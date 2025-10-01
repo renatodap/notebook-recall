@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase/server'
-import Link from 'next/link'
-import Button from '@/components/ui/Button'
+import MobileNav from '@/components/MobileNav'
 import CollectionsClient from '@/components/collections/CollectionsClient'
 
 export const dynamic = 'force-dynamic'
@@ -30,21 +29,19 @@ export default async function CollectionsPage() {
   })) || []
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-900">Collections</h1>
-            <div className="flex items-center gap-4">
-              <Link href="/dashboard">
-                <Button variant="secondary">← Dashboard</Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-gray-50 pb-20 md:pb-0 md:pl-64">
+      <MobileNav />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-4xl mx-auto px-4 py-6 md:py-12">
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Collections</h1>
+          <p className="text-gray-600">
+            Organize your sources into projects and topics
+          </p>
+        </div>
+
+        {/* Collections */}
         <CollectionsClient initialCollections={collectionsWithCount} />
       </div>
     </div>

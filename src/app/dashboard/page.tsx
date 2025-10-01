@@ -1,11 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase/server'
-import { signOut } from '@/lib/auth/actions'
-import ContentIngestion from '@/components/ContentIngestion'
-import QuickEntry from '@/components/QuickEntry'
-import DashboardClient from '@/components/DashboardClient'
-import Button from '@/components/ui/Button'
-import Link from 'next/link'
+import MobileNav from '@/components/MobileNav'
+import SourcesView from '@/components/SourcesView'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,55 +25,20 @@ export default async function DashboardPage() {
     .order('created_at', { ascending: false })
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-900">Recall Notebook</h1>
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600">{user.email}</span>
-              <Link href="/collections">
-                <Button variant="secondary">📚 Collections</Button>
-              </Link>
-              <Link href="/synthesis">
-                <Button variant="secondary">📝 Synthesis</Button>
-              </Link>
-              <Link href="/graph">
-                <Button variant="secondary">🕸️ Graph</Button>
-              </Link>
-              <Link href="/chat">
-                <Button variant="secondary">💬 Assistant</Button>
-              </Link>
-              <Link href="/publishing">
-                <Button variant="secondary">📄 Publish</Button>
-              </Link>
-              <Link href="/analytics">
-                <Button variant="secondary">📊 Analytics</Button>
-              </Link>
-              <Link href="/search">
-                <Button variant="secondary">🔍 Search</Button>
-              </Link>
-              <form action={signOut}>
-                <Button type="submit" variant="ghost">
-                  Sign Out
-                </Button>
-              </form>
-            </div>
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-gray-50 pb-20 md:pb-0 md:pl-64">
+      <MobileNav />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-1 space-y-8">
-            <QuickEntry />
-            <ContentIngestion />
-          </div>
-
-          <div className="lg:col-span-2">
-            <DashboardClient initialSources={sources || []} />
-          </div>
+      <div className="max-w-4xl mx-auto px-4 py-6 md:py-12">
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Your Sources</h1>
+          <p className="text-gray-600">
+            All your saved content in one place
+          </p>
         </div>
+
+        {/* Sources View */}
+        <SourcesView initialSources={sources || []} />
       </div>
     </div>
   )
