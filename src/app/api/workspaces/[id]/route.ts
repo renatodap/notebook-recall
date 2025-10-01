@@ -14,22 +14,35 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: annotation, error } = await (supabase as any)
-      .from('pdf_annotations')
+    const { data: workspace } = await (supabase as any)
+      .from('workspaces')
       .select('*')
       .eq('id', id)
+      .single()
+
+    if (!workspace) {
+      return NextResponse.json({ error: 'Workspace not found' }, { status: 404 })
+    }
+
+    const { data: membership } = await (supabase as any)
+      .from('workspace_members')
+      .select('*')
+      .eq('workspace_id', id)
       .eq('user_id', user.id)
       .single()
 
-    if (error) throw error
-
-    if (!annotation) {
-      return NextResponse.json({ error: 'Annotation not found' }, { status: 404 })
+    if (!membership && workspace.owner_id !== user.id) {
+      return NextResponse.json({ error: 'Not a member of this workspace' }, { status: 403 })
     }
 
-    return NextResponse.json({ annotation })
+    const { data: members } = await (supabase as any)
+      .from('workspace_members')
+      .select('*')
+      .eq('workspace_id', id)
+
+    return NextResponse.json({ workspace, members })
   } catch (error) {
-    console.error('Get annotation error:', error)
+    console.error('Get workspace error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -48,30 +61,29 @@ export async function PATCH(
     }
 
     const body = await request.json()
-    const { note, color, annotation_type } = body
+    const { name, description } = body
 
-    const updateData: any = {}
-    if (note !== undefined) updateData.note = note
-    if (color !== undefined) updateData.color = color
-    if (annotation_type !== undefined) updateData.annotation_type = annotation_type
+    const updates: any = { updated_at: new Date().toISOString() }
+    if (name !== undefined) updates.name = name
+    if (description !== undefined) updates.description = description
 
-    const { data: annotation, error } = await (supabase as any)
-      .from('pdf_annotations')
-      .update(updateData)
+    const { data: workspace, error } = await (supabase as any)
+      .from('workspaces')
+      .update(updates)
       .eq('id', id)
-      .eq('user_id', user.id)
+      .eq('owner_id', user.id)
       .select()
       .single()
 
     if (error) throw error
 
-    if (!annotation) {
-      return NextResponse.json({ error: 'Annotation not found' }, { status: 404 })
+    if (!workspace) {
+      return NextResponse.json({ error: 'Workspace not found or unauthorized' }, { status: 404 })
     }
 
-    return NextResponse.json({ annotation })
+    return NextResponse.json({ workspace })
   } catch (error) {
-    console.error('Update annotation error:', error)
+    console.error('Update workspace error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -90,16 +102,16 @@ export async function DELETE(
     }
 
     const { error } = await (supabase as any)
-      .from('pdf_annotations')
+      .from('workspaces')
       .delete()
       .eq('id', id)
-      .eq('user_id', user.id)
+      .eq('owner_id', user.id)
 
     if (error) throw error
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Delete annotation error:', error)
+    console.error('Delete workspace error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
