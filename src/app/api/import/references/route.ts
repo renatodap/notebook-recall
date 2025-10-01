@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Optionally create sources from references with summaries and embeddings
-    let createdSources: any[] = []
+    const createdSources: any[] = []
     const errors: string[] = []
 
     if (createSources && result.references.length > 0) {

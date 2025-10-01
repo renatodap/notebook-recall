@@ -22,18 +22,12 @@ export async function backfillEmbeddings(
   config?: BackfillConfig & { user_id?: string }
 ): Promise<BackfillResult> {
   const startTime = Date.now();
-  const batchSize = config?.batch_size || DEFAULT_BATCH_SIZE;
   const dryRun = config?.dry_run || false;
   const skipExisting = config?.skipExisting !== false;
   const maxRetries = config?.maxRetries || DEFAULT_MAX_RETRIES;
   const userId = config?.user_id;
 
   const supabase = createServiceRoleClient();
-
-  let processed = 0;
-  let failed = 0;
-  const skipped = 0;
-  const failures: Array<{ summary_id: string; error: string }> = [];
 
   try {
     // Get summaries without embeddings
