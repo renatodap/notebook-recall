@@ -1,115 +1,286 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createRouteHandlerClient } from '@/lib/supabase/server'
-import { z } from 'zod'
+/**
+ * POST /api/search
+ *
+ * Enhanced search with semantic, keyword, and hybrid modes
+ */
+
+import { NextRequest, NextResponse } from 'next/server';
+import { createRouteHandlerClient } from '@/lib/supabase/server';
+import { generateEmbedding } from '@/lib/embeddings/client';
+import { calculateHybridScore } from '@/lib/embeddings/utils';
+import { z } from 'zod';
+import type { SearchRequest, SearchResponse, SearchMode, SearchResult } from '@/types';
+
+export const dynamic = 'force-dynamic';
 
 const SearchRequestSchema = z.object({
   query: z.string().min(1, 'Query is required'),
-  limit: z.number().int().positive().max(50).optional(),
-})
+  mode: z.enum(['semantic', 'keyword', 'hybrid']).optional(),
+  limit: z.number().int().positive().max(100).optional(),
+  threshold: z.number().min(0).max(1).optional(),
+});
 
-/**
- * POST /api/search - Search sources by keyword or semantic similarity
- */
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createRouteHandlerClient()
+    const supabase = await createRouteHandlerClient();
 
     // Check authentication
     const {
       data: { user },
-    } = await supabase.auth.getUser()
+    } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json()
+    const body = await request.json();
 
     // Validate request
-    const validation = SearchRequestSchema.safeParse(body)
+    const validation = SearchRequestSchema.safeParse(body);
     if (!validation.success) {
       return NextResponse.json(
         { error: validation.error.issues[0].message },
         { status: 400 }
-      )
+      );
     }
 
-    const { query, limit = 20 } = validation.data
+    const {
+      query,
+      mode = 'hybrid',
+      limit = 20,
+      threshold = 0.7,
+    } = validation.data as SearchRequest;
 
-    // For now, implement keyword search
-    // In future, integrate vector similarity search
-    const searchPattern = `%${query}%`
+    let results: SearchResult[] = [];
+    const searchMode: SearchMode = mode;
 
-    const { data, error } = await supabase
-      .from('sources')
-      .select(
-        `
-        *,
-        summary:summaries(*),
-        tags:tags(*)
-      `
-      )
-      .eq('user_id', user.id)
-      .or(
-        `title.ilike.${searchPattern},original_content.ilike.${searchPattern},summaries.summary_text.ilike.${searchPattern}`
-      )
-      .limit(limit)
+    // Semantic or Hybrid Search
+    if (mode === 'semantic' || mode === 'hybrid') {
+      try {
+        // Generate query embedding
+        const queryEmbedding = await generateEmbedding({
+          text: query,
+          type: 'query',
+          normalize: true,
+        });
 
-    if (error) {
-      console.error('Search error:', error)
-      // Try alternative search if the OR query fails
-      const { data: fallbackData, error: fallbackError } = await supabase
-        .from('sources')
-        .select(
-          `
-          *,
-          summary:summaries(*),
-          tags:tags(*)
-        `
-        )
-        .eq('user_id', user.id)
-        .ilike('title', searchPattern)
-        .limit(limit)
+        // Use database function for vector similarity search
+        const { data: semanticData, error: semanticError } = await (supabase as any).rpc(
+          'match_summaries',
+          {
+            query_embedding: queryEmbedding.embedding,
+            match_threshold: threshold,
+            match_count: limit,
+            p_user_id: user.id,
+          }
+        );
 
-      if (fallbackError) {
-        throw fallbackError
+        if (semanticError) {
+          console.error('Semantic search error:', semanticError);
+
+          // Fall back to keyword search
+          if (mode === 'semantic') {
+            return await performKeywordSearch(supabase, user.id, query, limit);
+          }
+        } else if (semanticData) {
+          // Transform semantic results
+          results = semanticData.map((item: any) => ({
+            source: {
+              id: item.source_id,
+              user_id: item.user_id,
+              title: item.title,
+              content_type: item.content_type,
+              original_content: item.original_content,
+              url: item.url,
+              created_at: item.created_at,
+              updated_at: item.updated_at,
+            },
+            summary: {
+              id: item.summary_id,
+              source_id: item.source_id,
+              summary_text: item.summary_text,
+              key_actions: item.key_actions || [],
+              key_topics: item.key_topics || [],
+              word_count: item.word_count || 0,
+              embedding: null,
+              created_at: item.summary_created_at,
+            },
+            relevance_score: item.similarity || 0,
+            match_type: 'semantic',
+            matched_content: item.summary_text?.substring(0, 200) || '',
+          }));
+        }
+      } catch (error) {
+        console.error('Embedding generation error:', error);
+
+        // Fall back to keyword search
+        if (mode === 'semantic') {
+          return await performKeywordSearch(supabase, user.id, query, limit);
+        }
       }
-
-      return NextResponse.json({
-        results: fallbackData || [],
-        total: fallbackData?.length || 0,
-      })
     }
 
-    // Calculate relevance scores (simple: count of matches)
-    const results = (data || []).map((item: any) => {
-      let relevanceScore = 0
-      const lowerQuery = query.toLowerCase()
+    // Keyword or Hybrid Search
+    if (mode === 'keyword' || (mode === 'hybrid' && results.length < limit)) {
+      const keywordResults = await getKeywordResults(supabase, user.id, query, limit);
 
-      if (item.title?.toLowerCase().includes(lowerQuery)) relevanceScore += 3
-      if (item.original_content?.toLowerCase().includes(lowerQuery))
-        relevanceScore += 2
-      if (item.summary?.[0]?.summary_text?.toLowerCase().includes(lowerQuery))
-        relevanceScore += 2
-
-      return {
-        ...item,
-        relevance_score: relevanceScore,
+      if (mode === 'keyword') {
+        results = keywordResults;
+      } else {
+        // Merge with semantic results for hybrid
+        results = mergeResults(results, keywordResults, limit);
       }
-    })
+    }
 
-    // Sort by relevance
-    results.sort((a: any, b: any) => b.relevance_score - a.relevance_score)
+    // Sort by relevance score
+    results.sort((a, b) => b.relevance_score - a.relevance_score);
 
-    return NextResponse.json({
+    // Limit results
+    results = results.slice(0, limit);
+
+    const response: SearchResponse = {
       results,
       total: results.length,
-    })
+      search_mode: searchMode,
+    };
+
+    return NextResponse.json(response);
   } catch (error) {
-    console.error('Search API error:', error)
+    console.error('Search API error:', error);
     return NextResponse.json(
       { error: 'Failed to search sources' },
       { status: 500 }
-    )
+    );
   }
+}
+
+/**
+ * Perform keyword search
+ */
+async function getKeywordResults(
+  supabase: any,
+  userId: string,
+  query: string,
+  limit: number
+): Promise<SearchResult[]> {
+  const searchPattern = `%${query}%`;
+
+  const { data, error } = await supabase
+    .from('sources')
+    .select(
+      `
+      *,
+      summary:summaries(*)
+    `
+    )
+    .eq('user_id', userId)
+    .or(
+      `title.ilike.${searchPattern},original_content.ilike.${searchPattern}`
+    )
+    .limit(limit);
+
+  if (error) {
+    console.error('Keyword search error:', error);
+    return [];
+  }
+
+  // Calculate keyword relevance scores
+  return (data || []).map((item: any) => {
+    let score = 0;
+    const lowerQuery = query.toLowerCase();
+
+    if (item.title?.toLowerCase().includes(lowerQuery)) score += 0.3;
+    if (item.original_content?.toLowerCase().includes(lowerQuery)) score += 0.4;
+    if (item.summary?.[0]?.summary_text?.toLowerCase().includes(lowerQuery))
+      score += 0.3;
+
+    // Normalize to 0-1 range
+    score = Math.min(score, 1.0);
+
+    return {
+      source: {
+        id: item.id,
+        user_id: item.user_id,
+        title: item.title,
+        content_type: item.content_type,
+        original_content: item.original_content,
+        url: item.url,
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+      },
+      summary: item.summary?.[0] || {
+        id: '',
+        source_id: item.id,
+        summary_text: '',
+        key_actions: [],
+        key_topics: [],
+        word_count: 0,
+        embedding: null,
+        created_at: item.created_at,
+      },
+      relevance_score: score,
+      match_type: 'keyword' as const,
+      matched_content: item.title || '',
+    };
+  });
+}
+
+/**
+ * Perform keyword search and return as NextResponse
+ */
+async function performKeywordSearch(
+  supabase: any,
+  userId: string,
+  query: string,
+  limit: number
+): Promise<NextResponse> {
+  const results = await getKeywordResults(supabase, userId, query, limit);
+
+  const response: SearchResponse = {
+    results,
+    total: results.length,
+    search_mode: 'keyword',
+  };
+
+  return NextResponse.json(response);
+}
+
+/**
+ * Merge semantic and keyword results for hybrid search
+ */
+function mergeResults(
+  semanticResults: SearchResult[],
+  keywordResults: SearchResult[],
+  limit: number
+): SearchResult[] {
+  const merged = new Map<string, SearchResult>();
+
+  // Add semantic results
+  semanticResults.forEach((result) => {
+    merged.set(result.source.id, result);
+  });
+
+  // Merge keyword results
+  keywordResults.forEach((keywordResult) => {
+    const existing = merged.get(keywordResult.source.id);
+
+    if (existing) {
+      // Calculate hybrid score
+      const hybrid = calculateHybridScore(
+        existing.relevance_score,
+        keywordResult.relevance_score
+      );
+
+      merged.set(keywordResult.source.id, {
+        ...existing,
+        relevance_score: hybrid.finalScore,
+        match_type: 'hybrid',
+      });
+    } else {
+      // Add as keyword-only result
+      merged.set(keywordResult.source.id, keywordResult);
+    }
+  });
+
+  return Array.from(merged.values()).slice(0, limit);
 }

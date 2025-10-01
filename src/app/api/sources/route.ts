@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
+import { generateEmbedding } from '@/lib/embeddings/client'
 import { z } from 'zod'
 
 const CreateSourceSchema = z.object({
@@ -35,6 +36,13 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100)
     const contentType = searchParams.get('contentType')
     const sortBy = searchParams.get('sort') || 'newest'
+    const tagsParam = searchParams.get('tags')
+    const tagLogic = searchParams.get('tagLogic') || 'OR'
+
+    // Parse tag filter
+    const filterTags = tagsParam
+      ? tagsParam.split(',').map((t) => t.trim().toLowerCase())
+      : []
 
     // Build query
     let query = supabase
@@ -49,7 +57,7 @@ export async function GET(request: NextRequest) {
       )
       .eq('user_id', user.id)
 
-    // Apply filters
+    // Apply content type filter
     if (contentType) {
       query = query.eq('content_type', contentType)
     }
@@ -72,12 +80,43 @@ export async function GET(request: NextRequest) {
       throw error
     }
 
+    // Apply tag filtering (client-side for now - for AND logic)
+    let filteredData = data || []
+
+    if (filterTags.length > 0 && filteredData.length > 0) {
+      filteredData = filteredData.filter((source: any) => {
+        if (!source.tags || source.tags.length === 0) {
+          return false
+        }
+
+        const sourceTagNames = source.tags.map((t: any) =>
+          t.tag_name.toLowerCase()
+        )
+
+        if (tagLogic === 'AND') {
+          // Must have ALL tags
+          return filterTags.every((filterTag) =>
+            sourceTagNames.includes(filterTag)
+          )
+        } else {
+          // Must have ANY tag (OR)
+          return filterTags.some((filterTag) =>
+            sourceTagNames.includes(filterTag)
+          )
+        }
+      })
+    }
+
     return NextResponse.json({
-      data: data || [],
-      total: count || 0,
+      data: filteredData,
+      total: filteredData.length,
       page,
       limit,
-      hasMore: count ? from + limit < count : false,
+      hasMore: false, // Tag filtering is done client-side, so no pagination
+      filters: {
+        tags: filterTags.length > 0 ? filterTags : undefined,
+        tagLogic: filterTags.length > 0 ? tagLogic : undefined,
+      },
     })
   } catch (error) {
     console.error('GET sources error:', error)
@@ -143,6 +182,21 @@ export async function POST(request: NextRequest) {
       throw sourceError
     }
 
+    // Generate embedding for summary
+    let embedding = null;
+    try {
+      const textToEmbed = [summary_text, ...key_topics].join(' ');
+      const embeddingResult = await generateEmbedding({
+        text: textToEmbed,
+        type: 'summary',
+        normalize: true,
+      });
+      embedding = embeddingResult.embedding;
+    } catch (error) {
+      console.error('Embedding generation error:', error);
+      // Continue without embedding - can backfill later
+    }
+
     // Create summary
     const { data: summary, error: summaryError } = await supabase
       .from('summaries')
@@ -152,6 +206,7 @@ export async function POST(request: NextRequest) {
         key_actions,
         key_topics,
         word_count,
+        embedding,
       } as any)
       .select()
       .single()

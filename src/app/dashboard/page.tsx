@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase/server'
 import { signOut } from '@/lib/auth/actions'
 import ContentIngestion from '@/components/ContentIngestion'
-import SourceCard from '@/components/SourceCard'
+import DashboardClient from '@/components/DashboardClient'
 import Button from '@/components/ui/Button'
 import Link from 'next/link'
 
@@ -26,7 +26,6 @@ export default async function DashboardPage() {
     `)
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
-    .limit(20)
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -56,30 +55,7 @@ export default async function DashboardPage() {
           </div>
 
           <div className="lg:col-span-2">
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Your Sources</h2>
-              <p className="text-gray-600">
-                {sources?.length || 0} {sources?.length === 1 ? 'item' : 'items'} saved
-              </p>
-            </div>
-
-            {sources && sources.length > 0 ? (
-              <div className="grid gap-4">
-                {sources.map((source: any) => (
-                  <SourceCard key={source.id} source={source} />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12 bg-white rounded-lg border-2 border-dashed border-gray-300">
-                <div className="text-4xl mb-4">📚</div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  No sources yet
-                </h3>
-                <p className="text-gray-600">
-                  Add your first piece of content to get started
-                </p>
-              </div>
-            )}
+            <DashboardClient initialSources={sources || []} />
           </div>
         </div>
       </div>

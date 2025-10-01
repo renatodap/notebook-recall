@@ -61,21 +61,28 @@ export interface CreateSourceResponse {
   tags: Tag[];
 }
 
+export type SearchMode = 'semantic' | 'keyword' | 'hybrid';
+export type MatchType = 'semantic' | 'keyword' | 'hybrid';
+
 export interface SearchRequest {
   query: string;
+  mode?: SearchMode;
   limit?: number;
+  threshold?: number;
 }
 
 export interface SearchResult {
   source: Source;
   summary: Summary;
   relevance_score: number;
+  match_type: MatchType;
   matched_content: string;
 }
 
 export interface SearchResponse {
   results: SearchResult[];
   total: number;
+  search_mode: SearchMode;
 }
 
 // UI component types
@@ -111,12 +118,26 @@ export interface ApiError {
 export type LoadingState = 'idle' | 'loading' | 'success' | 'error';
 
 // Filter types
+export type TagLogic = 'OR' | 'AND';
+
 export interface SourceFilters {
   contentType?: ContentType[];
   tags?: string[];
+  tagLogic?: TagLogic;
   dateFrom?: Date;
   dateTo?: Date;
   searchQuery?: string;
+}
+
+export interface TagWithCount {
+  tag_name: string;
+  count: number;
+  sources?: string[];
+}
+
+export interface GetTagsResponse {
+  tags: TagWithCount[];
+  total: number;
 }
 
 // Sort types
@@ -149,11 +170,28 @@ export interface AuthState {
   error: ApiError | null;
 }
 
-// Embedding types
-export interface EmbeddingRequest {
+// Embedding types (see src/lib/embeddings/types.ts for detailed types)
+export type Embedding = number[];
+
+export interface EmbeddingGenerateRequest {
   text: string;
+  type: 'summary' | 'query';
 }
 
-export interface EmbeddingResponse {
-  embedding: number[];
+export interface EmbeddingGenerateResponse {
+  embedding: Embedding;
+  model: string;
+  tokens: number;
+}
+
+export interface BackfillRequest {
+  batch_size?: number;
+  dry_run?: boolean;
+}
+
+export interface BackfillResponse {
+  processed: number;
+  failed: number;
+  skipped: number;
+  duration_ms: number;
 }

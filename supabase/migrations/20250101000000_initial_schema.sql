@@ -72,7 +72,8 @@ CREATE TRIGGER update_sources_updated_at
 CREATE OR REPLACE FUNCTION match_summaries(
   query_embedding vector(1536),
   match_threshold float DEFAULT 0.7,
-  match_count int DEFAULT 10
+  match_count int DEFAULT 10,
+  p_user_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
   id uuid,
@@ -90,8 +91,10 @@ BEGIN
     s.summary_text,
     1 - (s.embedding <=> query_embedding) as similarity
   FROM summaries s
+  INNER JOIN sources src ON src.id = s.source_id
   WHERE s.embedding IS NOT NULL
     AND 1 - (s.embedding <=> query_embedding) > match_threshold
+    AND (p_user_id IS NULL OR src.user_id = p_user_id)
   ORDER BY s.embedding <=> query_embedding
   LIMIT match_count;
 END;
