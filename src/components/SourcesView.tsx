@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import SourceCard from './SourceCard'
+import BulkActions from './BulkActions'
 import type { Source, Summary, Tag } from '@/types'
 
 interface SourcesViewProps {
@@ -13,6 +14,8 @@ export default function SourcesView({ initialSources }: SourcesViewProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [filteredSources, setFilteredSources] = useState(initialSources)
   const [sortBy, setSortBy] = useState<'newest' | 'oldest'>('newest')
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [selectionMode, setSelectionMode] = useState(false)
 
   // Sync with initialSources when they change
   useEffect(() => {
@@ -60,8 +63,35 @@ export default function SourcesView({ initialSources }: SourcesViewProps) {
     return acc
   }, {} as Record<string, number>)
 
+  const toggleSelection = (id: string) => {
+    setSelectedIds(prev =>
+      prev.includes(id) ? prev.filter(sid => sid !== id) : [...prev, id]
+    )
+  }
+
+  const selectAll = () => {
+    setSelectedIds(filteredSources.map(s => s.id))
+  }
+
+  const clearSelection = () => {
+    setSelectedIds([])
+    setSelectionMode(false)
+  }
+
   return (
     <div className="space-y-4">
+      {/* Bulk Actions */}
+      {selectedIds.length > 0 && (
+        <BulkActions
+          selectedSourceIds={selectedIds}
+          onClearSelection={clearSelection}
+          onActionComplete={() => {
+            clearSelection()
+            window.location.reload()
+          }}
+        />
+      )}
+
       {/* Search Bar */}
       <div className="sticky top-0 z-10 bg-gray-50 pb-4 pt-2 md:pt-0">
         <div className="relative">
@@ -87,6 +117,31 @@ export default function SourcesView({ initialSources }: SourcesViewProps) {
 
         {/* Filter Bar */}
         <div className="flex items-center gap-2 mt-3 overflow-x-auto pb-2">
+          <button
+            onClick={() => {
+              setSelectionMode(!selectionMode)
+              if (selectionMode) {
+                clearSelection()
+              }
+            }}
+            className={`flex-shrink-0 px-4 py-2 border rounded-full text-sm font-medium transition-colors ${
+              selectionMode
+                ? 'bg-blue-600 text-white border-blue-600'
+                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+            }`}
+          >
+            {selectionMode ? '✓ Selection Mode' : '☑️ Select'}
+          </button>
+
+          {selectionMode && filteredSources.length > 0 && (
+            <button
+              onClick={selectAll}
+              className="flex-shrink-0 px-4 py-2 bg-white border border-gray-300 rounded-full text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              Select All ({filteredSources.length})
+            </button>
+          )}
+
           <button
             onClick={() => setSortBy(sortBy === 'newest' ? 'oldest' : 'newest')}
             className="flex-shrink-0 px-4 py-2 bg-white border border-gray-300 rounded-full text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
@@ -125,10 +180,24 @@ export default function SourcesView({ initialSources }: SourcesViewProps) {
       {filteredSources.length > 0 ? (
         <div className="space-y-3">
           {filteredSources.map((source) => (
-            <SourceCard
-              key={source.id}
-              source={source}
-            />
+            <div key={source.id} className="flex items-start gap-3">
+              {selectionMode && (
+                <input
+                  type="checkbox"
+                  checked={selectedIds.includes(source.id)}
+                  onChange={() => toggleSelection(source.id)}
+                  className="mt-4 w-5 h-5 text-blue-600 rounded cursor-pointer"
+                />
+              )}
+              <div className="flex-1">
+                <SourceCard
+                  source={source}
+                  summary={source.summary[0]}
+                  tags={source.tags}
+                  onClick={() => window.location.href = `/search?q=${encodeURIComponent(source.title)}`}
+                />
+              </div>
+            </div>
           ))}
         </div>
       ) : sources.length === 0 ? (

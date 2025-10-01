@@ -1,12 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Button from './ui/Button'
 import ExportButton from './ExportButton'
 import SynthesisGenerator from './ai/SynthesisGenerator'
 import BlogGenerator from './publishing/BlogGenerator'
 import NewsletterGenerator from './publishing/NewsletterGenerator'
-import type { CitationFormat } from '@/types'
+import type { CitationFormat, Collection } from '@/types'
 
 interface BulkActionsProps {
   selectedSourceIds: string[]
@@ -28,6 +28,55 @@ export default function BulkActions({
   const [tagInput, setTagInput] = useState('')
   const [isAddingTags, setIsAddingTags] = useState(false)
   const [exportingCitations, setExportingCitations] = useState(false)
+  const [showCollectionModal, setShowCollectionModal] = useState(false)
+  const [collections, setCollections] = useState<Collection[]>([])
+  const [addingToCollection, setAddingToCollection] = useState(false)
+
+  // Fetch collections
+  useEffect(() => {
+    fetchCollections()
+  }, [])
+
+  const fetchCollections = async () => {
+    try {
+      const response = await fetch('/api/collections')
+      const data = await response.json()
+      setCollections(data.collections || [])
+    } catch (error) {
+      console.error('Failed to fetch collections:', error)
+    }
+  }
+
+  const handleAddToCollection = async (collectionId: string) => {
+    setAddingToCollection(true)
+    try {
+      let successCount = 0
+      for (const sourceId of selectedSourceIds) {
+        const response = await fetch(`/api/collections/${collectionId}/sources`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ source_id: sourceId }),
+        })
+        if (response.ok) {
+          successCount++
+        }
+      }
+
+      if (successCount > 0) {
+        alert(`Added ${successCount} source(s) to collection`)
+        setShowCollectionModal(false)
+        onClearSelection()
+        onActionComplete()
+      } else {
+        alert('Failed to add sources to collection')
+      }
+    } catch (error) {
+      console.error('Add to collection error:', error)
+      alert('Failed to add sources to collection')
+    } finally {
+      setAddingToCollection(false)
+    }
+  }
 
   const handleDelete = async () => {
     if (!confirm(`Delete ${selectedSourceIds.length} source(s)? This cannot be undone.`)) {
@@ -132,6 +181,14 @@ export default function BulkActions({
 
           {/* Export Button */}
           <ExportButton sourceIds={selectedSourceIds} />
+
+          {/* Add to Collection Button */}
+          <Button
+            onClick={() => setShowCollectionModal(true)}
+            variant="secondary"
+          >
+            📁 Add to Collection
+          </Button>
 
           {/* Export Citations Button */}
           <Button
@@ -377,6 +434,65 @@ export default function BulkActions({
           sourceIds={selectedSourceIds}
           onClose={() => setShowNewsletterGenerator(false)}
         />
+      )}
+
+      {/* Collection Selection Modal */}
+      {showCollectionModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              Add to Collection
+            </h2>
+            <p className="text-gray-600 mb-6">
+              Select a collection for {selectedSourceIds.length} source{selectedSourceIds.length !== 1 ? 's' : ''}
+            </p>
+
+            {collections.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500 mb-4">No collections yet</p>
+                <Button
+                  onClick={() => {
+                    setShowCollectionModal(false)
+                    window.location.href = '/collections'
+                  }}
+                  variant="secondary"
+                >
+                  Create Collection
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-80 overflow-y-auto mb-6">
+                {collections.map((collection) => (
+                  <button
+                    key={collection.id}
+                    onClick={() => handleAddToCollection(collection.id)}
+                    disabled={addingToCollection}
+                    className="w-full p-4 text-left border border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all disabled:opacity-50"
+                  >
+                    <div className="font-medium text-gray-900">
+                      {collection.name}
+                    </div>
+                    {collection.description && (
+                      <div className="text-sm text-gray-600 line-clamp-1">
+                        {collection.description}
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2">
+              <Button
+                onClick={() => setShowCollectionModal(false)}
+                variant="secondary"
+                disabled={addingToCollection}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

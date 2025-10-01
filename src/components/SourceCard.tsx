@@ -1,9 +1,9 @@
 import Link from 'next/link'
 import { Card, CardBody } from './ui/Card'
-import { Source, Summary, Tag } from '@/types'
+import { Source, Summary, Tag, Collection } from '@/types'
 
 interface SourceCardProps {
-  source: Source & { summary: Summary[]; tags: Tag[] }
+  source: Source & { summary: Summary[]; tags: Tag[]; collections?: Collection[] }
   selectable?: boolean
   selected?: boolean
   onSelect?: (sourceId: string, selected: boolean) => void
@@ -73,6 +73,25 @@ export default function SourceCard({
                 <p className="text-sm text-gray-600 line-clamp-3 mb-3">
                   {summary.summary_text}
                 </p>
+              )}
+
+              {/* Collection badges */}
+              {source.collections && source.collections.length > 0 && (
+                <div className="flex flex-wrap gap-1 mb-2">
+                  {source.collections.slice(0, 2).map((collection) => (
+                    <span
+                      key={collection.id}
+                      className="px-2 py-1 bg-emerald-100 text-emerald-700 text-xs rounded-full flex items-center gap-1"
+                    >
+                      📁 {collection.name}
+                    </span>
+                  ))}
+                  {source.collections.length > 2 && (
+                    <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+                      +{source.collections.length - 2} more
+                    </span>
+                  )}
+                </div>
               )}
 
               {summary && summary.key_topics && summary.key_topics.length > 0 && (
