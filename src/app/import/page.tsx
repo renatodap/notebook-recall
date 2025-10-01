@@ -57,7 +57,7 @@ export default async function ImportPage() {
                 <li>Open Zotero desktop app</li>
                 <li>Select all items (or a collection)</li>
                 <li>Right-click → Export Items</li>
-                <li>Choose "BibTeX" format</li>
+                <li>Choose &quot;BibTeX&quot; format</li>
                 <li>Upload the .bib file here</li>
               </ol>
             </div>
@@ -70,7 +70,7 @@ export default async function ImportPage() {
                 <li>Open Mendeley desktop app</li>
                 <li>Select references to export</li>
                 <li>File → Export...</li>
-                <li>Choose "BibTeX (*.bib)" format</li>
+                <li>Choose &quot;BibTeX (*.bib)&quot; format</li>
                 <li>Upload the .bib file here</li>
               </ol>
             </div>
@@ -83,7 +83,7 @@ export default async function ImportPage() {
                 <li>Open EndNote library</li>
                 <li>Select references to export</li>
                 <li>File → Export...</li>
-                <li>Choose "RIS" or "XML" format</li>
+                <li>Choose &quot;RIS&quot; or &quot;XML&quot; format</li>
                 <li>Upload the file here</li>
               </ol>
             </div>
@@ -101,7 +101,7 @@ export default async function ImportPage() {
               <div>
                 <p className="font-semibold text-gray-900">AI Processing</p>
                 <p className="text-sm text-gray-600">
-                  We'll analyze each reference and extract key metadata
+                  We&apos;ll analyze each reference and extract key metadata
                 </p>
               </div>
             </div>
@@ -119,7 +119,7 @@ export default async function ImportPage() {
               <div>
                 <p className="font-semibold text-gray-900">Auto-Link</p>
                 <p className="text-sm text-gray-600">
-                  We'll discover connections between your references
+                  We&apos;ll discover connections between your references
                 </p>
               </div>
             </div>

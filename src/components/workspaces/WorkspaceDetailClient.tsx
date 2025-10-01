@@ -50,13 +50,13 @@ export default function WorkspaceDetailClient({
     <div className="space-y-8">
       <Card className="shadow-lg">
         <CardHeader>
-          <div className="flex justify-between items-start">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">{workspace.name}</h1>
-              <p className="text-gray-600 mt-2">{workspace.description || 'No description'}</p>
+          <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
+            <div className="flex-1">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{workspace.name}</h1>
+              <p className="text-sm sm:text-base text-gray-600 mt-2">{workspace.description || 'No description'}</p>
             </div>
             {isOwner && (
-              <Button variant="secondary" size="sm">
+              <Button variant="secondary" size="sm" className="self-end sm:self-start">
                 ⚙️ Settings
               </Button>
             )}

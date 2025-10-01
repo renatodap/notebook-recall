@@ -46,20 +46,24 @@ export default async function PublicSourcePage({ params }: PublicSourcePageProps
     <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-white">
       {/* Header */}
       <nav className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <Link href="/" className="text-xl font-bold text-indigo-600 hover:text-indigo-700">
-                📚 Recall Notebook
+        <div className="max-w-5xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-4">
+          <div className="flex justify-between items-center gap-2">
+            <div className="flex-1 min-w-0">
+              <Link href="/" className="text-base sm:text-xl font-bold text-indigo-600 hover:text-indigo-700">
+                📚 <span className="hidden xs:inline">Recall Notebook</span><span className="xs:hidden">Recall</span>
               </Link>
-              <span className="ml-3 text-sm text-gray-500">Public Research</span>
+              <span className="ml-2 sm:ml-3 text-xs sm:text-sm text-gray-500 hidden sm:inline">Public Research</span>
             </div>
-            <div className="flex gap-3">
+            <div className="flex gap-2">
               <Link href="/login">
-                <Button variant="ghost" size="sm">Sign In</Button>
+                <Button variant="ghost" size="sm" className="text-xs sm:text-sm px-2 sm:px-3">
+                  <span className="hidden xs:inline">Sign In</span><span className="xs:hidden">Login</span>
+                </Button>
               </Link>
               <Link href="/signup">
-                <Button size="sm">Get Started Free</Button>
+                <Button size="sm" className="text-xs sm:text-sm px-2 sm:px-3 whitespace-nowrap">
+                  <span className="hidden sm:inline">Get Started Free</span><span className="sm:hidden">Sign Up</span>
+                </Button>
               </Link>
             </div>
           </div>
@@ -67,18 +71,18 @@ export default async function PublicSourcePage({ params }: PublicSourcePageProps
       </nav>
 
       {/* Main Content */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="max-w-5xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-12">
         <div className="grid lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
             {/* Source Card */}
             <Card className="shadow-lg">
               <CardHeader className="bg-gradient-to-r from-indigo-50 to-purple-50">
                 <div>
-                  <div className="inline-block px-3 py-1 bg-indigo-600 text-white text-xs font-semibold rounded-full mb-3">
+                  <div className="inline-block px-3 py-1 bg-indigo-600 text-white text-xs font-semibold rounded-full mb-2 sm:mb-3">
                     PUBLIC RESEARCH
                   </div>
-                  <h1 className="text-4xl font-bold text-gray-900 mb-3">{source.title}</h1>
-                  <div className="flex items-center gap-4 text-sm text-gray-600">
+                  <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2 sm:mb-3">{source.title}</h1>
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
                     <span className="capitalize flex items-center gap-1">
                       <span className="text-base">📄</span>
                       {source.content_type}

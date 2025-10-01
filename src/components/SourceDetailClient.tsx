@@ -46,24 +46,24 @@ export default function SourceDetailClient({ source, onDelete }: SourceDetailCli
             {/* Source Details Card */}
             <Card>
               <CardHeader>
-                <div className="flex justify-between items-start">
+                <div className="flex flex-col gap-3">
                   <div className="flex-1">
-                    <h1 className="text-3xl font-bold text-gray-900">{source.title}</h1>
-                    <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{source.title}</h1>
+                    <div className="flex items-center gap-2 sm:gap-4 mt-2 text-xs sm:text-sm text-gray-600 flex-wrap">
                       <span className="capitalize">{source.content_type}</span>
                       <span>•</span>
                       <span>{new Date(source.created_at).toLocaleDateString()}</span>
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     {isPDF && source.url && (
                       <Button
                         onClick={() => setShowPDFViewer(true)}
                         variant="primary"
                         size="sm"
-                        className="bg-indigo-600 hover:bg-indigo-700"
+                        className="bg-indigo-600 hover:bg-indigo-700 flex-1 sm:flex-none"
                       >
-                        📄 Annotate PDF
+                        📄 <span className="hidden xs:inline">Annotate PDF</span><span className="xs:hidden">PDF</span>
                       </Button>
                     )}
                     <ShareButton sourceId={source.id} />
@@ -72,12 +72,13 @@ export default function SourceDetailClient({ source, onDelete }: SourceDetailCli
                       onClick={() => setShowCitationManager(true)}
                       variant="secondary"
                       size="sm"
+                      className="flex-1 sm:flex-none"
                     >
-                      📚 Cite
+                      📚 <span className="hidden xs:inline">Cite</span>
                     </Button>
-                    <form action={onDelete}>
-                      <Button type="submit" variant="secondary" size="sm" className="text-red-600 hover:bg-red-50">
-                        🗑️ Delete
+                    <form action={onDelete} className="flex-1 sm:flex-none">
+                      <Button type="submit" variant="secondary" size="sm" className="text-red-600 hover:bg-red-50 w-full">
+                        🗑️ <span className="hidden xs:inline">Delete</span>
                       </Button>
                     </form>
                   </div>

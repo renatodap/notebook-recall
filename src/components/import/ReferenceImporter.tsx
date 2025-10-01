@@ -159,10 +159,10 @@ export default function ReferenceImporter({ onImportComplete }: { onImportComple
                     >
                       {uploading ? 'Parsing...' : '🔍 Preview References'}
                     </Button>
-                    <label htmlFor="reference-file">
-                      <Button variant="ghost" as="span">
+                    <label htmlFor="reference-file" className="cursor-pointer">
+                      <span className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
                         Choose Different File
-                      </Button>
+                      </span>
                     </label>
                   </div>
                 </div>
@@ -177,10 +177,10 @@ export default function ReferenceImporter({ onImportComplete }: { onImportComple
                       or click to browse
                     </p>
                   </div>
-                  <label htmlFor="reference-file">
-                    <Button as="span">
+                  <label htmlFor="reference-file" className="cursor-pointer">
+                    <span className="inline-flex items-center justify-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition-colors">
                       Browse Files
-                    </Button>
+                    </span>
                   </label>
                   <p className="text-xs text-gray-500 mt-2">
                     Supported: .bib (BibTeX), .ris (RIS), .xml (EndNote)
@@ -190,7 +190,7 @@ export default function ReferenceImporter({ onImportComplete }: { onImportComple
             </div>
 
             {/* Format Examples */}
-            <div className="mt-6 grid grid-cols-3 gap-3">
+            <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
                 <p className="font-semibold text-sm text-blue-900 mb-1">📘 Zotero</p>
                 <p className="text-xs text-blue-700">Export as BibTeX (.bib)</p>

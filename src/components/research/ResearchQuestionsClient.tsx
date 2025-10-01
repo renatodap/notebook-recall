@@ -101,12 +101,13 @@ export default function ResearchQuestionsClient({ userId }: { userId: string }) 
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex gap-2">
+      <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 mb-6">
+        <div className="flex flex-wrap gap-2">
           <Button
             onClick={() => setFilter('all')}
             variant={filter === 'all' ? 'primary' : 'ghost'}
             size="sm"
+            className="flex-1 sm:flex-none"
           >
             All ({questions.length})
           </Button>
@@ -114,6 +115,7 @@ export default function ResearchQuestionsClient({ userId }: { userId: string }) 
             onClick={() => setFilter('open')}
             variant={filter === 'open' ? 'primary' : 'ghost'}
             size="sm"
+            className="flex-1 sm:flex-none"
           >
             Open ({statusCounts.open})
           </Button>
@@ -121,6 +123,7 @@ export default function ResearchQuestionsClient({ userId }: { userId: string }) 
             onClick={() => setFilter('partial')}
             variant={filter === 'partial' ? 'primary' : 'ghost'}
             size="sm"
+            className="flex-1 sm:flex-none"
           >
             Partial ({statusCounts.partial})
           </Button>
@@ -128,6 +131,7 @@ export default function ResearchQuestionsClient({ userId }: { userId: string }) 
             onClick={() => setFilter('answered')}
             variant={filter === 'answered' ? 'primary' : 'ghost'}
             size="sm"
+            className="flex-1 sm:flex-none"
           >
             Answered ({statusCounts.answered})
           </Button>
@@ -135,7 +139,7 @@ export default function ResearchQuestionsClient({ userId }: { userId: string }) 
 
         <Button
           onClick={() => setShowCreateModal(true)}
-          className="bg-green-600 hover:bg-green-700"
+          className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
         >
           + Add Question
         </Button>
@@ -228,10 +232,10 @@ export default function ResearchQuestionsClient({ userId }: { userId: string }) 
             className="fixed inset-0 bg-black bg-opacity-50 z-40"
             onClick={() => setShowCreateModal(false)}
           />
-          <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-            <Card className="w-full max-w-2xl">
+          <div className="fixed inset-0 flex items-center justify-center z-50 p-3 sm:p-4">
+            <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
               <CardHeader>
-                <h2 className="text-2xl font-bold text-gray-900">Add Research Question</h2>
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Add Research Question</h2>
               </CardHeader>
               <CardBody>
                 <form onSubmit={createQuestion} className="space-y-4">

@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ content: latex, filename: `${source.title.replace(/[^a-z0-9]/gi, '_')}.tex` })
     } else if (format === 'docx') {
       const docContent = await generateDOCX(source, summary)
-      return new NextResponse(docContent, {
+      return new NextResponse(Buffer.from(docContent), {
         headers: {
           'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
           'Content-Disposition': `attachment; filename="${source.title.replace(/[^a-z0-9]/gi, '_')}.docx"`

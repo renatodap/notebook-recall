@@ -99,22 +99,22 @@ export default function ShareButton({ sourceId }: ShareButtonProps) {
           />
 
           {/* Modal */}
-          <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-            <Card className="w-full max-w-lg shadow-2xl animate-in fade-in zoom-in duration-200">
-              <CardBody className="p-6">
-                <div className="flex justify-between items-start mb-6">
+          <div className="fixed inset-0 flex items-center justify-center z-50 p-3 sm:p-4">
+            <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl animate-in fade-in zoom-in duration-200">
+              <CardBody className="p-4 sm:p-6">
+                <div className="flex justify-between items-start mb-4 sm:mb-6">
                   <div>
-                    <h3 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                      <span className="text-3xl">🔗</span>
-                      Share This Source
+                    <h3 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
+                      <span className="text-2xl sm:text-3xl">🔗</span>
+                      <span className="hidden xs:inline">Share This Source</span><span className="xs:hidden">Share</span>
                     </h3>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-xs sm:text-sm text-gray-600 mt-1">
                       Control who can view this research
                     </p>
                   </div>
                   <button
                     onClick={() => setIsOpen(false)}
-                    className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+                    className="text-gray-400 hover:text-gray-600 text-xl sm:text-2xl leading-none ml-2"
                   >
                     ×
                   </button>
@@ -186,21 +186,21 @@ export default function ShareButton({ sourceId }: ShareButtonProps) {
 
                 {/* Public Link Section */}
                 {visibility === 'public' && publicUrl && (
-                  <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
-                    <label className="text-sm font-semibold text-gray-700 mb-2 block">
+                  <div className="p-3 sm:p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
+                    <label className="text-xs sm:text-sm font-semibold text-gray-700 mb-2 block">
                       🎉 Public Link - Share anywhere!
                     </label>
-                    <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2">
                       <input
                         type="text"
                         value={publicUrl}
                         readOnly
-                        className="flex-1 px-3 py-2 bg-white border border-green-300 rounded-lg text-sm font-mono text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                        className="flex-1 px-2 sm:px-3 py-2 bg-white border border-green-300 rounded-lg text-xs sm:text-sm font-mono text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500"
                       />
                       <Button
                         onClick={copyToClipboard}
                         size="sm"
-                        className={copied ? 'bg-green-600 hover:bg-green-700' : ''}
+                        className={`whitespace-nowrap ${copied ? 'bg-green-600 hover:bg-green-700' : ''}`}
                       >
                         {copied ? '✓ Copied!' : '📋 Copy'}
                       </Button>

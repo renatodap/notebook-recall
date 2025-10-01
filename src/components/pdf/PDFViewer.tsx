@@ -129,9 +129,9 @@ export default function PDFViewer({ sourceId, pdfUrl }: PDFViewerProps) {
   const pageAnnotations = annotations.filter(a => a.page_number === pageNumber)
 
   return (
-    <div className="flex h-full bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
+    <div className="flex flex-col lg:flex-row h-full bg-gray-50 rounded-lg border border-gray-200 overflow-hidden relative">
       {/* Main PDF Viewer */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-w-0">
         {/* Toolbar */}
         <AnnotationToolbar
           selectedTool={selectedTool}
@@ -145,8 +145,8 @@ export default function PDFViewer({ sourceId, pdfUrl }: PDFViewerProps) {
         />
 
         {/* PDF Display */}
-        <div className="flex-1 overflow-auto bg-gray-100 p-8">
-          <div className="max-w-4xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden">
+        <div className="flex-1 overflow-auto bg-gray-100 p-2 sm:p-4 md:p-8">
+          <div className="w-full lg:max-w-4xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden">
             {loading && (
               <div className="flex items-center justify-center h-96">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
@@ -205,18 +205,19 @@ export default function PDFViewer({ sourceId, pdfUrl }: PDFViewerProps) {
             {/* Quick annotation popup */}
             {selection && (
               <div
-                className="fixed z-50 bg-white border border-gray-300 rounded-lg shadow-xl p-3 animate-in fade-in zoom-in duration-200"
+                className="fixed z-50 bg-white border border-gray-300 rounded-lg shadow-xl p-2 sm:p-3 animate-in fade-in zoom-in duration-200 max-w-[90vw]"
                 style={{
-                  left: selection.rect.x + selection.rect.width / 2 - 100,
-                  top: selection.rect.y - 60
+                  left: Math.max(10, Math.min(selection.rect.x + selection.rect.width / 2 - 100, window.innerWidth - 210)),
+                  top: Math.max(10, selection.rect.y - 60)
                 }}
               >
                 <div className="flex gap-2">
                   <Button
                     size="sm"
                     onClick={() => createAnnotation()}
+                    className="text-xs sm:text-sm"
                   >
-                    ✓ Annotate
+                    ✓ <span className="hidden xs:inline">Annotate</span>
                   </Button>
                   <Button
                     size="sm"
@@ -225,8 +226,9 @@ export default function PDFViewer({ sourceId, pdfUrl }: PDFViewerProps) {
                       setSelection(null)
                       window.getSelection()?.removeAllRanges()
                     }}
+                    className="text-xs sm:text-sm"
                   >
-                    ✕ Cancel
+                    ✕ <span className="hidden xs:inline">Cancel</span>
                   </Button>
                 </div>
               </div>
@@ -234,16 +236,17 @@ export default function PDFViewer({ sourceId, pdfUrl }: PDFViewerProps) {
           </div>
 
           {/* Page Navigation */}
-          <div className="flex items-center justify-center gap-4 mt-6 pb-4">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 mt-4 sm:mt-6 pb-4">
             <Button
               onClick={() => setPageNumber(Math.max(1, pageNumber - 1))}
               disabled={pageNumber <= 1}
               variant="secondary"
               size="sm"
+              className="w-full sm:w-auto"
             >
-              ← Previous
+              ← <span className="hidden xs:inline">Previous</span><span className="xs:hidden">Prev</span>
             </Button>
-            <span className="text-sm text-gray-700 font-medium">
+            <span className="text-xs sm:text-sm text-gray-700 font-medium whitespace-nowrap">
               Page {pageNumber} of {numPages}
             </span>
             <Button
@@ -251,22 +254,33 @@ export default function PDFViewer({ sourceId, pdfUrl }: PDFViewerProps) {
               disabled={pageNumber >= numPages}
               variant="secondary"
               size="sm"
+              className="w-full sm:w-auto"
             >
-              Next →
+              <span className="hidden xs:inline">Next</span><span className="xs:hidden">Next</span> →
             </Button>
           </div>
         </div>
       </div>
 
-      {/* Annotation Sidebar */}
+      {/* Annotation Sidebar - Overlay on mobile, side-by-side on desktop */}
       {showSidebar && (
-        <AnnotationSidebar
-          annotations={pageAnnotations}
-          onDeleteAnnotation={deleteAnnotation}
-          currentPage={pageNumber}
-          totalPages={numPages}
-          onPageChange={setPageNumber}
-        />
+        <>
+          {/* Mobile overlay backdrop */}
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+            onClick={() => setShowSidebar(false)}
+          />
+          <div className="fixed lg:relative inset-y-0 right-0 z-50 lg:z-0">
+            <AnnotationSidebar
+              annotations={pageAnnotations}
+              onDeleteAnnotation={deleteAnnotation}
+              currentPage={pageNumber}
+              totalPages={numPages}
+              onPageChange={setPageNumber}
+              onClose={() => setShowSidebar(false)}
+            />
+          </div>
+        </>
       )}
     </div>
   )

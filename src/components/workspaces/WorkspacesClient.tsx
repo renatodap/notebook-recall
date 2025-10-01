@@ -131,10 +131,10 @@ export default function WorkspacesClient({ userId }: { userId: string }) {
             className="fixed inset-0 bg-black bg-opacity-50 z-40"
             onClick={() => setShowCreateModal(false)}
           />
-          <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-            <Card className="w-full max-w-lg">
+          <div className="fixed inset-0 flex items-center justify-center z-50 p-3 sm:p-4">
+            <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto">
               <CardHeader>
-                <h2 className="text-2xl font-bold text-gray-900">Create Workspace</h2>
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Create Workspace</h2>
               </CardHeader>
               <CardBody>
                 <form onSubmit={createWorkspace} className="space-y-4">

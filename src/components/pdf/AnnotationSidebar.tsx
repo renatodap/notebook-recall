@@ -22,6 +22,7 @@ interface AnnotationSidebarProps {
   currentPage: number
   totalPages: number
   onPageChange: (page: number) => void
+  onClose?: () => void
 }
 
 export default function AnnotationSidebar({
@@ -29,7 +30,8 @@ export default function AnnotationSidebar({
   onDeleteAnnotation,
   currentPage,
   totalPages,
-  onPageChange
+  onPageChange,
+  onClose
 }: AnnotationSidebarProps) {
   const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set())
   const [editingNote, setEditingNote] = useState<string | null>(null)
@@ -78,17 +80,28 @@ export default function AnnotationSidebar({
   )
 
   return (
-    <div className="w-80 bg-white border-l border-gray-200 flex flex-col h-full">
+    <div className="w-full sm:w-96 lg:w-80 bg-white border-l border-gray-200 flex flex-col h-full shadow-xl lg:shadow-none">
       {/* Header */}
-      <div className="p-4 border-b border-gray-200 bg-gray-50">
-        <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-          <span className="text-lg">📝</span>
-          <span>Annotations</span>
-          <span className="ml-auto text-sm font-normal text-gray-600">
-            ({annotations.length})
-          </span>
-        </h3>
-        <p className="text-xs text-gray-500 mt-1">Page {currentPage} of {totalPages}</p>
+      <div className="p-3 sm:p-4 border-b border-gray-200 bg-gray-50">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+            <span className="text-lg">📝</span>
+            <span>Annotations</span>
+            <span className="ml-2 text-sm font-normal text-gray-600">
+              ({annotations.length})
+            </span>
+          </h3>
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="lg:hidden p-2 hover:bg-gray-200 rounded-full transition-colors"
+              aria-label="Close sidebar"
+            >
+              <span className="text-xl">✕</span>
+            </button>
+          )}
+        </div>
+        <p className="text-xs text-gray-500">Page {currentPage} of {totalPages}</p>
       </div>
 
       {/* Annotations List */}
