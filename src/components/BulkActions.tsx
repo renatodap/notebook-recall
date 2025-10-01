@@ -192,6 +192,69 @@ export default function BulkActions({
             📧 Newsletter
           </Button>
 
+          {/* Generate Paper Button */}
+          <Button
+            onClick={async () => {
+              const title = prompt('Enter paper title:')
+              if (!title) return
+              const response = await fetch('/api/publishing/generate-paper', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ source_ids: selectedSourceIds, title }),
+              })
+              if (response.ok) {
+                const data = await response.json()
+                alert('Paper generated! Check the Publishing page.')
+                window.open(`/publishing`, '_blank')
+              }
+            }}
+            variant="secondary"
+            disabled={selectedSourceIds.length < 3}
+          >
+            📄 Paper
+          </Button>
+
+          {/* Generate Presentation Button */}
+          <Button
+            onClick={async () => {
+              const title = prompt('Enter presentation title:')
+              if (!title) return
+              const response = await fetch('/api/publishing/generate-presentation', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ source_ids: selectedSourceIds, title }),
+              })
+              if (response.ok) {
+                alert('Presentation generated! Check the Publishing page.')
+                window.open(`/publishing`, '_blank')
+              }
+            }}
+            variant="secondary"
+            disabled={selectedSourceIds.length === 0}
+          >
+            🎤 Presentation
+          </Button>
+
+          {/* Generate Book Outline Button */}
+          <Button
+            onClick={async () => {
+              const title = prompt('Enter book title (optional):')
+              const response = await fetch('/api/publishing/generate-book-outline', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ source_ids: selectedSourceIds, book_title: title }),
+              })
+              if (response.ok) {
+                alert('Book outline generated! Check the Publishing page.')
+                window.open(`/publishing`, '_blank')
+              }
+            }}
+            variant="secondary"
+            disabled={selectedSourceIds.length < 5}
+          >
+            📚 Book Outline
+          </Button>
+
           {/* Delete Button */}
           <Button
             onClick={handleDelete}

@@ -44,6 +44,15 @@ export default async function DashboardPage() {
               <Link href="/graph">
                 <Button variant="secondary">🕸️ Graph</Button>
               </Link>
+              <Link href="/chat">
+                <Button variant="secondary">💬 Assistant</Button>
+              </Link>
+              <Link href="/publishing">
+                <Button variant="secondary">📄 Publish</Button>
+              </Link>
+              <Link href="/analytics">
+                <Button variant="secondary">📊 Analytics</Button>
+              </Link>
               <Link href="/search">
                 <Button variant="secondary">🔍 Search</Button>
               </Link>
