@@ -12,6 +12,7 @@ export function getSummarizationPrompt(
     url: 'web page content',
     pdf: 'PDF document',
     note: 'note',
+    image: 'image content',
   }[contentType]
 
   return `You are a helpful assistant that analyzes content and provides structured summaries.
