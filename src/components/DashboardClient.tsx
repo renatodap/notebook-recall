@@ -18,6 +18,12 @@ export default function DashboardClient({ initialSources }: DashboardClientProps
   const [filterTags, setFilterTags] = useState<string[]>([])
   const [filterLogic, setFilterLogic] = useState<'OR' | 'AND'>('OR')
 
+  // Sync sources when initialSources changes (after router.refresh())
+  useEffect(() => {
+    setSources(initialSources)
+    setFilteredSources(initialSources)
+  }, [initialSources])
+
   // Refresh sources from API
   const refreshSources = useCallback(async () => {
     try {

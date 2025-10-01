@@ -14,6 +14,7 @@ export default function QuickEntry() {
   const [file, setFile] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const [detectedType, setDetectedType] = useState<DetectedType>('unknown')
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -104,6 +105,7 @@ export default function QuickEntry() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+    setSuccess(false)
     setLoading(true)
 
     try {
@@ -184,8 +186,13 @@ export default function QuickEntry() {
       setInput('')
       setFile(null)
       setDetectedType('unknown')
+      setSuccess(true)
+
+      // Refresh sources list
       router.refresh()
-      alert('Content saved successfully!')
+
+      // Auto-dismiss success message after 3 seconds
+      setTimeout(() => setSuccess(false), 3000)
     } catch (err: any) {
       setError(err.message || 'An error occurred')
     } finally {
@@ -305,6 +312,12 @@ export default function QuickEntry() {
           {error && (
             <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-sm text-red-600">{error}</p>
+            </div>
+          )}
+
+          {success && (
+            <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+              <p className="text-sm text-green-600">✓ Content saved successfully!</p>
             </div>
           )}
 
