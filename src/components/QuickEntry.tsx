@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, DragEvent, ChangeEvent } from 'react'
+import { useState, useRef, DragEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import Button from './ui/Button'
 import { Card, CardBody } from './ui/Card'

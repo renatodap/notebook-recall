@@ -155,8 +155,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    let {
-      title,
+    const {
       content_type,
       original_content,
       url,
@@ -167,6 +166,7 @@ export async function POST(request: NextRequest) {
     } = validation.data
 
     // Generate title if not provided
+    let title = validation.data.title
     if (!title || title.trim() === '' || title === 'Untitled') {
       try {
         title = await generateTitle(original_content, content_type)
