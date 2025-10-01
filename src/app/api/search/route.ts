@@ -18,6 +18,7 @@ const SearchRequestSchema = z.object({
   mode: z.enum(['semantic', 'keyword', 'hybrid']).optional(),
   limit: z.number().int().positive().max(100).optional(),
   threshold: z.number().min(0).max(1).optional(),
+  collection_id: z.string().uuid().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -49,6 +50,7 @@ export async function POST(request: NextRequest) {
       mode = 'hybrid',
       limit = 20,
       threshold = 0.7,
+      collection_id,
     } = validation.data as SearchRequest;
 
     let results: SearchResult[] = [];
@@ -72,6 +74,7 @@ export async function POST(request: NextRequest) {
             match_threshold: threshold,
             match_count: limit,
             p_user_id: user.id,
+            p_collection_id: collection_id || null,
           }
         );
 
@@ -80,7 +83,7 @@ export async function POST(request: NextRequest) {
 
           // Fall back to keyword search
           if (mode === 'semantic') {
-            return await performKeywordSearch(supabase, user.id, query, limit);
+            return await performKeywordSearch(supabase, user.id, query, limit, collection_id);
           }
         } else if (semanticData) {
           // Transform semantic results
@@ -115,14 +118,14 @@ export async function POST(request: NextRequest) {
 
         // Fall back to keyword search
         if (mode === 'semantic') {
-          return await performKeywordSearch(supabase, user.id, query, limit);
+          return await performKeywordSearch(supabase, user.id, query, limit, collection_id);
         }
       }
     }
 
     // Keyword or Hybrid Search
     if (mode === 'keyword' || (mode === 'hybrid' && results.length < limit)) {
-      const keywordResults = await getKeywordResults(supabase, user.id, query, limit);
+      const keywordResults = await getKeywordResults(supabase, user.id, query, limit, collection_id);
 
       if (mode === 'keyword') {
         results = keywordResults;
@@ -161,19 +164,27 @@ async function getKeywordResults(
   supabase: any,
   userId: string,
   query: string,
-  limit: number
+  limit: number,
+  collectionId?: string
 ): Promise<SearchResult[]> {
   const searchPattern = `%${query}%`;
 
-  const { data, error } = await supabase
+  let queryBuilder = supabase
     .from('sources')
     .select(
       `
       *,
-      summary:summaries(*)
+      summary:summaries(*)${collectionId ? ',collection_sources!inner(collection_id)' : ''}
     `
     )
-    .eq('user_id', userId)
+    .eq('user_id', userId);
+
+  // Apply collection filter if provided
+  if (collectionId) {
+    queryBuilder = queryBuilder.eq('collection_sources.collection_id', collectionId);
+  }
+
+  const { data, error } = await queryBuilder
     .or(
       `title.ilike.${searchPattern},original_content.ilike.${searchPattern}`
     )
@@ -232,9 +243,10 @@ async function performKeywordSearch(
   supabase: any,
   userId: string,
   query: string,
-  limit: number
+  limit: number,
+  collectionId?: string
 ): Promise<NextResponse> {
-  const results = await getKeywordResults(supabase, userId, query, limit);
+  const results = await getKeywordResults(supabase, userId, query, limit, collectionId);
 
   const response: SearchResponse = {
     results,

@@ -40,13 +40,108 @@ export async function GET(request: NextRequest) {
     const sortBy = searchParams.get('sort') || 'newest'
     const tagsParam = searchParams.get('tags')
     const tagLogic = searchParams.get('tagLogic') || 'OR'
+    const collectionId = searchParams.get('collection_id')
 
     // Parse tag filter
     const filterTags = tagsParam
       ? tagsParam.split(',').map((t) => t.trim().toLowerCase())
       : []
 
-    // Build query
+    // Use database function for tag filtering if tags are specified
+    if (filterTags.length > 0) {
+      const { data, error } = await (supabase as any).rpc('get_sources_by_tags', {
+        p_user_id: user.id,
+        p_tags: filterTags,
+        p_tag_logic: tagLogic,
+        p_content_type: contentType || null,
+        p_collection_id: collectionId || null,
+        p_limit: limit,
+        p_offset: (page - 1) * limit,
+      })
+
+      if (error) {
+        throw error
+      }
+
+      // Fetch summaries and tags for each source
+      const sourceIds = data.map((s: any) => s.id)
+      const { data: summaries } = await supabase
+        .from('summaries')
+        .select('*')
+        .in('source_id', sourceIds)
+
+      const { data: tags } = await supabase
+        .from('tags')
+        .select('*')
+        .in('source_id', sourceIds)
+
+      // Combine data
+      const enrichedData = data.map((source: any) => ({
+        ...source,
+        summary: summaries?.filter((s: any) => s.source_id === source.id) || [],
+        tags: tags?.filter((t: any) => t.source_id === source.id) || [],
+      }))
+
+      return NextResponse.json({
+        data: enrichedData,
+        total: data.length,
+        page,
+        limit,
+        hasMore: data.length === limit,
+        filters: {
+          tags: filterTags,
+          tagLogic,
+          contentType: contentType || undefined,
+          collection_id: collectionId || undefined,
+        },
+      })
+    }
+
+    // Use database function for collection filtering if no tags
+    if (collectionId) {
+      const { data, error } = await (supabase as any).rpc('get_sources_by_collection', {
+        p_user_id: user.id,
+        p_collection_id: collectionId,
+        p_limit: limit,
+        p_offset: (page - 1) * limit,
+      })
+
+      if (error) {
+        throw error
+      }
+
+      // Fetch summaries and tags for each source
+      const sourceIds = data.map((s: any) => s.id)
+      const { data: summaries } = await supabase
+        .from('summaries')
+        .select('*')
+        .in('source_id', sourceIds)
+
+      const { data: tags } = await supabase
+        .from('tags')
+        .select('*')
+        .in('source_id', sourceIds)
+
+      // Combine data
+      const enrichedData = data.map((source: any) => ({
+        ...source,
+        summary: summaries?.filter((s: any) => s.source_id === source.id) || [],
+        tags: tags?.filter((t: any) => t.source_id === source.id) || [],
+      }))
+
+      return NextResponse.json({
+        data: enrichedData,
+        total: data.length,
+        page,
+        limit,
+        hasMore: data.length === limit,
+        filters: {
+          collection_id: collectionId,
+        },
+      })
+    }
+
+    // Standard query without filtering
     let query = supabase
       .from('sources')
       .select(
@@ -82,42 +177,14 @@ export async function GET(request: NextRequest) {
       throw error
     }
 
-    // Apply tag filtering (client-side for now - for AND logic)
-    let filteredData = data || []
-
-    if (filterTags.length > 0 && filteredData.length > 0) {
-      filteredData = filteredData.filter((source: any) => {
-        if (!source.tags || source.tags.length === 0) {
-          return false
-        }
-
-        const sourceTagNames = source.tags.map((t: any) =>
-          t.tag_name.toLowerCase()
-        )
-
-        if (tagLogic === 'AND') {
-          // Must have ALL tags
-          return filterTags.every((filterTag) =>
-            sourceTagNames.includes(filterTag)
-          )
-        } else {
-          // Must have ANY tag (OR)
-          return filterTags.some((filterTag) =>
-            sourceTagNames.includes(filterTag)
-          )
-        }
-      })
-    }
-
     return NextResponse.json({
-      data: filteredData,
-      total: filteredData.length,
+      data: data || [],
+      total: count || 0,
       page,
       limit,
-      hasMore: false, // Tag filtering is done client-side, so no pagination
+      hasMore: (count || 0) > page * limit,
       filters: {
-        tags: filterTags.length > 0 ? filterTags : undefined,
-        tagLogic: filterTags.length > 0 ? tagLogic : undefined,
+        contentType: contentType || undefined,
       },
     })
   } catch (error) {

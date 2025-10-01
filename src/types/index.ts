@@ -69,6 +69,7 @@ export interface SearchRequest {
   mode?: SearchMode;
   limit?: number;
   threshold?: number;
+  collection_id?: string;
 }
 
 export interface SearchResult {
@@ -127,6 +128,7 @@ export interface SourceFilters {
   dateFrom?: Date;
   dateTo?: Date;
   searchQuery?: string;
+  collection_id?: string;
 }
 
 export interface TagWithCount {
