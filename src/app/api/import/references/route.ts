@@ -75,14 +75,16 @@ export async function POST(request: NextRequest) {
             // If summary generation fails, create a basic summary
             summaryData = {
               summary: content.slice(0, 500),
-              keyActions: [],
-              keyTopics: sourceData.tags || [],
-              wordCount: content.split(/\s+/).length,
+              actions: [],
+              topics: sourceData.tags || [],
             }
           }
 
+          // Calculate word count
+          const wordCount = content.split(/\s+/).length
+
           // Generate embedding (MANDATORY)
-          const textToEmbed = [summaryData.summary, ...summaryData.keyTopics].join(' ')
+          const textToEmbed = [summaryData.summary, ...summaryData.topics].join(' ')
           const embeddingResult = await generateEmbedding({
             text: textToEmbed,
             type: 'summary',
@@ -95,9 +97,9 @@ export async function POST(request: NextRequest) {
             .insert({
               source_id: source.id,
               summary_text: summaryData.summary,
-              key_actions: summaryData.keyActions,
-              key_topics: summaryData.keyTopics,
-              word_count: summaryData.wordCount,
+              key_actions: summaryData.actions,
+              key_topics: summaryData.topics,
+              word_count: wordCount,
               embedding: embeddingResult.embedding,
             })
 
