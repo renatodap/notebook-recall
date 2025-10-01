@@ -3,6 +3,10 @@
 import { useState } from 'react'
 import Button from './ui/Button'
 import ExportButton from './ExportButton'
+import SynthesisGenerator from './ai/SynthesisGenerator'
+import BlogGenerator from './publishing/BlogGenerator'
+import NewsletterGenerator from './publishing/NewsletterGenerator'
+import type { CitationFormat } from '@/types'
 
 interface BulkActionsProps {
   selectedSourceIds: string[]
@@ -17,8 +21,13 @@ export default function BulkActions({
 }: BulkActionsProps) {
   const [isDeleting, setIsDeleting] = useState(false)
   const [showTagInput, setShowTagInput] = useState(false)
+  const [showCitationExport, setShowCitationExport] = useState(false)
+  const [showSynthesisGenerator, setShowSynthesisGenerator] = useState(false)
+  const [showBlogGenerator, setShowBlogGenerator] = useState(false)
+  const [showNewsletterGenerator, setShowNewsletterGenerator] = useState(false)
   const [tagInput, setTagInput] = useState('')
   const [isAddingTags, setIsAddingTags] = useState(false)
+  const [exportingCitations, setExportingCitations] = useState(false)
 
   const handleDelete = async () => {
     if (!confirm(`Delete ${selectedSourceIds.length} source(s)? This cannot be undone.`)) {
@@ -124,6 +133,65 @@ export default function BulkActions({
           {/* Export Button */}
           <ExportButton sourceIds={selectedSourceIds} />
 
+          {/* Export Citations Button */}
+          <Button
+            onClick={() => setShowCitationExport(!showCitationExport)}
+            variant="secondary"
+            disabled={exportingCitations}
+          >
+            📚 Export Citations
+          </Button>
+
+          {/* Generate Synthesis Button */}
+          <Button
+            onClick={() => setShowSynthesisGenerator(true)}
+            variant="secondary"
+            disabled={selectedSourceIds.length < 2}
+          >
+            📝 Synthesis
+          </Button>
+
+          {/* Analyze Gaps Button */}
+          <Button
+            onClick={async () => {
+              if (selectedSourceIds.length < 2) {
+                alert('Select at least 2 sources to analyze research gaps')
+                return
+              }
+              const response = await fetch('/api/analysis/gaps', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ source_ids: selectedSourceIds }),
+              })
+              const data = await response.json()
+              if (response.ok) {
+                alert(`Gap Analysis Complete!\n\n${data.analysis.total_gaps} gaps identified:\n${Object.entries(data.analysis.gaps_by_category).map(([cat, count]) => `- ${cat}: ${count}`).join('\n')}`)
+              }
+            }}
+            variant="secondary"
+            disabled={selectedSourceIds.length < 2}
+          >
+            🔍 Find Gaps
+          </Button>
+
+          {/* Generate Blog Button */}
+          <Button
+            onClick={() => setShowBlogGenerator(true)}
+            variant="secondary"
+            disabled={selectedSourceIds.length === 0}
+          >
+            ✨ Blog Post
+          </Button>
+
+          {/* Generate Newsletter Button */}
+          <Button
+            onClick={() => setShowNewsletterGenerator(true)}
+            variant="secondary"
+            disabled={selectedSourceIds.length === 0}
+          >
+            📧 Newsletter
+          </Button>
+
           {/* Delete Button */}
           <Button
             onClick={handleDelete}
@@ -167,6 +235,85 @@ export default function BulkActions({
             Cancel
           </Button>
         </div>
+      )}
+
+      {/* Citation Export Menu */}
+      {showCitationExport && (
+        <div className="mt-4">
+          <div className="text-sm font-medium text-gray-700 mb-2">Export Format:</div>
+          <div className="flex gap-2 flex-wrap">
+            {(['bibtex', 'ris', 'apa', 'mla', 'chicago'] as CitationFormat[]).map((format) => (
+              <Button
+                key={format}
+                onClick={async () => {
+                  setExportingCitations(true)
+                  try {
+                    const response = await fetch('/api/citations/export-citations', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ source_ids: selectedSourceIds, format }),
+                    })
+                    if (response.ok) {
+                      const blob = await response.blob()
+                      const url = window.URL.createObjectURL(blob)
+                      const a = document.createElement('a')
+                      a.href = url
+                      a.download = `bibliography.${format === 'bibtex' ? 'bib' : format === 'ris' ? 'ris' : 'txt'}`
+                      document.body.appendChild(a)
+                      a.click()
+                      document.body.removeChild(a)
+                      window.URL.revokeObjectURL(url)
+                      setShowCitationExport(false)
+                    } else {
+                      alert('Some sources may not have citations yet. Visit each source and use "Cite" button to generate citations first.')
+                    }
+                  } catch (error) {
+                    console.error('Export error:', error)
+                    alert('Failed to export citations')
+                  } finally {
+                    setExportingCitations(false)
+                  }
+                }}
+                variant="secondary"
+                size="sm"
+                disabled={exportingCitations}
+              >
+                {format.toUpperCase()}
+              </Button>
+            ))}
+            <Button
+              onClick={() => setShowCitationExport(false)}
+              variant="secondary"
+              size="sm"
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Synthesis Generator Modal */}
+      {showSynthesisGenerator && (
+        <SynthesisGenerator
+          sourceIds={selectedSourceIds}
+          onClose={() => setShowSynthesisGenerator(false)}
+        />
+      )}
+
+      {/* Blog Generator Modal */}
+      {showBlogGenerator && (
+        <BlogGenerator
+          sourceIds={selectedSourceIds}
+          onClose={() => setShowBlogGenerator(false)}
+        />
+      )}
+
+      {/* Newsletter Generator Modal */}
+      {showNewsletterGenerator && (
+        <NewsletterGenerator
+          sourceIds={selectedSourceIds}
+          onClose={() => setShowNewsletterGenerator(false)}
+        />
       )}
     </div>
   )

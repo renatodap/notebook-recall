@@ -1,0 +1,167 @@
+'use client'
+
+import { useState } from 'react'
+import { Card, CardBody, CardHeader } from './ui/Card'
+import Button from './ui/Button'
+import CitationManager from './academic/CitationManager'
+import ConnectionsPanel from './ai/ConnectionsPanel'
+import ContradictionsPanel from './ai/ContradictionsPanel'
+import type { Source, Summary, Tag } from '@/types'
+
+interface SourceDetailClientProps {
+  source: Source & { summary: Summary[]; tags: Tag[] }
+  onDelete: () => void
+}
+
+export default function SourceDetailClient({ source, onDelete }: SourceDetailClientProps) {
+  const [showCitationManager, setShowCitationManager] = useState(false)
+
+  const summary = source.summary?.[0]
+
+  return (
+    <div className="grid lg:grid-cols-3 gap-6">
+      <div className="lg:col-span-2 space-y-6">
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-start">
+            <div className="flex-1">
+              <h1 className="text-3xl font-bold text-gray-900">{source.title}</h1>
+              <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
+                <span className="capitalize">{source.content_type}</span>
+                <span>•</span>
+                <span>{new Date(source.created_at).toLocaleDateString()}</span>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => setShowCitationManager(true)}
+                variant="secondary"
+                size="sm"
+              >
+                📚 Cite
+              </Button>
+              <form action={onDelete}>
+                <Button type="submit" variant="secondary" size="sm" className="text-red-600 hover:bg-red-50">
+                  🗑️ Delete
+                </Button>
+              </form>
+            </div>
+          </div>
+        </CardHeader>
+        <CardBody>
+          {source.url && (
+            <div className="mb-4">
+              <a
+                href={source.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-indigo-600 hover:text-indigo-700 text-sm break-all"
+              >
+                🔗 {source.url}
+              </a>
+            </div>
+          )}
+
+          {summary && (
+            <>
+              <div className="mb-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-2">Summary</h2>
+                <p className="text-gray-700 whitespace-pre-wrap">{summary.summary_text}</p>
+              </div>
+
+              {summary.key_actions && summary.key_actions.length > 0 && (
+                <div className="mb-6">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-2">Key Actions</h2>
+                  <ul className="list-disc list-inside space-y-1">
+                    {summary.key_actions.map((action, i) => (
+                      <li key={i} className="text-gray-700">{action}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {summary.key_topics && summary.key_topics.length > 0 && (
+                <div className="mb-6">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-2">Topics</h2>
+                  <div className="flex flex-wrap gap-2">
+                    {summary.key_topics.map((topic, i) => (
+                      <span
+                        key={i}
+                        className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm"
+                      >
+                        {topic}
+                      </span>
+                    ))}
+                  </div>
+                  <button
+                    onClick={async () => {
+                      try {
+                        const res = await fetch('/api/concepts/extract', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ source_id: source.id })
+                        })
+                        if (res.ok) {
+                          alert('Concepts extracted! Refresh to see.')
+                        }
+                      } catch (e) {
+                        console.error(e)
+                      }
+                    }}
+                    className="mt-2 text-xs text-blue-600 hover:text-blue-700"
+                  >
+                    🧠 Extract AI Concepts
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+
+          {source.tags && source.tags.length > 0 && (
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-2">Tags</h2>
+              <div className="flex flex-wrap gap-2">
+                {source.tags.map((tag) => (
+                  <span
+                    key={tag.id}
+                    className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm"
+                  >
+                    {tag.tag_name}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <h2 className="text-lg font-semibold text-gray-900">Original Content</h2>
+        </CardHeader>
+        <CardBody>
+          <div className="prose max-w-none">
+            <p className="text-gray-700 whitespace-pre-wrap text-sm">
+              {source.original_content}
+            </p>
+          </div>
+        </CardBody>
+      </Card>
+      </div>
+
+      {/* Sidebar */}
+      <div className="lg:col-span-1 space-y-6">
+        <ConnectionsPanel sourceId={source.id} />
+        <ContradictionsPanel sourceId={source.id} />
+      </div>
+
+      {/* Citation Manager Modal */}
+      {showCitationManager && (
+        <CitationManager
+          sourceId={source.id}
+          onClose={() => setShowCitationManager(false)}
+        />
+      )}
+    </div>
+  )
+}

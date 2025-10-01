@@ -35,6 +35,15 @@ export default async function DashboardPage() {
             <h1 className="text-2xl font-bold text-gray-900">Recall Notebook</h1>
             <div className="flex items-center gap-4">
               <span className="text-sm text-gray-600">{user.email}</span>
+              <Link href="/collections">
+                <Button variant="secondary">📚 Collections</Button>
+              </Link>
+              <Link href="/synthesis">
+                <Button variant="secondary">📝 Synthesis</Button>
+              </Link>
+              <Link href="/graph">
+                <Button variant="secondary">🕸️ Graph</Button>
+              </Link>
               <Link href="/search">
                 <Button variant="secondary">🔍 Search</Button>
               </Link>
