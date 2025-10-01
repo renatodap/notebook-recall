@@ -21,6 +21,7 @@ export default function SourceCard({
     url: '🔗',
     pdf: '📄',
     note: '📋',
+    image: '🖼️',
   }
 
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
