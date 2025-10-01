@@ -213,13 +213,18 @@ ALTER TABLE public.methodologies
   ADD COLUMN IF NOT EXISTS validity_considerations text,
   ADD COLUMN IF NOT EXISTS extracted_text text;
 
--- Add output_type and output_sources fields to published_outputs if missing
-ALTER TABLE public.published_outputs
-  ADD COLUMN IF NOT EXISTS output_type varchar(50),
-  RENAME COLUMN type TO output_type_old;
-
-UPDATE public.published_outputs SET output_type = output_type_old WHERE output_type IS NULL;
-ALTER TABLE public.published_outputs DROP COLUMN IF EXISTS output_type_old;
+-- Rename type column to output_type for consistency
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public'
+    AND table_name = 'published_outputs'
+    AND column_name = 'type'
+  ) THEN
+    ALTER TABLE public.published_outputs RENAME COLUMN type TO output_type;
+  END IF;
+END $$;
 
 -- Add permission_level to collection_collaborators
 ALTER TABLE public.collection_collaborators
