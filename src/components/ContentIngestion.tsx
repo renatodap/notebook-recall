@@ -8,7 +8,7 @@ import Button from './ui/Button'
 import { Card, CardBody } from './ui/Card'
 import { ContentType } from '@/types'
 
-type Tab = 'text' | 'url' | 'pdf'
+type Tab = 'text' | 'url' | 'pdf' | 'image'
 
 export default function ContentIngestion() {
   const router = useRouter()
@@ -58,6 +58,18 @@ export default function ContentIngestion() {
         content = data.content
         contentType = 'pdf'
         setTitle(title || data.title)
+      } else if (activeTab === 'image' && file) {
+        const formData = new FormData()
+        formData.append('file', file)
+        const response = await fetch('/api/process-image', {
+          method: 'POST',
+          body: formData,
+        })
+        const data = await response.json()
+        if (!response.ok) throw new Error(data.error)
+        content = data.content
+        contentType = 'image'
+        setTitle(title || data.title)
       }
 
       // Summarize content
@@ -106,7 +118,7 @@ export default function ContentIngestion() {
         <h2 className="text-xl font-semibold mb-4">Add New Content</h2>
 
         <div className="flex gap-2 mb-4 border-b">
-          {['text', 'url', 'pdf'].map((tab) => (
+          {['text', 'url', 'pdf', 'image'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab as Tab)}
@@ -167,6 +179,25 @@ export default function ContentIngestion() {
                 disabled={loading}
                 className="w-full"
               />
+            </div>
+          )}
+
+          {activeTab === 'image' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Image File <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/gif,image/webp"
+                onChange={(e) => setFile(e.target.files?.[0] || null)}
+                required
+                disabled={loading}
+                className="w-full"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Supported formats: JPG, PNG, GIF, WebP
+              </p>
             </div>
           )}
 

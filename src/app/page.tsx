@@ -31,7 +31,7 @@ export default function Home() {
             <div className="text-3xl mb-4">📝</div>
             <h3 className="text-lg font-semibold mb-2">Multi-Source Ingestion</h3>
             <p className="text-gray-600">
-              Upload text, paste URLs, or upload PDFs. We handle all your content formats.
+              Upload text, paste URLs, upload PDFs, or process images with OCR. Quick entry mode auto-detects content type.
             </p>
           </div>
 

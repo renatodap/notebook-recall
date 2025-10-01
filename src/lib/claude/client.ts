@@ -180,6 +180,49 @@ async function summarizeLargeContent(
 }
 
 /**
+ * Generates a title for content using Claude API
+ */
+export async function generateTitle(
+  content: string,
+  contentType: ContentType
+): Promise<string> {
+  try {
+    const client = createClaudeClient()
+
+    // Truncate content for title generation
+    const truncatedContent = content.substring(0, 1000)
+
+    const prompt = `Generate a brief, descriptive title (5-10 words max) for this ${contentType} content. The title should capture the main topic or theme. Return only the title with no additional text or punctuation.
+
+Content:
+${truncatedContent}${content.length > 1000 ? '...' : ''}`
+
+    const response = await client.messages.create({
+      model: 'claude-3-5-sonnet-20241022',
+      max_tokens: 100,
+      temperature: 0.5,
+      messages: [
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+    })
+
+    const textContent = response.content.find((c) => c.type === 'text')
+    if (!textContent || textContent.type !== 'text') {
+      throw new Error('No text content in response')
+    }
+
+    return textContent.text.trim()
+  } catch (error) {
+    console.error('Title generation error:', error)
+    // Return a fallback title
+    return `Untitled ${contentType.charAt(0).toUpperCase() + contentType.slice(1)}`
+  }
+}
+
+/**
  * Gets Claude API client for direct use
  */
 export function getClaudeClient(): Anthropic {

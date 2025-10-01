@@ -5,7 +5,7 @@ import { z } from 'zod'
 
 const SummarizeRequestSchema = z.object({
   content: z.string().min(1, 'Content is required'),
-  contentType: z.enum(['text', 'url', 'pdf', 'note']),
+  contentType: z.enum(['text', 'url', 'pdf', 'note', 'image']),
 })
 
 export async function POST(request: NextRequest) {

@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase/server'
 import { signOut } from '@/lib/auth/actions'
 import ContentIngestion from '@/components/ContentIngestion'
+import QuickEntry from '@/components/QuickEntry'
 import DashboardClient from '@/components/DashboardClient'
 import Button from '@/components/ui/Button'
 import Link from 'next/link'
@@ -68,7 +69,8 @@ export default async function DashboardPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 space-y-8">
+            <QuickEntry />
             <ContentIngestion />
           </div>
 

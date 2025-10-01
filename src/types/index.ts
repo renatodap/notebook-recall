@@ -1,5 +1,5 @@
 // Database types
-export type ContentType = 'text' | 'url' | 'pdf' | 'note';
+export type ContentType = 'text' | 'url' | 'pdf' | 'note' | 'image';
 
 export interface Source {
   id: string;

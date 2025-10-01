@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
 import { generateEmbedding } from '@/lib/embeddings/client'
+import { generateTitle } from '@/lib/claude/client'
 import { z } from 'zod'
 
 const CreateSourceSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
-  content_type: z.enum(['text', 'url', 'pdf', 'note']),
+  title: z.string().optional(),
+  content_type: z.enum(['text', 'url', 'pdf', 'note', 'image']),
   original_content: z.string().min(1, 'Content is required'),
   url: z.string().url().optional().nullable(),
   summary_text: z.string().min(1, 'Summary is required'),
@@ -154,7 +155,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const {
+    let {
       title,
       content_type,
       original_content,
@@ -164,6 +165,16 @@ export async function POST(request: NextRequest) {
       key_topics,
       word_count,
     } = validation.data
+
+    // Generate title if not provided
+    if (!title || title.trim() === '' || title === 'Untitled') {
+      try {
+        title = await generateTitle(original_content, content_type)
+      } catch (error) {
+        console.error('Title generation error:', error)
+        title = `Untitled ${content_type.charAt(0).toUpperCase() + content_type.slice(1)}`
+      }
+    }
 
     // Create source
     const { data: source, error: sourceError } = await supabase
