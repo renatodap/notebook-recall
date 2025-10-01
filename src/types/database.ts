@@ -17,7 +17,7 @@ export interface Database {
           id: string
           user_id: string
           title: string
-          content_type: 'text' | 'url' | 'pdf' | 'note'
+          content_type: 'text' | 'url' | 'pdf' | 'note' | 'image'
           original_content: string
           url: string | null
           created_at: string
@@ -27,7 +27,7 @@ export interface Database {
           id?: string
           user_id: string
           title: string
-          content_type: 'text' | 'url' | 'pdf' | 'note'
+          content_type: 'text' | 'url' | 'pdf' | 'note' | 'image'
           original_content: string
           url?: string | null
           created_at?: string
@@ -37,7 +37,7 @@ export interface Database {
           id?: string
           user_id?: string
           title?: string
-          content_type?: 'text' | 'url' | 'pdf' | 'note'
+          content_type?: 'text' | 'url' | 'pdf' | 'note' | 'image'
           original_content?: string
           url?: string | null
           created_at?: string
@@ -116,7 +116,7 @@ export interface Database {
       }
     }
     Enums: {
-      content_type: 'text' | 'url' | 'pdf' | 'note'
+      content_type: 'text' | 'url' | 'pdf' | 'note' | 'image'
     }
   }
 }
