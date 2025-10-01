@@ -19,13 +19,14 @@ const DEFAULT_MAX_RETRIES = 3;
  * Backfill embeddings for summaries without them
  */
 export async function backfillEmbeddings(
-  config?: BackfillConfig
+  config?: BackfillConfig & { user_id?: string }
 ): Promise<BackfillResult> {
   const startTime = Date.now();
   const batchSize = config?.batch_size || DEFAULT_BATCH_SIZE;
   const dryRun = config?.dry_run || false;
   const skipExisting = config?.skipExisting !== false;
   const maxRetries = config?.maxRetries || DEFAULT_MAX_RETRIES;
+  const userId = config?.user_id;
 
   const supabase = createServiceRoleClient();
 
@@ -38,10 +39,28 @@ export async function backfillEmbeddings(
     // Get summaries without embeddings
     let query: any = supabase
       .from('summaries')
-      .select('id, summary_text, key_topics');
+      .select('id, summary_text, key_topics, source_id');
 
     if (skipExisting) {
       query = query.isNull('embedding');
+    }
+
+    // Filter by user if specified
+    if (userId) {
+      const { data: summaries, error } = await query.limit(1000);
+
+      if (error) throw error;
+
+      // Filter summaries by user ownership through sources
+      const { data: userSources } = await supabase
+        .from('sources')
+        .select('id')
+        .eq('user_id', userId);
+
+      const userSourceIds = new Set(userSources?.map((s: any) => s.id) || []);
+      const filteredSummaries = summaries?.filter((s: any) => userSourceIds.has(s.source_id)) || [];
+
+      return await processSummaries(filteredSummaries, supabase, maxRetries, dryRun, startTime);
     }
 
     const { data: summaries, error } = await query.limit(1000); // Process max 1000 at a time
@@ -50,97 +69,110 @@ export async function backfillEmbeddings(
       throw error;
     }
 
-    if (!summaries || summaries.length === 0) {
-      return {
-        processed: 0,
-        failed: 0,
-        skipped: 0,
-        duration_ms: Date.now() - startTime,
-        failures: [],
-      };
-    }
-
-    if (dryRun) {
-      return {
-        processed: summaries.length,
-        failed: 0,
-        skipped: 0,
-        duration_ms: Date.now() - startTime,
-        failures: [],
-      };
-    }
-
-    // Process in batches
-    for (let i = 0; i < summaries.length; i += batchSize) {
-      const batch = summaries.slice(i, i + batchSize);
-
-      for (const summary of batch) {
-        let attempts = 0;
-        let success = false;
-
-        while (attempts < maxRetries && !success) {
-          try {
-            // Combine summary text and topics for embedding
-            const textToEmbed = [
-              summary.summary_text,
-              ...(summary.key_topics || []),
-            ].join(' ');
-
-            // Generate embedding
-            const result = await generateEmbedding({
-              text: textToEmbed,
-              type: 'summary',
-              normalize: true,
-            });
-
-            // Store in database
-            const { error: updateError } = await (supabase as any)
-              .from('summaries')
-              .update({ embedding: result.embedding })
-              .eq('id', summary.id)
-              .single();
-
-            if (updateError) {
-              throw updateError;
-            }
-
-            processed++;
-            success = true;
-          } catch (error) {
-            attempts++;
-
-            if (attempts >= maxRetries) {
-              failed++;
-              failures.push({
-                summary_id: summary.id,
-                error:
-                  error instanceof Error
-                    ? error.message
-                    : 'Unknown error occurred',
-              });
-            } else {
-              // Wait before retry
-              await new Promise((resolve) =>
-                setTimeout(resolve, 1000 * Math.pow(2, attempts))
-              );
-            }
-          }
-        }
-      }
-    }
-
-    return {
-      processed,
-      failed,
-      skipped,
-      duration_ms: Date.now() - startTime,
-      failures,
-    };
+    return await processSummaries(summaries, supabase, maxRetries, dryRun, startTime);
   } catch (error) {
     throw new Error(
       `Backfill failed: ${error instanceof Error ? error.message : 'Unknown error'}`
     );
   }
+}
+
+/**
+ * Process a batch of summaries to generate embeddings
+ */
+async function processSummaries(
+  summaries: any[] | null,
+  supabase: any,
+  maxRetries: number,
+  dryRun: boolean,
+  startTime: number
+): Promise<BackfillResult> {
+  let processed = 0;
+  let failed = 0;
+  const skipped = 0;
+  const failures: Array<{ summary_id: string; error: string }> = [];
+
+  if (!summaries || summaries.length === 0) {
+    return {
+      processed: 0,
+      failed: 0,
+      skipped: 0,
+      duration_ms: Date.now() - startTime,
+      failures: [],
+    };
+  }
+
+  if (dryRun) {
+    return {
+      processed: summaries.length,
+      failed: 0,
+      skipped: 0,
+      duration_ms: Date.now() - startTime,
+      failures: [],
+    };
+  }
+
+  // Process summaries
+  for (const summary of summaries) {
+    let attempts = 0;
+    let success = false;
+
+    while (attempts < maxRetries && !success) {
+      try {
+        // Combine summary text and topics for embedding
+        const textToEmbed = [
+          summary.summary_text,
+          ...(summary.key_topics || []),
+        ].join(' ');
+
+        // Generate embedding
+        const result = await generateEmbedding({
+          text: textToEmbed,
+          type: 'summary',
+          normalize: true,
+        });
+
+        // Store in database
+        const { error: updateError } = await supabase
+          .from('summaries')
+          .update({ embedding: result.embedding })
+          .eq('id', summary.id);
+
+        if (updateError) {
+          throw updateError;
+        }
+
+        processed++;
+        success = true;
+      } catch (error) {
+        attempts++;
+
+        if (attempts >= maxRetries) {
+          failed++;
+          failures.push({
+            summary_id: summary.id,
+            error:
+              error instanceof Error
+                ? error.message
+                : 'Unknown error occurred',
+          });
+        } else {
+          // Wait before retry
+          await new Promise((resolve) =>
+            setTimeout(resolve, 1000 * Math.pow(2, attempts))
+          );
+        }
+      }
+    }
+  }
+
+  return {
+    processed,
+    failed,
+    skipped,
+    duration_ms: Date.now() - startTime,
+    failures,
+  };
 }
 
 /**

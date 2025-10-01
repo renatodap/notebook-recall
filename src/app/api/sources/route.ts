@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
 import { generateEmbedding } from '@/lib/embeddings/client'
+import { backfillEmbeddings } from '@/lib/embeddings/backfill'
 import { generateTitle } from '@/lib/claude/client'
 import { z } from 'zod'
 
@@ -193,20 +194,14 @@ export async function POST(request: NextRequest) {
       throw sourceError
     }
 
-    // Generate embedding for summary
-    let embedding = null;
-    try {
-      const textToEmbed = [summary_text, ...key_topics].join(' ');
-      const embeddingResult = await generateEmbedding({
-        text: textToEmbed,
-        type: 'summary',
-        normalize: true,
-      });
-      embedding = embeddingResult.embedding;
-    } catch (error) {
-      console.error('Embedding generation error:', error);
-      // Continue without embedding - can backfill later
-    }
+    // Generate embedding for summary (MANDATORY)
+    const textToEmbed = [summary_text, ...key_topics].join(' ');
+    const embeddingResult = await generateEmbedding({
+      text: textToEmbed,
+      type: 'summary',
+      normalize: true,
+    });
+    const embedding = embeddingResult.embedding;
 
     // Create summary
     const { data: summary, error: summaryError } = await supabase
@@ -242,6 +237,15 @@ export async function POST(request: NextRequest) {
         // Don't fail the request if tags fail
       }
     }
+
+    // Run backfill for this user to catch any failed embeddings (non-blocking)
+    backfillEmbeddings({
+      user_id: user.id,
+      batch_size: 10,
+      skipExisting: true,
+    }).catch(error => {
+      console.error('Background backfill error (non-critical):', error)
+    })
 
     return NextResponse.json({
       source,
