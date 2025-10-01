@@ -146,9 +146,6 @@ export default function CollectionDetailClient({
             <div key={source.id} className="relative">
               <SourceCard
                 source={source}
-                summary={source.summary[0]}
-                tags={source.tags}
-                onClick={() => router.push(`/search?q=${encodeURIComponent(source.title)}`)}
               />
               {source.collection_note && (
                 <div className="mt-2 ml-4 text-sm text-gray-600 italic">

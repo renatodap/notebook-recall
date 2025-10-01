@@ -192,9 +192,6 @@ export default function SourcesView({ initialSources }: SourcesViewProps) {
               <div className="flex-1">
                 <SourceCard
                   source={source}
-                  summary={source.summary[0]}
-                  tags={source.tags}
-                  onClick={() => window.location.href = `/search?q=${encodeURIComponent(source.title)}`}
                 />
               </div>
             </div>
