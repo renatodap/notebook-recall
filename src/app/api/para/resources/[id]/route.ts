@@ -7,9 +7,10 @@ export const dynamic = 'force-dynamic';
 // GET /api/para/resources/[id] - Get a specific resource with sources
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const supabase = await createRouteHandlerClient();
 
     const { data: { session } } = await supabase.auth.getSession();
@@ -31,7 +32,7 @@ export async function GET(
           )
         )
       `)
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('user_id', session.user.id)
       .single();
 
@@ -50,9 +51,10 @@ export async function GET(
 // PATCH /api/para/resources/[id] - Update a resource
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const supabase = await createRouteHandlerClient();
 
     const { data: { session } } = await supabase.auth.getSession();
@@ -69,7 +71,7 @@ export async function PATCH(
         description: body.description,
         category: body.category,
       })
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('user_id', session.user.id)
       .select()
       .single()
@@ -90,9 +92,10 @@ export async function PATCH(
 // DELETE /api/para/resources/[id] - Delete a resource
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const supabase = await createRouteHandlerClient();
 
     const { data: { session } } = await supabase.auth.getSession();
@@ -103,7 +106,7 @@ export async function DELETE(
     const { error } = await supabase
       .from('resources')
       .delete()
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('user_id', session.user.id);
 
     if (error) throw error;

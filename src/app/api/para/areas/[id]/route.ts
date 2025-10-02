@@ -7,9 +7,10 @@ export const dynamic = 'force-dynamic';
 // GET /api/para/areas/[id] - Get a specific area with sources
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const supabase = await createRouteHandlerClient();
 
     const { data: { session } } = await supabase.auth.getSession();
@@ -31,7 +32,7 @@ export async function GET(
           )
         )
       `)
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('user_id', session.user.id)
       .single();
 
@@ -50,9 +51,10 @@ export async function GET(
 // PATCH /api/para/areas/[id] - Update an area
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const supabase = await createRouteHandlerClient();
 
     const { data: { session } } = await supabase.auth.getSession();
@@ -70,7 +72,7 @@ export async function PATCH(
         standard: body.standard,
         review_frequency: body.review_frequency,
       })
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('user_id', session.user.id)
       .select()
       .single()
@@ -91,9 +93,10 @@ export async function PATCH(
 // DELETE /api/para/areas/[id] - Delete an area
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const supabase = await createRouteHandlerClient();
 
     const { data: { session } } = await supabase.auth.getSession();
@@ -104,7 +107,7 @@ export async function DELETE(
     const { error } = await supabase
       .from('areas')
       .delete()
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('user_id', session.user.id);
 
     if (error) throw error;

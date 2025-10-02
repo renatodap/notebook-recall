@@ -7,9 +7,10 @@ export const dynamic = 'force-dynamic';
 // GET /api/para/projects/[id] - Get a specific project with sources
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const supabase = await createRouteHandlerClient();
 
     const { data: { session } } = await supabase.auth.getSession();
@@ -31,7 +32,7 @@ export async function GET(
           )
         )
       `)
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('user_id', session.user.id)
       .single();
 
@@ -50,9 +51,10 @@ export async function GET(
 // PATCH /api/para/projects/[id] - Update a project
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const supabase = await createRouteHandlerClient();
 
     const { data: { session } } = await supabase.auth.getSession();
@@ -71,7 +73,7 @@ export async function PATCH(
         deadline: body.deadline,
         status: body.status,
       })
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('user_id', session.user.id)
       .select()
       .single()
@@ -92,9 +94,10 @@ export async function PATCH(
 // DELETE /api/para/projects/[id] - Delete a project
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const supabase = await createRouteHandlerClient();
 
     const { data: { session } } = await supabase.auth.getSession();
@@ -105,7 +108,7 @@ export async function DELETE(
     const { error } = await supabase
       .from('projects')
       .delete()
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('user_id', session.user.id);
 
     if (error) throw error;

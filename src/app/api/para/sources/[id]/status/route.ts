@@ -7,17 +7,16 @@ export const dynamic = 'force-dynamic';
 // GET /api/para/sources/[id]/status - Get PARA status for a specific source
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: sourceId } = await params;
     const supabase = await createRouteHandlerClient();
 
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    const sourceId = params.id;
 
     // Get source with PARA assignments
     const { data: source, error: sourceError } = await supabase
