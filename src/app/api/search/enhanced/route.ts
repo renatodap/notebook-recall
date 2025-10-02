@@ -13,9 +13,7 @@ import type {
   EnhancedSearchResponse,
   ChunkSearchResult,
   GroupedSearchResults,
-  HybridSearchResult,
 } from '@/types/chunks';
-import type { Source, Summary } from '@/types';
 
 export const dynamic = 'force-dynamic';
 

@@ -9,7 +9,6 @@ import { generateEmbedding } from '@/lib/embeddings/client';
 import { chunkDocument, getChunkConfig, shouldChunk } from './splitter';
 import type { ContentType } from '@/types';
 import type { ContentChunk, ChunkBackfillResponse } from '@/types/chunks';
-import type { DocumentChunk } from './splitter';
 
 /**
  * Create and embed chunks for a source

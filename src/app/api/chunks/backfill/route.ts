@@ -44,7 +44,6 @@ export async function POST(request: NextRequest) {
     }
 
     const {
-      source_id,
       batch_size = 10,
       dry_run = false,
     } = validation.data as ChunkBackfillRequest;
@@ -59,14 +58,14 @@ export async function POST(request: NextRequest) {
 
       let needsChunking = 0;
 
-      if (sources) {
+      if (sources && Array.isArray(sources)) {
         for (const source of sources) {
           const { count } = await supabase
             .from('content_chunks')
             .select('*', { count: 'exact', head: true })
-            .eq('source_id', source.id);
+            .eq('source_id', (source as any).id);
 
-          if (count === 0 && source.original_content.length > 1000) {
+          if (count === 0 && (source as any).original_content?.length > 1000) {
             needsChunking++;
           }
         }
@@ -112,7 +111,7 @@ export async function POST(request: NextRequest) {
  *
  * Get backfill statistics
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const supabase = await createRouteHandlerClient();
 
