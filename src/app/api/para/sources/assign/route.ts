@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
         source_id,
       }));
 
-      const { error: projectError } = await supabase
+      const { error: projectError } = await (supabase as any)
         .from('project_sources')
         .upsert(projectAssignments, { onConflict: 'project_id,source_id' });
 
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
         source_id,
       }));
 
-      const { error: areaError } = await supabase
+      const { error: areaError } = await (supabase as any)
         .from('area_sources')
         .upsert(areaAssignments, { onConflict: 'area_id,source_id' });
 
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
         source_id,
       }));
 
-      const { error: resourceError } = await supabase
+      const { error: resourceError } = await (supabase as any)
         .from('resource_sources')
         .upsert(resourceAssignments, { onConflict: 'resource_id,source_id' });
 

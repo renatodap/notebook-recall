@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/lib/supabase/server';
-import type { Project } from '@/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -64,7 +63,7 @@ export async function PATCH(
 
     const body = await request.json();
 
-    const { data: project, error } = await supabase
+    const { data: project, error } = await (supabase as any)
       .from('projects')
       .update({
         name: body.name,
@@ -76,8 +75,7 @@ export async function PATCH(
       .eq('id', id)
       .eq('user_id', session.user.id)
       .select()
-      .single()
-      .returns<Project>();
+      .single();
 
     if (error) throw error;
 
@@ -105,7 +103,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('projects')
       .delete()
       .eq('id', id)

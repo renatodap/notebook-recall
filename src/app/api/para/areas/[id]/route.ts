@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/lib/supabase/server';
-import type { Area } from '@/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -64,7 +63,7 @@ export async function PATCH(
 
     const body = await request.json();
 
-    const { data: area, error } = await supabase
+    const { data: area, error } = await (supabase as any)
       .from('areas')
       .update({
         name: body.name,
@@ -75,8 +74,7 @@ export async function PATCH(
       .eq('id', id)
       .eq('user_id', session.user.id)
       .select()
-      .single()
-      .returns<Area>();
+      .single();
 
     if (error) throw error;
 
@@ -104,7 +102,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('areas')
       .delete()
       .eq('id', id)

@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     const body: ArchiveSourceRequest = await request.json();
     const { source_id, archived } = body;
 
-    const { data: source, error } = await supabase
+    const { data: source, error } = await (supabase as any)
       .from('sources')
       .update({ archived })
       .eq('id', source_id)

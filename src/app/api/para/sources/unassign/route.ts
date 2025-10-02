@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
 
     // Remove from project
     if (project_id) {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('project_sources')
         .delete()
         .eq('project_id', project_id)
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
 
     // Remove from area
     if (area_id) {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('area_sources')
         .delete()
         .eq('area_id', area_id)
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
 
     // Remove from resource
     if (resource_id) {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('resource_sources')
         .delete()
         .eq('resource_id', resource_id)
