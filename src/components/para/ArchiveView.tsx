@@ -72,16 +72,13 @@ export default function ArchiveView({ initialSources }: ArchiveViewProps) {
 
       <div className="grid grid-cols-1 gap-4">
         {sources.map((source) => {
-          const summary = Array.isArray(source.summaries) ? source.summaries[0] : source.summaries;
+          const summary = Array.isArray(source.summaries) ? source.summaries : [source.summaries];
           const tags = source.tags || [];
 
           return (
             <div key={source.id} className="relative">
               <SourceCard
-                source={source}
-                summary={summary}
-                tags={tags}
-                onClick={() => router.push(`/sources/${source.id}`)}
+                source={{ ...source, summary, tags }}
               />
               <div className="absolute top-4 right-4">
                 <button
