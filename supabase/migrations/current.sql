@@ -17,6 +17,28 @@ CREATE TABLE public.annotations (
   CONSTRAINT annotations_source_id_fkey FOREIGN KEY (source_id) REFERENCES public.sources(id),
   CONSTRAINT annotations_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
+CREATE TABLE public.area_sources (
+  area_id uuid NOT NULL,
+  source_id uuid NOT NULL,
+  added_at timestamp with time zone DEFAULT now(),
+  note text,
+  CONSTRAINT area_sources_pkey PRIMARY KEY (area_id, source_id),
+  CONSTRAINT area_sources_area_id_fkey FOREIGN KEY (area_id) REFERENCES public.areas(id),
+  CONSTRAINT area_sources_source_id_fkey FOREIGN KEY (source_id) REFERENCES public.sources(id)
+);
+CREATE TABLE public.areas (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  name text NOT NULL,
+  description text,
+  standard text,
+  review_frequency character varying DEFAULT 'monthly'::character varying,
+  metadata jsonb DEFAULT '{}'::jsonb,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT areas_pkey PRIMARY KEY (id),
+  CONSTRAINT areas_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+);
 CREATE TABLE public.batch_operations_log (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL,
@@ -77,7 +99,7 @@ CREATE TABLE public.collection_sources (
   added_by uuid,
   note text,
   added_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT collection_sources_pkey PRIMARY KEY (collection_id, source_id),
+  CONSTRAINT collection_sources_pkey PRIMARY KEY (source_id, collection_id),
   CONSTRAINT collection_sources_collection_id_fkey FOREIGN KEY (collection_id) REFERENCES public.collections(id),
   CONSTRAINT collection_sources_source_id_fkey FOREIGN KEY (source_id) REFERENCES public.sources(id),
   CONSTRAINT collection_sources_added_by_fkey FOREIGN KEY (added_by) REFERENCES auth.users(id)
@@ -92,8 +114,10 @@ CREATE TABLE public.collections (
   metadata jsonb,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
+  area_id uuid NOT NULL,
   CONSTRAINT collections_pkey PRIMARY KEY (id),
-  CONSTRAINT collections_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+  CONSTRAINT collections_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
+  CONSTRAINT collections_area_id_fkey FOREIGN KEY (area_id) REFERENCES public.areas(id)
 );
 CREATE TABLE public.comments (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -180,7 +204,7 @@ CREATE TABLE public.follows (
   follower_id uuid NOT NULL,
   following_id uuid NOT NULL,
   created_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT follows_pkey PRIMARY KEY (following_id, follower_id),
+  CONSTRAINT follows_pkey PRIMARY KEY (follower_id, following_id),
   CONSTRAINT follows_follower_id_fkey FOREIGN KEY (follower_id) REFERENCES auth.users(id),
   CONSTRAINT follows_following_id_fkey FOREIGN KEY (following_id) REFERENCES auth.users(id)
 );
@@ -236,6 +260,29 @@ CREATE TABLE public.pdf_annotations (
   CONSTRAINT pdf_annotations_pkey PRIMARY KEY (id),
   CONSTRAINT pdf_annotations_source_id_fkey FOREIGN KEY (source_id) REFERENCES public.sources(id),
   CONSTRAINT pdf_annotations_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.project_sources (
+  project_id uuid NOT NULL,
+  source_id uuid NOT NULL,
+  added_at timestamp with time zone DEFAULT now(),
+  note text,
+  CONSTRAINT project_sources_pkey PRIMARY KEY (project_id, source_id),
+  CONSTRAINT project_sources_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.projects(id),
+  CONSTRAINT project_sources_source_id_fkey FOREIGN KEY (source_id) REFERENCES public.sources(id)
+);
+CREATE TABLE public.projects (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  name text NOT NULL,
+  description text,
+  goal text,
+  deadline timestamp with time zone,
+  status character varying DEFAULT 'active'::character varying,
+  metadata jsonb DEFAULT '{}'::jsonb,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT projects_pkey PRIMARY KEY (id),
+  CONSTRAINT projects_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
 CREATE TABLE public.published_outputs (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -314,13 +361,34 @@ CREATE TABLE public.research_questions (
   CONSTRAINT research_questions_pkey PRIMARY KEY (id),
   CONSTRAINT research_questions_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
+CREATE TABLE public.resource_sources (
+  resource_id uuid NOT NULL,
+  source_id uuid NOT NULL,
+  added_at timestamp with time zone DEFAULT now(),
+  note text,
+  CONSTRAINT resource_sources_pkey PRIMARY KEY (resource_id, source_id),
+  CONSTRAINT resource_sources_resource_id_fkey FOREIGN KEY (resource_id) REFERENCES public.resources(id),
+  CONSTRAINT resource_sources_source_id_fkey FOREIGN KEY (source_id) REFERENCES public.sources(id)
+);
+CREATE TABLE public.resources (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  name text NOT NULL,
+  description text,
+  category character varying,
+  metadata jsonb DEFAULT '{}'::jsonb,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT resources_pkey PRIMARY KEY (id),
+  CONSTRAINT resources_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+);
 CREATE TABLE public.source_concepts (
   source_id uuid NOT NULL,
   concept_id uuid NOT NULL,
   relevance double precision DEFAULT 0.5,
   mentions integer DEFAULT 1,
   context text,
-  CONSTRAINT source_concepts_pkey PRIMARY KEY (source_id, concept_id),
+  CONSTRAINT source_concepts_pkey PRIMARY KEY (concept_id, source_id),
   CONSTRAINT source_concepts_source_id_fkey FOREIGN KEY (source_id) REFERENCES public.sources(id),
   CONSTRAINT source_concepts_concept_id_fkey FOREIGN KEY (concept_id) REFERENCES public.concepts(id)
 );
@@ -378,6 +446,8 @@ CREATE TABLE public.sources (
   youtube_id text,
   youtube_title text,
   youtube_channel text,
+  archived boolean DEFAULT false,
+  archived_at timestamp with time zone,
   CONSTRAINT sources_pkey PRIMARY KEY (id),
   CONSTRAINT sources_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
