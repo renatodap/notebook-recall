@@ -9,12 +9,14 @@ import MobileNav from '../MobileNav';
 
 type PARACategory = 'projects' | 'areas' | 'resources' | 'archive';
 
-interface PARAItem extends Partial<Project & Area & Resource> {
+interface PARAItem {
   id: string;
   name: string;
-  description?: string;
+  description?: string | null;
   icon?: string;
   source_count: number;
+  created_at?: string;
+  user_id?: string;
 }
 
 interface PARADashboardRedesignProps {
@@ -141,7 +143,6 @@ export default function PARADashboardRedesign({
     }
   };
 
-  const currentColor = getCategoryColor(activeCategory);
   const currentItems = getCurrentItems();
 
   return (
@@ -250,7 +251,7 @@ export default function PARADashboardRedesign({
                   key={item.id}
                   id={item.id}
                   name={item.name}
-                  description={item.description}
+                  description={item.description || undefined}
                   icon={item.icon || getCategoryIcon(activeCategory)}
                   type={activeCategory as 'project' | 'area' | 'resource'}
                   sourceCount={item.source_count}
@@ -263,7 +264,7 @@ export default function PARADashboardRedesign({
           {currentItems.length === 0 && activeCategory !== 'archive' && (
             <div className="text-center py-12 text-gray-500">
               <p className="text-lg mb-4">No {activeCategory} yet</p>
-              <p className="text-sm">Click the "Create New" card above to get started!</p>
+              <p className="text-sm">Click the &ldquo;Create New&rdquo; card above to get started!</p>
             </div>
           )}
         </div>

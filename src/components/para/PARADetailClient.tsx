@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import SourceCard from '@/components/SourceCard';
@@ -23,6 +23,7 @@ export default function PARADetailClient({
   colorClass,
 }: PARADetailClientProps) {
   const [sources, setSources] = useState(initialSources);
+  const [filteredSources, setFilteredSources] = useState(initialSources);
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(item.name);
   const [description, setDescription] = useState(item.description || '');
@@ -30,11 +31,71 @@ export default function PARADetailClient({
   const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showAddSourcesModal, setShowAddSourcesModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'recent' | 'alphabetical' | 'relevant'>('recent');
+  const [aiSummary, setAiSummary] = useState<string>('');
+  const [loadingSummary, setLoadingSummary] = useState(false);
   const router = useRouter();
 
   const bgColorClass = colorClass === 'indigo' ? 'bg-indigo-600' : colorClass === 'green' ? 'bg-green-600' : 'bg-purple-600';
   const textColorClass = colorClass === 'indigo' ? 'text-indigo-600' : colorClass === 'green' ? 'text-green-600' : 'text-purple-600';
   const borderColorClass = colorClass === 'indigo' ? 'border-indigo-300' : colorClass === 'green' ? 'border-green-300' : 'border-purple-300';
+
+  // Filter and sort sources
+  useEffect(() => {
+    let filtered = [...sources];
+
+    // Search filter
+    if (searchQuery.trim()) {
+      filtered = filtered.filter((s) =>
+        s.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.summary?.[0]?.summary_text?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    // Sort
+    if (sortBy === 'recent') {
+      filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    } else if (sortBy === 'alphabetical') {
+      filtered.sort((a, b) => a.title.localeCompare(b.title));
+    }
+
+    setFilteredSources(filtered);
+  }, [sources, searchQuery, sortBy]);
+
+  // Generate AI summary
+  useEffect(() => {
+    if (sources.length > 0) {
+      generateAISummary();
+    }
+  }, [sources.length]);
+
+  const generateAISummary = async () => {
+    setLoadingSummary(true);
+    try {
+      // Get all source IDs
+      const sourceIds = sources.map(s => s.id);
+
+      const response = await fetch('/api/para/generate-summary', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          source_ids: sourceIds,
+          type,
+          item_name: item.name,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setAiSummary(data.summary || '');
+      }
+    } catch (error) {
+      console.error('Error generating AI summary:', error);
+    } finally {
+      setLoadingSummary(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!name.trim()) return;
@@ -211,8 +272,74 @@ export default function PARADetailClient({
         </div>
       </div>
 
+      {/* AI Summary */}
+      {sources.length > 0 && (
+        <div className="mb-6">
+          <div className={`bg-white rounded-2xl p-6 shadow-sm border-2 ${borderColorClass}`}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <span>🤖</span>
+                <span>AI Summary</span>
+              </h2>
+              {!loadingSummary && (
+                <button
+                  onClick={generateAISummary}
+                  className="text-sm text-gray-600 hover:text-gray-900 underline"
+                >
+                  Refresh
+                </button>
+              )}
+            </div>
+            {loadingSummary ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin text-3xl">⚡</div>
+                <span className="ml-3 text-gray-600">Generating summary from {sources.length} sources...</span>
+              </div>
+            ) : aiSummary ? (
+              <div className="prose max-w-none">
+                <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{aiSummary}</p>
+              </div>
+            ) : (
+              <p className="text-gray-500 italic">No summary available. Click refresh to generate.</p>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Sources */}
       <div>
+        {/* Filter & Sort Controls */}
+        {sources.length > 0 && (
+          <div className="bg-white rounded-xl p-4 shadow-sm mb-4 flex items-center gap-4 flex-wrap">
+            {/* Search */}
+            <div className="flex-1 min-w-[200px]">
+              <input
+                type="text"
+                placeholder="Search sources..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              />
+            </div>
+
+            {/* Sort */}
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value="recent">Most Recent</option>
+              <option value="alphabetical">A-Z</option>
+              <option value="relevant">Most Relevant</option>
+            </select>
+
+            {/* Results Count */}
+            <div className="text-sm text-gray-600">
+              {filteredSources.length} of {sources.length} sources
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-2xl font-bold text-gray-900">Sources</h2>
           <button
@@ -251,9 +378,15 @@ export default function PARADetailClient({
               Add Your First Source
             </button>
           </div>
+        ) : filteredSources.length === 0 ? (
+          <div className="bg-white rounded-xl p-12 text-center shadow-sm border-2 border-dashed border-gray-300">
+            <div className="text-4xl mb-4">🔍</div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No sources match your search</h3>
+            <p className="text-gray-600">Try adjusting your filters</p>
+          </div>
         ) : (
           <div className="grid grid-cols-1 gap-4">
-            {sources.map((source) => (
+            {filteredSources.map((source) => (
               <div key={source.id} className="relative">
                 <SourceCard source={source} />
                 <button
