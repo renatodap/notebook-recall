@@ -50,7 +50,7 @@ export async function createSourceWithChunks(
 
   try {
     // 1. Create source
-    const { data: source, error: sourceError } = await supabase
+    const { data: source, error: sourceError } = await (supabase as any)
       .from('sources')
       .insert({
         user_id: userId,
@@ -75,7 +75,7 @@ export async function createSourceWithChunks(
     });
 
     // 3. Create summary with embedding
-    const { data: summary, error: summaryError } = await supabase
+    const { data: summary, error: summaryError } = await (supabase as any)
       .from('summaries')
       .insert({
         source_id: source.id,
@@ -99,7 +99,7 @@ export async function createSourceWithChunks(
         tag_name: topic.toLowerCase(),
       }));
 
-      await supabase.from('tags').insert(tagsData);
+      await (supabase as any).from('tags').insert(tagsData);
     }
 
     // 5. Create chunks (async, non-blocking)
