@@ -137,7 +137,7 @@ export async function GET() {
       .neq('source_id', '00000000-0000-0000-0000-000000000000');
 
     const uniqueSourcesWithChunks = new Set(
-      sourcesWithChunks?.map(c => c.source_id) || []
+      sourcesWithChunks?.map((c: any) => c.source_id) || []
     ).size;
 
     // Count total chunks
