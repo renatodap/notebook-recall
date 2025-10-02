@@ -17,6 +17,18 @@ CREATE TABLE public.annotations (
   CONSTRAINT annotations_source_id_fkey FOREIGN KEY (source_id) REFERENCES public.sources(id),
   CONSTRAINT annotations_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
+CREATE TABLE public.area_resources (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  area_id uuid NOT NULL,
+  resource_id uuid NOT NULL,
+  user_id uuid NOT NULL,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT area_resources_pkey PRIMARY KEY (id),
+  CONSTRAINT area_resources_unique UNIQUE (area_id, resource_id),
+  CONSTRAINT area_resources_area_id_fkey FOREIGN KEY (area_id) REFERENCES public.areas(id) ON DELETE CASCADE,
+  CONSTRAINT area_resources_resource_id_fkey FOREIGN KEY (resource_id) REFERENCES public.resources(id) ON DELETE CASCADE,
+  CONSTRAINT area_resources_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
+);
 CREATE TABLE public.area_sources (
   area_id uuid NOT NULL,
   source_id uuid NOT NULL,
@@ -34,6 +46,7 @@ CREATE TABLE public.areas (
   standard text,
   review_frequency character varying DEFAULT 'monthly'::character varying,
   metadata jsonb DEFAULT '{}'::jsonb,
+  icon text DEFAULT '🌳',
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT areas_pkey PRIMARY KEY (id),
@@ -261,6 +274,30 @@ CREATE TABLE public.pdf_annotations (
   CONSTRAINT pdf_annotations_source_id_fkey FOREIGN KEY (source_id) REFERENCES public.sources(id),
   CONSTRAINT pdf_annotations_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
+CREATE TABLE public.project_areas (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  project_id uuid NOT NULL,
+  area_id uuid NOT NULL,
+  user_id uuid NOT NULL,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT project_areas_pkey PRIMARY KEY (id),
+  CONSTRAINT project_areas_unique UNIQUE (project_id, area_id),
+  CONSTRAINT project_areas_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.projects(id) ON DELETE CASCADE,
+  CONSTRAINT project_areas_area_id_fkey FOREIGN KEY (area_id) REFERENCES public.areas(id) ON DELETE CASCADE,
+  CONSTRAINT project_areas_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
+);
+CREATE TABLE public.project_resources (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  project_id uuid NOT NULL,
+  resource_id uuid NOT NULL,
+  user_id uuid NOT NULL,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT project_resources_pkey PRIMARY KEY (id),
+  CONSTRAINT project_resources_unique UNIQUE (project_id, resource_id),
+  CONSTRAINT project_resources_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.projects(id) ON DELETE CASCADE,
+  CONSTRAINT project_resources_resource_id_fkey FOREIGN KEY (resource_id) REFERENCES public.resources(id) ON DELETE CASCADE,
+  CONSTRAINT project_resources_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
+);
 CREATE TABLE public.project_sources (
   project_id uuid NOT NULL,
   source_id uuid NOT NULL,
@@ -279,6 +316,7 @@ CREATE TABLE public.projects (
   deadline timestamp with time zone,
   status character varying DEFAULT 'active'::character varying,
   metadata jsonb DEFAULT '{}'::jsonb,
+  icon text DEFAULT '🎯',
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT projects_pkey PRIMARY KEY (id),
@@ -377,6 +415,7 @@ CREATE TABLE public.resources (
   description text,
   category character varying,
   metadata jsonb DEFAULT '{}'::jsonb,
+  icon text DEFAULT '💎',
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT resources_pkey PRIMARY KEY (id),
