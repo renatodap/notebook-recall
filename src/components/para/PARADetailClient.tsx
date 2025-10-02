@@ -1,0 +1,306 @@
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import SourceCard from '@/components/SourceCard';
+import type { Project, Area, Resource } from '@/types';
+
+interface PARADetailClientProps {
+  item: Project | Area | Resource;
+  type: 'project' | 'area' | 'resource';
+  initialSources: any[];
+  icon: string;
+  colorClass: 'indigo' | 'green' | 'purple';
+}
+
+export default function PARADetailClient({
+  item,
+  type,
+  initialSources,
+  icon,
+  colorClass,
+}: PARADetailClientProps) {
+  const [sources, setSources] = useState(initialSources);
+  const [isEditing, setIsEditing] = useState(false);
+  const [name, setName] = useState(item.name);
+  const [description, setDescription] = useState(item.description || '');
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const router = useRouter();
+
+  const bgColorClass = colorClass === 'indigo' ? 'bg-indigo-600' : colorClass === 'green' ? 'bg-green-600' : 'bg-purple-600';
+  const textColorClass = colorClass === 'indigo' ? 'text-indigo-600' : colorClass === 'green' ? 'text-green-600' : 'text-purple-600';
+  const borderColorClass = colorClass === 'indigo' ? 'border-indigo-300' : colorClass === 'green' ? 'border-green-300' : 'border-purple-300';
+
+  const handleSave = async () => {
+    if (!name.trim()) return;
+
+    setSaving(true);
+    try {
+      const response = await fetch(`/api/para/${type}s/${item.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, description }),
+      });
+
+      if (!response.ok) throw new Error(`Failed to update ${type}`);
+
+      setIsEditing(false);
+      router.refresh();
+    } catch (error) {
+      console.error(`Error updating ${type}:`, error);
+      alert(`Failed to update ${type}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      const response = await fetch(`/api/para/${type}s/${item.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) throw new Error(`Failed to delete ${type}`);
+
+      router.push('/para');
+      router.refresh();
+    } catch (error) {
+      console.error(`Error deleting ${type}:`, error);
+      alert(`Failed to delete ${type}`);
+      setDeleting(false);
+    }
+  };
+
+  const handleRemoveSource = async (sourceId: string) => {
+    try {
+      const payload: any = { source_id: sourceId };
+      if (type === 'project') payload.project_id = item.id;
+      if (type === 'area') payload.area_id = item.id;
+      if (type === 'resource') payload.resource_id = item.id;
+
+      const response = await fetch('/api/para/sources/unassign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) throw new Error('Failed to remove source');
+
+      setSources(sources.filter((s) => s.id !== sourceId));
+      router.refresh();
+    } catch (error) {
+      console.error('Error removing source:', error);
+      alert('Failed to remove source');
+    }
+  };
+
+  return (
+    <div>
+      {/* Header */}
+      <div className="mb-6">
+        <Link
+          href="/para"
+          className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-4 transition-colors"
+        >
+          <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          Back to PARA
+        </Link>
+
+        <div className={`bg-white rounded-2xl p-8 shadow-sm border-2 ${borderColorClass}`}>
+          {!isEditing ? (
+            <>
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-4">
+                  <div className="text-6xl">{icon}</div>
+                  <div>
+                    <div className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-1">
+                      {type}
+                    </div>
+                    <h1 className="text-4xl font-bold text-gray-900">{item.name}</h1>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="px-4 py-2 text-red-700 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+              {item.description && (
+                <p className="text-lg text-gray-600 mb-4">{item.description}</p>
+              )}
+              <div className="flex items-center gap-6 text-sm text-gray-500">
+                <div className="flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  Created {new Date(item.created_at).toLocaleDateString()}
+                </div>
+                <div className={`flex items-center gap-2 font-medium ${textColorClass}`}>
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  {sources.length} source{sources.length !== 1 ? 's' : ''}
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="mb-4">
+                <label htmlFor="edit-name" className="block text-sm font-medium text-gray-700 mb-2">
+                  Name
+                </label>
+                <input
+                  type="text"
+                  id="edit-name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                />
+              </div>
+              <div className="mb-6">
+                <label htmlFor="edit-description" className="block text-sm font-medium text-gray-700 mb-2">
+                  Description
+                </label>
+                <textarea
+                  id="edit-description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={3}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                />
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setIsEditing(false);
+                    setName(item.name);
+                    setDescription(item.description || '');
+                  }}
+                  disabled={saving}
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSave}
+                  disabled={saving || !name.trim()}
+                  className={`px-4 py-2 ${bgColorClass} text-white rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50`}
+                >
+                  {saving ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Sources */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-2xl font-bold text-gray-900">Sources</h2>
+          <Link
+            href={`/dashboard?assign_to_${type}=${item.id}`}
+            className={`px-4 py-2 ${bgColorClass} text-white rounded-lg font-medium hover:opacity-90 transition-opacity`}
+          >
+            + Add Sources
+          </Link>
+        </div>
+
+        {sources.length === 0 ? (
+          <div className="bg-white rounded-xl p-12 text-center shadow-sm">
+            <div className="text-gray-400 mb-4">
+              <svg
+                className="mx-auto h-16 w-16"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No sources yet</h3>
+            <p className="text-gray-600 mb-4">
+              Add sources to this {type} to start organizing your knowledge
+            </p>
+            <Link
+              href={`/dashboard?assign_to_${type}=${item.id}`}
+              className={`inline-block px-6 py-3 ${bgColorClass} text-white rounded-lg font-medium hover:opacity-90 transition-opacity`}
+            >
+              Add Your First Source
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4">
+            {sources.map((source) => (
+              <div key={source.id} className="relative">
+                <SourceCard source={source} />
+                <button
+                  onClick={() => {
+                    if (confirm(`Remove this source from ${item.name}?`)) {
+                      handleRemoveSource(source.id);
+                    }
+                  }}
+                  className="absolute top-4 right-4 p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+                  title="Remove from this project"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Delete {type}?</h2>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete <strong>{item.name}</strong>? This will not delete the sources,
+              only remove them from this {type}.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={deleting}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors disabled:opacity-50"
+              >
+                {deleting ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

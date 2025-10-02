@@ -13,10 +13,10 @@ export default function MobileNav() {
 
   const navItems = [
     {
-      name: 'Collections',
-      path: '/collections',
-      icon: '📚',
-      activeIcon: '📚'
+      name: 'PARA',
+      path: '/para',
+      icon: '📁',
+      activeIcon: '📁'
     },
     {
       name: 'Sources',
