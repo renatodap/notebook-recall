@@ -79,26 +79,32 @@ export default function RelationshipModal({
         setAvailableResources(secondData.resources || []);
         // Extract current relationships from project data
         const project = currentData.project;
-        setCurrentAreas(project?.project_areas?.map((pa: any) => pa.area_id) || []);
-        setCurrentResources(project?.project_resources?.map((pr: any) => pr.resource_id) || []);
-        setSelectedAreas(currentAreas);
-        setSelectedResources(currentResources);
+        const newCurrentAreas = project?.project_areas?.map((pa: any) => pa.area_id) || [];
+        const newCurrentResources = project?.project_resources?.map((pr: any) => pr.resource_id) || [];
+        setCurrentAreas(newCurrentAreas);
+        setCurrentResources(newCurrentResources);
+        setSelectedAreas(newCurrentAreas);
+        setSelectedResources(newCurrentResources);
       } else if (itemType === 'area') {
         setAvailableProjects(firstData.projects || []);
         setAvailableResources(secondData.resources || []);
         const area = currentData.area;
-        setCurrentProjects(area?.project_areas?.map((pa: any) => pa.project_id) || []);
-        setCurrentResources(area?.area_resources?.map((ar: any) => ar.resource_id) || []);
-        setSelectedProjects(currentProjects);
-        setSelectedResources(currentResources);
+        const newCurrentProjects = area?.project_areas?.map((pa: any) => pa.project_id) || [];
+        const newCurrentResources = area?.area_resources?.map((ar: any) => ar.resource_id) || [];
+        setCurrentProjects(newCurrentProjects);
+        setCurrentResources(newCurrentResources);
+        setSelectedProjects(newCurrentProjects);
+        setSelectedResources(newCurrentResources);
       } else if (itemType === 'resource') {
         setAvailableProjects(firstData.projects || []);
         setAvailableAreas(secondData.areas || []);
         const resource = currentData.resource;
-        setCurrentProjects(resource?.project_resources?.map((pr: any) => pr.project_id) || []);
-        setCurrentAreas(resource?.area_resources?.map((ar: any) => ar.area_id) || []);
-        setSelectedProjects(currentProjects);
-        setSelectedAreas(currentAreas);
+        const newCurrentProjects = resource?.project_resources?.map((pr: any) => pr.project_id) || [];
+        const newCurrentAreas = resource?.area_resources?.map((ar: any) => ar.area_id) || [];
+        setCurrentProjects(newCurrentProjects);
+        setCurrentAreas(newCurrentAreas);
+        setSelectedProjects(newCurrentProjects);
+        setSelectedAreas(newCurrentAreas);
       }
     } catch (error) {
       console.error('Error fetching relationship data:', error);

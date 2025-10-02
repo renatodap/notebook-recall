@@ -79,7 +79,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
           item={project}
           type="project"
           initialSources={sources}
-          icon="🎯"
+          icon={project.icon || '🎯'}
           colorClass="indigo"
         />
       </div>

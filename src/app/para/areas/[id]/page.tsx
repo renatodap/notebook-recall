@@ -79,7 +79,7 @@ export default async function AreaPage({ params }: AreaPageProps) {
           item={area}
           type="area"
           initialSources={sources}
-          icon="🌳"
+          icon={area.icon || '🌳'}
           colorClass="green"
         />
       </div>

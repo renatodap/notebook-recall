@@ -79,7 +79,7 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
           item={resource}
           type="resource"
           initialSources={sources}
-          icon="💎"
+          icon={resource.icon || '💎'}
           colorClass="purple"
         />
       </div>

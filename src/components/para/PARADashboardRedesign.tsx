@@ -241,7 +241,7 @@ export default function PARADashboardRedesign({
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {/* Create New Card */}
               <CreateNewPARACard
-                type={createType}
+                type={activeCategory as 'project' | 'area' | 'resource'}
                 onClick={() => openCreateModal(activeCategory as 'project' | 'area' | 'resource')}
               />
 
