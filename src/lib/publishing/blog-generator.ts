@@ -82,25 +82,27 @@ Sources:
 ${sourceContext}
 
 Generate a complete blog post that:
-1. Has an attention-grabbing title and subtitle
-2. Starts with a compelling hook
+1. Has an attention-grabbing, creative, and specific title (NOT generic like "Generated Blog Post")
+2. Starts with a compelling hook that draws readers in
 3. Explains key concepts clearly for the target audience
 4. Uses examples and storytelling where appropriate
 5. Has proper structure with headers (H2, H3)
 6. Includes actionable takeaways or conclusions
 7. Is optimized for SEO
 
-Return your response as a JSON object with this structure:
+IMPORTANT: Return ONLY a valid JSON object (no markdown code blocks, no extra text). Use standard JSON with double quotes for all strings - DO NOT use template literals or backticks.
+
+Use this exact structure:
 {
-  "title": "Main blog post title",
-  "subtitle": "Optional subtitle or tagline",
-  "content": "Full blog post in markdown format",
+  "title": "Creative, engaging title based on the actual content (e.g., 'How Neural Networks Learn to Think Like Humans')",
+  "subtitle": "Optional subtitle or tagline that adds context",
+  "content": "Full blog post in markdown format with proper headings and structure",
   "seo_title": "SEO-optimized title (60 chars max)",
   "seo_description": "SEO meta description (150-160 chars)",
-  "tags": ["tag1", "tag2", "tag3"]
+  "tags": ["relevant", "topic", "keywords"]
 }
 
-Write the content in markdown format with proper headings, lists, and formatting.`
+Write the content in markdown format with proper headings, lists, and formatting. Make the title engaging and specific to the topic!`
 
   // Call Claude API
   const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -135,12 +137,37 @@ Write the content in markdown format with proper headings, lists, and formatting
 
   try {
     // Try to extract JSON from markdown code blocks if present
-    const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/) || content.match(/\{[\s\S]*\}/)
-    const jsonText = jsonMatch ? jsonMatch[1] || jsonMatch[0] : content
+    let jsonText = content
+
+    // Extract from code block if present
+    const codeBlockMatch = content.match(/```json\s*([\s\S]*?)\s*```/)
+    if (codeBlockMatch) {
+      jsonText = codeBlockMatch[1]
+    } else {
+      // Try to extract raw JSON
+      const rawJsonMatch = content.match(/\{[\s\S]*\}/)
+      if (rawJsonMatch) {
+        jsonText = rawJsonMatch[0]
+      }
+    }
+
+    // Replace template literals (backticks) with proper JSON strings
+    // Handle multiline template literals by replacing backticks with quotes
+    jsonText = jsonText.replace(/`([\s\S]*?)`/g, (_match: string, p1: string) => {
+      // Escape quotes and newlines in the content
+      const escaped = p1
+        .replace(/\\/g, '\\\\')
+        .replace(/"/g, '\\"')
+        .replace(/\n/g, '\\n')
+        .replace(/\r/g, '\\r')
+        .replace(/\t/g, '\\t')
+      return `"${escaped}"`
+    })
 
     result = JSON.parse(jsonText)
   } catch (e) {
     // If JSON parsing fails, create structured output from raw text
+    console.error('Blog post JSON parsing error:', e)
     result = {
       title: 'Generated Blog Post',
       subtitle: null,

@@ -23,8 +23,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
     }
 
-    // Read file content
-    const content = await file.text()
+    // Read file content with error handling
+    let content: string
+    try {
+      content = await file.text()
+    } catch (fileError) {
+      console.error('File reading error:', fileError)
+      return NextResponse.json({
+        error: 'Failed to read file content',
+        details: fileError instanceof Error ? fileError.message : 'Unknown error'
+      }, { status: 400 })
+    }
 
     // Parse references
     const result = parseReferenceFile(content)
@@ -161,6 +170,18 @@ export async function POST(request: NextRequest) {
     }, { status: 201 })
   } catch (error) {
     console.error('Import error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+    const errorStack = error instanceof Error ? error.stack : undefined
+
+    console.error('Import error details:', {
+      message: errorMessage,
+      stack: errorStack,
+    })
+
+    return NextResponse.json({
+      error: 'Internal server error',
+      details: errorMessage,
+      hint: 'Check server logs for more information'
+    }, { status: 500 })
   }
 }

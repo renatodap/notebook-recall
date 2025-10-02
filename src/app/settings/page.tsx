@@ -51,7 +51,7 @@ export default function SettingsPage() {
       }
 
       const data = await response.json()
-      setCaptureEmail(data.email)
+      setCaptureEmail(data.capture_email)
     } catch (error: any) {
       setMessage(`Error: ${error.message}`)
     } finally {

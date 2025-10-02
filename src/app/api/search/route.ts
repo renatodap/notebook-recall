@@ -81,11 +81,12 @@ export async function POST(request: NextRequest) {
         if (semanticError) {
           console.error('Semantic search error:', semanticError);
 
-          // Fall back to keyword search
+          // Fall back to keyword search if semantic search fails
           if (mode === 'semantic') {
+            console.log('Falling back to keyword search due to semantic error');
             return await performKeywordSearch(supabase, user.id, query, limit, collection_id);
           }
-        } else if (semanticData) {
+        } else if (semanticData && semanticData.length > 0) {
           // Transform semantic results
           results = semanticData.map((item: any) => ({
             source: {
@@ -112,12 +113,17 @@ export async function POST(request: NextRequest) {
             match_type: 'semantic',
             matched_content: item.summary_text?.substring(0, 200) || '',
           }));
+        } else if (mode === 'semantic') {
+          // No semantic results found, fall back to keyword search
+          console.log('No semantic results found, falling back to keyword search');
+          return await performKeywordSearch(supabase, user.id, query, limit, collection_id);
         }
       } catch (error) {
         console.error('Embedding generation error:', error);
 
         // Fall back to keyword search
         if (mode === 'semantic') {
+          console.log('Falling back to keyword search due to embedding error');
           return await performKeywordSearch(supabase, user.id, query, limit, collection_id);
         }
       }
