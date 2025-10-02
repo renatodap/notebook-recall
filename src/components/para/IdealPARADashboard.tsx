@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import type { Project, Area, Resource, PARAStats, Source, Summary, Tag } from '@/types';
 import EnhancedKnowledgeCard from './EnhancedKnowledgeCard';
@@ -24,10 +23,10 @@ interface IdealPARADashboardProps {
 }
 
 export default function IdealPARADashboard({
-  initialProjects,
-  initialAreas,
-  initialResources,
-  stats,
+  initialProjects: _initialProjects,
+  initialAreas: _initialAreas,
+  initialResources: _initialResources,
+  stats: _stats,
 }: IdealPARADashboardProps) {
   const [activeCategory, setActiveCategory] = useState<PARACategory>('projects');
   const [sources, setSources] = useState<SourceWithSummaryAndTags[]>([]);
@@ -40,7 +39,6 @@ export default function IdealPARADashboard({
   const [searchQuery, setSearchQuery] = useState('');
   const [filterTags, setFilterTags] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<'recent' | 'relevant' | 'alphabetical'>('recent');
-  const router = useRouter();
 
   // Fetch sources for active category
   useEffect(() => {
@@ -113,17 +111,17 @@ export default function IdealPARADashboard({
 
       if (pinsResponse.ok) {
         const pinsData = await pinsResponse.json();
-        const pinnedIds = new Set(
-          pinsData.pinned_items?.map((item: any) => item.source_id) || []
+        const pinnedIds = new Set<string>(
+          pinsData.pinned_items?.map((item: any) => item.source_id as string) || []
         );
         setPinnedSourceIds(pinnedIds);
       } else {
-        setPinnedSourceIds(new Set());
+        setPinnedSourceIds(new Set<string>());
       }
     } catch (error) {
       console.error('Error fetching sources:', error);
       setSources([]);
-      setPinnedSourceIds(new Set());
+      setPinnedSourceIds(new Set<string>());
     } finally {
       setLoading(false);
     }
