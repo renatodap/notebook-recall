@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/lib/supabase/server';
-import type { CreateProjectRequest, Project } from '@/types';
+import type { CreateProjectRequest } from '@/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
 
     const body: CreateProjectRequest = await request.json();
 
-    const { data: project, error } = await supabase
+    const { data: project, error } = await (supabase as any)
       .from('projects')
       .insert({
         user_id: session.user.id,
@@ -59,8 +59,7 @@ export async function POST(request: NextRequest) {
         status: body.status || 'active',
       })
       .select()
-      .single()
-      .returns<Project>();
+      .single();
 
     if (error) throw error;
 

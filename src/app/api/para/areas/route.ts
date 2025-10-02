@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/lib/supabase/server';
-import type { CreateAreaRequest, Area } from '@/types';
+import type { CreateAreaRequest } from '@/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
 
     const body: CreateAreaRequest = await request.json();
 
-    const { data: area, error } = await supabase
+    const { data: area, error } = await (supabase as any)
       .from('areas')
       .insert({
         user_id: session.user.id,
@@ -58,8 +58,7 @@ export async function POST(request: NextRequest) {
         review_frequency: body.review_frequency || 'monthly',
       })
       .select()
-      .single()
-      .returns<Area>();
+      .single();
 
     if (error) throw error;
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/lib/supabase/server';
-import type { CreateResourceRequest, Resource } from '@/types';
+import type { CreateResourceRequest } from '@/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
 
     const body: CreateResourceRequest = await request.json();
 
-    const { data: resource, error } = await supabase
+    const { data: resource, error } = await (supabase as any)
       .from('resources')
       .insert({
         user_id: session.user.id,
@@ -57,8 +57,7 @@ export async function POST(request: NextRequest) {
         category: body.category || null,
       })
       .select()
-      .single()
-      .returns<Resource>();
+      .single();
 
     if (error) throw error;
 
