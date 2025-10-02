@@ -89,7 +89,7 @@ export async function createSourceChunks(
 export async function deleteSourceChunks(sourceId: string): Promise<void> {
   const supabase = createServiceRoleClient();
 
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from('content_chunks')
     .delete()
     .eq('source_id', sourceId);
@@ -117,7 +117,7 @@ export async function regenerateSourceChunks(
 export async function getSourceChunks(sourceId: string): Promise<ContentChunk[]> {
   const supabase = createServiceRoleClient();
 
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('content_chunks')
     .select('*')
     .eq('source_id', sourceId)
@@ -147,7 +147,7 @@ export async function backfillChunks(
 
   try {
     // Get sources without chunks
-    let query = supabase
+    let query = (supabase as any)
       .from('sources')
       .select('id, original_content, content_type')
       .not('content_type', 'eq', 'image'); // Skip images
@@ -182,7 +182,7 @@ export async function backfillChunks(
     // Filter sources that don't have chunks yet
     const sourcesNeedingChunks: SourceForChunking[] = [];
     for (const source of (sources as SourceForChunking[])) {
-      const { count } = await supabase
+      const { count } = await (supabase as any)
         .from('content_chunks')
         .select('*', { count: 'exact', head: true })
         .eq('source_id', source.id);
@@ -253,7 +253,7 @@ export async function embedChunk(chunkId: string): Promise<void> {
   const supabase = createServiceRoleClient();
 
   // Get chunk
-  const { data: chunk, error: fetchError } = await supabase
+  const { data: chunk, error: fetchError } = await (supabase as any)
     .from('content_chunks')
     .select('*')
     .eq('id', chunkId)
@@ -271,7 +271,7 @@ export async function embedChunk(chunkId: string): Promise<void> {
   });
 
   // Update chunk
-  const { error: updateError } = await supabase
+  const { error: updateError } = await (supabase as any)
     .from('content_chunks')
     .update({ embedding: embeddingResult.embedding })
     .eq('id', chunkId);
@@ -293,7 +293,7 @@ export async function backfillChunkEmbeddings(
   let failed = 0;
 
   // Get chunks without embeddings
-  const { data: chunks, error } = await supabase
+  const { data: chunks, error } = await (supabase as any)
     .from('content_chunks')
     .select('id')
     .is('embedding', null)
