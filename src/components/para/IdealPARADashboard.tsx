@@ -7,6 +7,7 @@ import EnhancedKnowledgeCard from './EnhancedKnowledgeCard';
 import SemanticSidebar from './SemanticSidebar';
 import SpotlightPalette from './SpotlightPalette';
 import KnowledgeGraphPanel from './KnowledgeGraphPanel';
+import MobileNav from '../MobileNav';
 
 type PARACategory = 'projects' | 'areas' | 'resources' | 'archive';
 
@@ -233,15 +234,18 @@ export default function IdealPARADashboard({
   const currentColor = getCategoryColor(activeCategory);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Spotlight Command Palette */}
-      <SpotlightPalette
-        isOpen={showSpotlight}
-        onClose={() => setShowSpotlight(false)}
-      />
+    <>
+      <MobileNav />
 
-      {/* Top Navigation Bar - Horizontal PARA */}
-      <div className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pb-20 md:pb-0 md:pl-64">
+        {/* Spotlight Command Palette */}
+        <SpotlightPalette
+          isOpen={showSpotlight}
+          onClose={() => setShowSpotlight(false)}
+        />
+
+        {/* Top Navigation Bar - Horizontal PARA */}
+        <div className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40">
         <div className="max-w-[1920px] mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             {/* PARA Navigation */}
@@ -540,6 +544,7 @@ export default function IdealPARADashboard({
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 }

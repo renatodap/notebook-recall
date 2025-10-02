@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import SourceCard from '@/components/SourceCard';
+import AddSourcesToPARAModal from './AddSourcesToPARAModal';
 import type { Project, Area, Resource } from '@/types';
 
 interface PARADetailClientProps {
@@ -28,6 +29,7 @@ export default function PARADetailClient({
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showAddSourcesModal, setShowAddSourcesModal] = useState(false);
   const router = useRouter();
 
   const bgColorClass = colorClass === 'indigo' ? 'bg-indigo-600' : colorClass === 'green' ? 'bg-green-600' : 'bg-purple-600';
@@ -213,12 +215,12 @@ export default function PARADetailClient({
       <div>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-2xl font-bold text-gray-900">Sources</h2>
-          <Link
-            href={`/dashboard?assign_to_${type}=${item.id}`}
+          <button
+            onClick={() => setShowAddSourcesModal(true)}
             className={`px-4 py-2 ${bgColorClass} text-white rounded-lg font-medium hover:opacity-90 transition-opacity`}
           >
             + Add Sources
-          </Link>
+          </button>
         </div>
 
         {sources.length === 0 ? (
@@ -242,12 +244,12 @@ export default function PARADetailClient({
             <p className="text-gray-600 mb-4">
               Add sources to this {type} to start organizing your knowledge
             </p>
-            <Link
-              href={`/dashboard?assign_to_${type}=${item.id}`}
+            <button
+              onClick={() => setShowAddSourcesModal(true)}
               className={`inline-block px-6 py-3 ${bgColorClass} text-white rounded-lg font-medium hover:opacity-90 transition-opacity`}
             >
               Add Your First Source
-            </Link>
+            </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4">
@@ -300,6 +302,20 @@ export default function PARADetailClient({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Add Sources Modal */}
+      {showAddSourcesModal && (
+        <AddSourcesToPARAModal
+          paraType={type}
+          paraId={item.id}
+          paraName={item.name}
+          onClose={() => setShowAddSourcesModal(false)}
+          onSuccess={() => {
+            setShowAddSourcesModal(false);
+            router.refresh();
+          }}
+        />
       )}
     </div>
   );
