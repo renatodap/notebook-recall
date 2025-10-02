@@ -166,7 +166,7 @@ export async function backfillChunks(
     type SourceForChunking = {
       id: string;
       original_content: string;
-      content_type: string;
+      content_type: ContentType;
     };
 
     if (!sources || sources.length === 0) {
