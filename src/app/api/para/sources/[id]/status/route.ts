@@ -19,7 +19,7 @@ export async function GET(
     }
 
     // Get source with PARA assignments
-    const { data: source, error: sourceError } = await supabase
+    const { data: source, error: sourceError } = await (supabase as any)
       .from('sources')
       .select('id, user_id, archived')
       .eq('id', sourceId)
@@ -31,19 +31,19 @@ export async function GET(
     }
 
     // Get projects
-    const { data: projects } = await supabase
+    const { data: projects } = await (supabase as any)
       .from('project_sources')
       .select('projects(id, name)')
       .eq('source_id', sourceId);
 
     // Get areas
-    const { data: areas } = await supabase
+    const { data: areas } = await (supabase as any)
       .from('area_sources')
       .select('areas(id, name)')
       .eq('source_id', sourceId);
 
     // Get resources
-    const { data: resources } = await supabase
+    const { data: resources } = await (supabase as any)
       .from('resource_sources')
       .select('resources(id, name)')
       .eq('source_id', sourceId);

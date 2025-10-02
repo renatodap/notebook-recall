@@ -47,7 +47,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: sources, error } = await supabase
+    const { data: sources, error } = await (supabase as any)
       .from('sources')
       .select(`
         *,
