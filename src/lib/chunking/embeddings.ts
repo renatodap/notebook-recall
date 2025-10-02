@@ -265,7 +265,7 @@ export async function embedChunk(chunkId: string): Promise<void> {
 
   // Generate embedding
   const embeddingResult = await generateEmbedding({
-    text: chunk.content,
+    text: (chunk as ContentChunk).content,
     type: 'summary',
     normalize: true,
   });
