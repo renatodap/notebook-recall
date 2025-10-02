@@ -75,7 +75,7 @@ export function ChunkSearchResultCard({ result, onSourceClick }: ChunkSearchResu
         </span>
         {metadata.heading && (
           <span className="text-sm text-gray-500">
-            in "{metadata.heading}"
+            in &ldquo;{metadata.heading}&rdquo;
           </span>
         )}
       </div>
