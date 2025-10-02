@@ -169,7 +169,7 @@ async function getKeywordResults(
 ): Promise<SearchResult[]> {
   const searchPattern = `%${query}%`;
 
-  let queryBuilder = supabase
+  let queryBuilder = (supabase as any)
     .from('sources')
     .select(
       `

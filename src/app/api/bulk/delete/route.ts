@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     const { source_ids } = validation.data;
 
     // Verify all sources belong to the user
-    const { data: sources, error: fetchError } = await supabase
+    const { data: sources, error: fetchError } = await (supabase as any)
       .from('sources')
       .select('id')
       .in('id', source_ids)
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Delete sources (cascades to summaries and tags via foreign key constraints)
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await (supabase as any)
       .from('sources')
       .delete()
       .in('id', validSourceIds)

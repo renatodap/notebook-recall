@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     // If source_id provided, save to database
     if (source_id) {
       // Verify user owns this source
-      const { data: source } = await supabase
+      const { data: source } = await (supabase as any)
         .from('sources')
         .select('id')
         .eq('id', source_id)

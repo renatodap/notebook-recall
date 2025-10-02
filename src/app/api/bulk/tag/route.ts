@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     const normalizedTags = tags.map((tag) => tag.toLowerCase().trim());
 
     // Verify all sources belong to the user
-    const { data: sources, error: fetchError } = await supabase
+    const { data: sources, error: fetchError } = await (supabase as any)
       .from('sources')
       .select('id')
       .in('id', source_ids)
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get existing tags to avoid duplicates
-    const { data: existingTags, error: existingError } = await supabase
+    const { data: existingTags, error: existingError } = await (supabase as any)
       .from('tags')
       .select('source_id, tag_name')
       .in('source_id', validSourceIds);
@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Insert new tags
-    const { error: insertError } = await supabase
+    const { error: insertError } = await (supabase as any)
       .from('tags')
       .insert(newTags as any);
 

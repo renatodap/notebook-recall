@@ -22,7 +22,7 @@ export async function GET(
     }
 
     // Fetch source with summary and tags
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('sources')
       .select(
         `
@@ -73,7 +73,7 @@ export async function DELETE(
     }
 
     // Delete source (cascades to summaries and tags)
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('sources')
       .delete()
       .eq('id', id)

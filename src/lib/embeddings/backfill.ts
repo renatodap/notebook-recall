@@ -31,7 +31,7 @@ export async function backfillEmbeddings(
 
   try {
     // Get summaries without embeddings
-    let query: any = supabase
+    let query: any = (supabase as any)
       .from('summaries')
       .select('id, summary_text, key_topics, source_id');
 
@@ -46,7 +46,7 @@ export async function backfillEmbeddings(
       if (error) throw error;
 
       // Filter summaries by user ownership through sources
-      const { data: userSources } = await supabase
+      const { data: userSources } = await (supabase as any)
         .from('sources')
         .select('id')
         .eq('user_id', userId);
@@ -127,7 +127,7 @@ async function processSummaries(
         });
 
         // Store in database
-        const { error: updateError } = await supabase
+        const { error: updateError } = await (supabase as any)
           .from('summaries')
           .update({ embedding: result.embedding })
           .eq('id', summary.id);

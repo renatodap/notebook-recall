@@ -35,7 +35,7 @@ export async function POST(
     }
 
     // Verify source ownership
-    const { data: source } = await supabase
+    const { data: source } = await (supabase as any)
       .from('sources')
       .select('id')
       .eq('id', source_id)

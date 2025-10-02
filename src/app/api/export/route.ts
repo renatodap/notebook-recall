@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Build query
-    let query = supabase
+    let query = (supabase as any)
       .from('sources')
       .select(
         `

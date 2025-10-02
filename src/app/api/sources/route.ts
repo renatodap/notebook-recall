@@ -65,12 +65,12 @@ export async function GET(request: NextRequest) {
 
       // Fetch summaries and tags for each source
       const sourceIds = data.map((s: any) => s.id)
-      const { data: summaries } = await supabase
+      const { data: summaries } = await (supabase as any)
         .from('summaries')
         .select('*')
         .in('source_id', sourceIds)
 
-      const { data: tags } = await supabase
+      const { data: tags } = await (supabase as any)
         .from('tags')
         .select('*')
         .in('source_id', sourceIds)
@@ -112,12 +112,12 @@ export async function GET(request: NextRequest) {
 
       // Fetch summaries and tags for each source
       const sourceIds = data.map((s: any) => s.id)
-      const { data: summaries } = await supabase
+      const { data: summaries } = await (supabase as any)
         .from('summaries')
         .select('*')
         .in('source_id', sourceIds)
 
-      const { data: tags } = await supabase
+      const { data: tags } = await (supabase as any)
         .from('tags')
         .select('*')
         .in('source_id', sourceIds)
@@ -142,7 +142,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Standard query without filtering
-    let query = supabase
+    let query = (supabase as any)
       .from('sources')
       .select(
         `
@@ -245,7 +245,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create source
-    const { data: source, error: sourceError } = await supabase
+    const { data: source, error: sourceError } = await (supabase as any)
       .from('sources')
       .insert({
         user_id: user.id,
@@ -271,7 +271,7 @@ export async function POST(request: NextRequest) {
     const embedding = embeddingResult.embedding;
 
     // Create summary
-    const { data: summary, error: summaryError } = await supabase
+    const { data: summary, error: summaryError } = await (supabase as any)
       .from('summaries')
       .insert({
         source_id: (source as any).id,
@@ -295,7 +295,7 @@ export async function POST(request: NextRequest) {
         tag_name: topic.toLowerCase(),
       }))
 
-      const { error: tagsError } = await supabase
+      const { error: tagsError } = await (supabase as any)
         .from('tags')
         .insert(tagsData as any)
 

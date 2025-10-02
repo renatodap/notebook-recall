@@ -16,7 +16,7 @@ export async function GET(
     const { id: sourceId } = await params
 
     // Verify user owns this source
-    const { data: source } = await supabase
+    const { data: source } = await (supabase as any)
       .from('sources')
       .select('id')
       .eq('id', sourceId)

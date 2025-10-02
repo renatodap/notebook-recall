@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
 
     // Get tags with counts
     // First get all tags for user's sources
-    const { data: tagsData, error: tagsError } = await supabase
+    const { data: tagsData, error: tagsError } = await (supabase as any)
       .from('tags')
       .select(
         `

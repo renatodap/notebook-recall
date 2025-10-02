@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify user owns this source
-    const { data: source } = await supabase
+    const { data: source } = await (supabase as any)
       .from('sources')
       .select('id, title')
       .eq('id', source_id)
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get all user's sources with embeddings
-    const { data: allSources, error: sourcesError } = await supabase
+    const { data: allSources, error: sourcesError } = await (supabase as any)
       .from('sources')
       .select(`
         id,
