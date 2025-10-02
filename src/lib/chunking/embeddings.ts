@@ -173,7 +173,11 @@ export async function backfillChunks(
     }
 
     // Filter sources that don't have chunks yet
-    const sourcesNeedingChunks = [];
+    const sourcesNeedingChunks: Array<{
+      id: string;
+      original_content: string;
+      content_type: string;
+    }> = [];
     for (const source of sources) {
       const { count } = await supabase
         .from('content_chunks')
