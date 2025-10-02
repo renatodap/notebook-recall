@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import SourceCard from '@/components/SourceCard';
 import AddSourcesToPARAModal from './AddSourcesToPARAModal';
+import RelationshipModal from './RelationshipModal';
 import type { Project, Area, Resource } from '@/types';
 
 interface PARADetailClientProps {
@@ -31,6 +32,7 @@ export default function PARADetailClient({
   const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showAddSourcesModal, setShowAddSourcesModal] = useState(false);
+  const [showRelationshipModal, setShowRelationshipModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'recent' | 'alphabetical' | 'relevant'>('recent');
   const [aiSummary, setAiSummary] = useState<string>('');
@@ -190,6 +192,13 @@ export default function PARADetailClient({
                 </div>
                 <div className="flex gap-2">
                   <button
+                    onClick={() => setShowRelationshipModal(true)}
+                    className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2"
+                  >
+                    <span>🔗</span>
+                    <span>Relationships</span>
+                  </button>
+                  <button
                     onClick={() => setIsEditing(true)}
                     className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                   >
@@ -305,6 +314,95 @@ export default function PARADetailClient({
           </div>
         </div>
       )}
+
+      {/* Related Items */}
+      {(() => {
+        const itemWithRelations = item as any;
+        const relatedProjects = type === 'project' ? [] :
+          (type === 'area' ? (itemWithRelations.project_areas || []).map((pa: any) => pa.projects).filter(Boolean) :
+          (itemWithRelations.project_resources || []).map((pr: any) => pr.projects).filter(Boolean));
+        const relatedAreas = type === 'area' ? [] :
+          (type === 'project' ? (itemWithRelations.project_areas || []).map((pa: any) => pa.areas).filter(Boolean) :
+          (itemWithRelations.area_resources || []).map((ar: any) => ar.areas).filter(Boolean));
+        const relatedResources = type === 'resource' ? [] :
+          (type === 'project' ? (itemWithRelations.project_resources || []).map((pr: any) => pr.resources).filter(Boolean) :
+          (itemWithRelations.area_resources || []).map((ar: any) => ar.resources).filter(Boolean));
+
+        const hasRelations = relatedProjects.length > 0 || relatedAreas.length > 0 || relatedResources.length > 0;
+
+        return hasRelations ? (
+          <div className="mb-6">
+            <div className="bg-white rounded-2xl p-6 shadow-sm border-2 border-gray-200">
+              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2 mb-4">
+                <span>🔗</span>
+                <span>Related Items</span>
+              </h2>
+              <div className="space-y-4">
+                {relatedProjects.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                      <span>🎯</span>
+                      <span>Projects</span>
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {relatedProjects.map((project: any) => (
+                        <Link
+                          key={project.id}
+                          href={`/para/projects/${project.id}`}
+                          className="inline-flex items-center gap-2 px-3 py-2 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors"
+                        >
+                          <span className="text-lg">{project.icon || '🎯'}</span>
+                          <span className="text-sm font-medium text-indigo-900">{project.name}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {relatedAreas.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                      <span>🌳</span>
+                      <span>Areas</span>
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {relatedAreas.map((area: any) => (
+                        <Link
+                          key={area.id}
+                          href={`/para/areas/${area.id}`}
+                          className="inline-flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors"
+                        >
+                          <span className="text-lg">{area.icon || '🌳'}</span>
+                          <span className="text-sm font-medium text-green-900">{area.name}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {relatedResources.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                      <span>💎</span>
+                      <span>Resources</span>
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {relatedResources.map((resource: any) => (
+                        <Link
+                          key={resource.id}
+                          href={`/para/resources/${resource.id}`}
+                          className="inline-flex items-center gap-2 px-3 py-2 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors"
+                        >
+                          <span className="text-lg">{resource.icon || '💎'}</span>
+                          <span className="text-sm font-medium text-purple-900">{resource.name}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        ) : null;
+      })()}
 
       {/* Sources */}
       <div>
@@ -446,6 +544,20 @@ export default function PARADetailClient({
           onClose={() => setShowAddSourcesModal(false)}
           onSuccess={() => {
             setShowAddSourcesModal(false);
+            router.refresh();
+          }}
+        />
+      )}
+
+      {/* Relationship Modal */}
+      {showRelationshipModal && (
+        <RelationshipModal
+          itemId={item.id}
+          itemName={item.name}
+          itemType={type}
+          onClose={() => setShowRelationshipModal(false)}
+          onSuccess={() => {
+            setShowRelationshipModal(false);
             router.refresh();
           }}
         />

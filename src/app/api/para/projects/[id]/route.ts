@@ -29,6 +29,24 @@ export async function GET(
             *,
             summaries (*)
           )
+        ),
+        project_areas (
+          area_id,
+          areas (
+            id,
+            name,
+            description,
+            icon
+          )
+        ),
+        project_resources (
+          resource_id,
+          resources (
+            id,
+            name,
+            description,
+            icon
+          )
         )
       `)
       .eq('id', id)

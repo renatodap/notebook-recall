@@ -88,7 +88,7 @@ CREATE TABLE public.collection_collaborators (
   added_at timestamp with time zone DEFAULT now(),
   permission_level character varying DEFAULT 'view'::character varying,
   invited_by uuid,
-  CONSTRAINT collection_collaborators_pkey PRIMARY KEY (collection_id, user_id),
+  CONSTRAINT collection_collaborators_pkey PRIMARY KEY (user_id, collection_id),
   CONSTRAINT collection_collaborators_collection_id_fkey FOREIGN KEY (collection_id) REFERENCES public.collections(id),
   CONSTRAINT collection_collaborators_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
   CONSTRAINT collection_collaborators_invited_by_fkey FOREIGN KEY (invited_by) REFERENCES auth.users(id)
@@ -99,7 +99,7 @@ CREATE TABLE public.collection_sources (
   added_by uuid,
   note text,
   added_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT collection_sources_pkey PRIMARY KEY (source_id, collection_id),
+  CONSTRAINT collection_sources_pkey PRIMARY KEY (collection_id, source_id),
   CONSTRAINT collection_sources_collection_id_fkey FOREIGN KEY (collection_id) REFERENCES public.collections(id),
   CONSTRAINT collection_sources_source_id_fkey FOREIGN KEY (source_id) REFERENCES public.sources(id),
   CONSTRAINT collection_sources_added_by_fkey FOREIGN KEY (added_by) REFERENCES auth.users(id)
@@ -388,7 +388,7 @@ CREATE TABLE public.source_concepts (
   relevance double precision DEFAULT 0.5,
   mentions integer DEFAULT 1,
   context text,
-  CONSTRAINT source_concepts_pkey PRIMARY KEY (concept_id, source_id),
+  CONSTRAINT source_concepts_pkey PRIMARY KEY (source_id, concept_id),
   CONSTRAINT source_concepts_source_id_fkey FOREIGN KEY (source_id) REFERENCES public.sources(id),
   CONSTRAINT source_concepts_concept_id_fkey FOREIGN KEY (concept_id) REFERENCES public.concepts(id)
 );
