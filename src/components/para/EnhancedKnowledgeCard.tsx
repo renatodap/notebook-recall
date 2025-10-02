@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Source, Summary, Tag } from '@/types';
+import PARAAssignmentModal from './PARAAssignmentModal';
 
 interface EnhancedKnowledgeCardProps {
   source: Source & { summary: Summary[]; tags: Tag[] };
@@ -20,6 +21,7 @@ export default function EnhancedKnowledgeCard({
   const [isPinned, setIsPinned] = useState(initialPinned);
   const [showActions, setShowActions] = useState(false);
   const [pinLoading, setPinLoading] = useState(false);
+  const [showAssignModal, setShowAssignModal] = useState(false);
   const summary = source.summary?.[0];
 
   const contentTypeIcons: Record<string, string> = {
@@ -132,12 +134,12 @@ export default function EnhancedKnowledgeCard({
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                // TODO: Open link modal
+                setShowAssignModal(true);
               }}
               className="p-2 bg-white rounded-lg shadow-md hover:bg-gray-50 transition-colors"
-              title="Link to other sources"
+              title="Organize with PARA"
             >
-              🔗
+              📂
             </button>
           </div>
         )}
@@ -255,6 +257,18 @@ export default function EnhancedKnowledgeCard({
           }}
         />
       </div>
+
+      {/* Assignment Modal */}
+      {showAssignModal && (
+        <PARAAssignmentModal
+          sourceId={source.id}
+          onClose={() => setShowAssignModal(false)}
+          onSuccess={() => {
+            // Optionally refresh or show success message
+            setShowAssignModal(false);
+          }}
+        />
+      )}
     </Link>
   );
 }

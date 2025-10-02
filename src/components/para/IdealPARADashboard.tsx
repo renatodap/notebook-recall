@@ -23,11 +23,14 @@ interface IdealPARADashboardProps {
 }
 
 export default function IdealPARADashboard({
-  initialProjects: _initialProjects,
-  initialAreas: _initialAreas,
-  initialResources: _initialResources,
-  stats: _stats,
+  initialProjects,
+  initialAreas,
+  initialResources,
+  stats,
 }: IdealPARADashboardProps) {
+  const [projects, setProjects] = useState(initialProjects);
+  const [areas, setAreas] = useState(initialAreas);
+  const [resources, setResources] = useState(initialResources);
   const [activeCategory, setActiveCategory] = useState<PARACategory>('projects');
   const [sources, setSources] = useState<SourceWithSummaryAndTags[]>([]);
   const [filteredSources, setFilteredSources] = useState<SourceWithSummaryAndTags[]>([]);
@@ -35,6 +38,9 @@ export default function IdealPARADashboard({
   const [loading, setLoading] = useState(false);
   const [showGraph, setShowGraph] = useState(false);
   const [showSpotlight, setShowSpotlight] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createType, setCreateType] = useState<'project' | 'area' | 'resource'>('project');
+  const [creating, setCreating] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterTags, setFilterTags] = useState<string[]>([]);
@@ -141,6 +147,50 @@ export default function IdealPARADashboard({
     setFilterTags(tags);
   };
 
+  const openCreateModal = (type: 'project' | 'area' | 'resource') => {
+    setCreateType(type);
+    setShowCreateModal(true);
+  };
+
+  const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const name = formData.get('name') as string;
+    const description = formData.get('description') as string;
+
+    if (!name.trim()) return;
+
+    setCreating(true);
+    try {
+      const endpoint = `/api/para/${createType}s`;
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, description }),
+      });
+
+      if (!response.ok) throw new Error(`Failed to create ${createType}`);
+
+      const { [createType]: newItem } = await response.json();
+
+      // Update local state
+      if (createType === 'project') {
+        setProjects([{ ...newItem, source_count: 0 }, ...projects]);
+      } else if (createType === 'area') {
+        setAreas([{ ...newItem, source_count: 0 }, ...areas]);
+      } else {
+        setResources([{ ...newItem, source_count: 0 }, ...resources]);
+      }
+
+      setShowCreateModal(false);
+    } catch (error) {
+      console.error(`Error creating ${createType}:`, error);
+      alert(`Failed to create ${createType}`);
+    } finally {
+      setCreating(false);
+    }
+  };
+
   const getCategoryColor = (category: PARACategory) => {
     switch (category) {
       case 'projects':
@@ -219,6 +269,33 @@ export default function IdealPARADashboard({
 
             {/* Quick Actions */}
             <div className="flex items-center gap-3">
+              {activeCategory !== 'archive' && (
+                <>
+                  <button
+                    onClick={() => openCreateModal(
+                      activeCategory === 'projects' ? 'project' :
+                      activeCategory === 'areas' ? 'area' : 'resource'
+                    )}
+                    className={`px-4 py-2 text-sm font-medium rounded-lg flex items-center gap-2 text-white ${
+                      activeCategory === 'projects'
+                        ? 'bg-indigo-600 hover:bg-indigo-700'
+                        : activeCategory === 'areas'
+                        ? 'bg-green-600 hover:bg-green-700'
+                        : 'bg-purple-600 hover:bg-purple-700'
+                    }`}
+                  >
+                    <span>+</span>
+                    <span>New {activeCategory === 'projects' ? 'Project' : activeCategory === 'areas' ? 'Area' : 'Resource'}</span>
+                  </button>
+                  <Link
+                    href="/add"
+                    className="px-4 py-2 text-sm font-medium rounded-lg flex items-center gap-2 bg-gray-800 text-white hover:bg-gray-900"
+                  >
+                    <span>+</span>
+                    <span>Add Source</span>
+                  </Link>
+                </>
+              )}
               <button
                 onClick={() => setShowSpotlight(true)}
                 className="px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2"
@@ -259,6 +336,30 @@ export default function IdealPARADashboard({
 
           {/* Main Content - Knowledge Cards */}
           <main className="flex-1 min-w-0">
+            {/* Unassigned Sources Warning */}
+            {stats.unassigned_sources > 0 && (
+              <div className="mb-6 bg-amber-50 border-2 border-amber-200 rounded-xl p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl">⚠️</span>
+                  <div>
+                    <h3 className="font-semibold text-amber-900">
+                      {stats.unassigned_sources} unassigned {stats.unassigned_sources === 1 ? 'source' : 'sources'}
+                    </h3>
+                    <p className="text-sm text-amber-700">
+                      Organize your knowledge by assigning sources to projects, areas, or resources
+                    </p>
+                  </div>
+                </div>
+                <Link
+                  href="/dashboard"
+                  className="px-4 py-2 bg-amber-600 text-white rounded-lg font-medium hover:bg-amber-700 transition-colors flex items-center gap-2"
+                >
+                  <span>📂</span>
+                  <span>Organize Now</span>
+                </Link>
+              </div>
+            )}
+
             {/* Category Header */}
             <div className="mb-6">
               <div className="flex items-center gap-3 mb-2">
@@ -378,6 +479,67 @@ export default function IdealPARADashboard({
           </main>
         </div>
       </div>
+
+      {/* Create Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              Create New {createType.charAt(0).toUpperCase() + createType.slice(1)}
+            </h2>
+            <form onSubmit={handleCreate}>
+              <div className="mb-4">
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                  Name *
+                </label>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  required
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  placeholder={`My ${createType.charAt(0).toUpperCase() + createType.slice(1)}`}
+                />
+              </div>
+              <div className="mb-6">
+                <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+                  Description
+                </label>
+                <textarea
+                  id="description"
+                  name="description"
+                  rows={3}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  placeholder={`Describe your ${createType}...`}
+                />
+              </div>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateModal(false)}
+                  disabled={creating}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={creating}
+                  className={`flex-1 px-4 py-2 text-white rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50 ${
+                    createType === 'project'
+                      ? 'bg-indigo-600'
+                      : createType === 'area'
+                      ? 'bg-green-600'
+                      : 'bg-purple-600'
+                  }`}
+                >
+                  {creating ? 'Creating...' : 'Create'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
