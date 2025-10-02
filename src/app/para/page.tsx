@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase/server'
-import MobileNav from '@/components/MobileNav'
-import PARAClient from '@/components/para/PARAClient'
+import IdealPARADashboard from '@/components/para/IdealPARADashboard'
 
 export const dynamic = 'force-dynamic'
 
@@ -76,26 +75,11 @@ export default async function PARAPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20 md:pb-0 md:pl-64">
-      <MobileNav />
-
-      <div className="max-w-7xl mx-auto px-4 py-6 md:py-12">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-3">PARA</h1>
-          <p className="text-lg text-gray-600">
-            Projects, Areas, Resources & Archive — Organize your knowledge with purpose
-          </p>
-        </div>
-
-        {/* Main Content */}
-        <PARAClient
-          initialProjects={projectsWithCount}
-          initialAreas={areasWithCount}
-          initialResources={resourcesWithCount}
-          stats={stats}
-        />
-      </div>
-    </div>
+    <IdealPARADashboard
+      initialProjects={projectsWithCount}
+      initialAreas={areasWithCount}
+      initialResources={resourcesWithCount}
+      stats={stats}
+    />
   )
 }
