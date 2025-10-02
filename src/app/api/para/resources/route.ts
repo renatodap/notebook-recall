@@ -14,15 +14,14 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: resources, error } = await supabase
+    const { data: resources, error } = await (supabase as any)
       .from('resources')
       .select(`
         *,
         source_count:resource_sources(count)
       `)
       .eq('user_id', session.user.id)
-      .order('created_at', { ascending: false })
-      .returns<(Resource & { source_count: number })[]>();
+      .order('created_at', { ascending: false });
 
     if (error) throw error;
 
