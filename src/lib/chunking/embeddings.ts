@@ -42,7 +42,7 @@ export async function createSourceChunks(
       });
 
       // Store chunk in database
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('content_chunks')
         .insert({
           source_id: sourceId,
@@ -63,7 +63,7 @@ export async function createSourceChunks(
     } catch (error) {
       console.error(`Failed to embed chunk ${chunk.index}:`, error);
       // Store chunk without embedding
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from('content_chunks')
         .insert({
           source_id: sourceId,
