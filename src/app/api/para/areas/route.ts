@@ -55,6 +55,7 @@ export async function POST(request: NextRequest) {
         description: body.description || null,
         standard: body.standard || null,
         review_frequency: body.review_frequency || 'monthly',
+        icon: (body as any).icon || '🌳',
       })
       .select()
       .single();

@@ -56,6 +56,7 @@ export async function POST(request: NextRequest) {
         goal: body.goal || null,
         deadline: body.deadline || null,
         status: body.status || 'active',
+        icon: (body as any).icon || '🎯',
       })
       .select()
       .single();

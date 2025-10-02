@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase/server'
-import IdealPARADashboard from '@/components/para/IdealPARADashboard'
+import PARADashboardRedesign from '@/components/para/PARADashboardRedesign'
 
 export const dynamic = 'force-dynamic'
 
@@ -75,7 +75,7 @@ export default async function PARAPage() {
   }
 
   return (
-    <IdealPARADashboard
+    <PARADashboardRedesign
       initialProjects={projectsWithCount}
       initialAreas={areasWithCount}
       initialResources={resourcesWithCount}

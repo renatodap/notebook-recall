@@ -54,6 +54,7 @@ export async function POST(request: NextRequest) {
         name: body.name,
         description: body.description || null,
         category: body.category || null,
+        icon: (body as any).icon || '💎',
       })
       .select()
       .single();

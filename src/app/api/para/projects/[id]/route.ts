@@ -63,15 +63,18 @@ export async function PATCH(
 
     const body = await request.json();
 
+    // Build update object with only provided fields
+    const updateData: any = {};
+    if (body.name !== undefined) updateData.name = body.name;
+    if (body.description !== undefined) updateData.description = body.description;
+    if (body.goal !== undefined) updateData.goal = body.goal;
+    if (body.deadline !== undefined) updateData.deadline = body.deadline;
+    if (body.status !== undefined) updateData.status = body.status;
+    if (body.icon !== undefined) updateData.icon = body.icon;
+
     const { data: project, error } = await (supabase as any)
       .from('projects')
-      .update({
-        name: body.name,
-        description: body.description,
-        goal: body.goal,
-        deadline: body.deadline,
-        status: body.status,
-      })
+      .update(updateData)
       .eq('id', id)
       .eq('user_id', session.user.id)
       .select()

@@ -63,14 +63,17 @@ export async function PATCH(
 
     const body = await request.json();
 
+    // Build update object with only provided fields
+    const updateData: any = {};
+    if (body.name !== undefined) updateData.name = body.name;
+    if (body.description !== undefined) updateData.description = body.description;
+    if (body.standard !== undefined) updateData.standard = body.standard;
+    if (body.review_frequency !== undefined) updateData.review_frequency = body.review_frequency;
+    if (body.icon !== undefined) updateData.icon = body.icon;
+
     const { data: area, error } = await (supabase as any)
       .from('areas')
-      .update({
-        name: body.name,
-        description: body.description,
-        standard: body.standard,
-        review_frequency: body.review_frequency,
-      })
+      .update(updateData)
       .eq('id', id)
       .eq('user_id', session.user.id)
       .select()
