@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     const { source_id, project_id, area_id, resource_id } = body;
 
     // Verify the source belongs to the user
-    const { data: source, error: sourceError } = await supabase
+    const { data: source, error: sourceError } = await (supabase as any)
       .from('sources')
       .select('user_id')
       .eq('id', source_id)
