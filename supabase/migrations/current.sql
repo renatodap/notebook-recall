@@ -66,7 +66,7 @@ CREATE TABLE public.collection_collaborators (
   added_at timestamp with time zone DEFAULT now(),
   permission_level character varying DEFAULT 'view'::character varying,
   invited_by uuid,
-  CONSTRAINT collection_collaborators_pkey PRIMARY KEY (user_id, collection_id),
+  CONSTRAINT collection_collaborators_pkey PRIMARY KEY (collection_id, user_id),
   CONSTRAINT collection_collaborators_collection_id_fkey FOREIGN KEY (collection_id) REFERENCES public.collections(id),
   CONSTRAINT collection_collaborators_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
   CONSTRAINT collection_collaborators_invited_by_fkey FOREIGN KEY (invited_by) REFERENCES auth.users(id)
@@ -77,7 +77,7 @@ CREATE TABLE public.collection_sources (
   added_by uuid,
   note text,
   added_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT collection_sources_pkey PRIMARY KEY (source_id, collection_id),
+  CONSTRAINT collection_sources_pkey PRIMARY KEY (collection_id, source_id),
   CONSTRAINT collection_sources_collection_id_fkey FOREIGN KEY (collection_id) REFERENCES public.collections(id),
   CONSTRAINT collection_sources_source_id_fkey FOREIGN KEY (source_id) REFERENCES public.sources(id),
   CONSTRAINT collection_sources_added_by_fkey FOREIGN KEY (added_by) REFERENCES auth.users(id)
@@ -121,6 +121,17 @@ CREATE TABLE public.concepts (
   created_at timestamp with time zone DEFAULT now(),
   CONSTRAINT concepts_pkey PRIMARY KEY (id)
 );
+CREATE TABLE public.content_chunks (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  source_id uuid NOT NULL,
+  chunk_index integer NOT NULL,
+  content text NOT NULL,
+  embedding USER-DEFINED,
+  metadata jsonb DEFAULT '{}'::jsonb,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT content_chunks_pkey PRIMARY KEY (id),
+  CONSTRAINT content_chunks_source_id_fkey FOREIGN KEY (source_id) REFERENCES public.sources(id)
+);
 CREATE TABLE public.contradictions (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   source_a_id uuid NOT NULL,
@@ -138,11 +149,38 @@ CREATE TABLE public.contradictions (
   CONSTRAINT contradictions_source_b_id_fkey FOREIGN KEY (source_b_id) REFERENCES public.sources(id),
   CONSTRAINT contradictions_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
+CREATE TABLE public.digest_emails (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  digest_type text NOT NULL,
+  period_start timestamp with time zone NOT NULL,
+  period_end timestamp with time zone NOT NULL,
+  content text NOT NULL,
+  source_count integer DEFAULT 0,
+  sent_at timestamp with time zone DEFAULT now(),
+  metadata jsonb DEFAULT '{}'::jsonb,
+  CONSTRAINT digest_emails_pkey PRIMARY KEY (id),
+  CONSTRAINT digest_emails_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.email_captures (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  email_from text NOT NULL,
+  email_subject text,
+  email_body text NOT NULL,
+  source_id uuid,
+  processed boolean DEFAULT false,
+  captured_at timestamp with time zone DEFAULT now(),
+  metadata jsonb DEFAULT '{}'::jsonb,
+  CONSTRAINT email_captures_pkey PRIMARY KEY (id),
+  CONSTRAINT email_captures_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
+  CONSTRAINT email_captures_source_id_fkey FOREIGN KEY (source_id) REFERENCES public.sources(id)
+);
 CREATE TABLE public.follows (
   follower_id uuid NOT NULL,
   following_id uuid NOT NULL,
   created_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT follows_pkey PRIMARY KEY (follower_id, following_id),
+  CONSTRAINT follows_pkey PRIMARY KEY (following_id, follower_id),
   CONSTRAINT follows_follower_id_fkey FOREIGN KEY (follower_id) REFERENCES auth.users(id),
   CONSTRAINT follows_following_id_fkey FOREIGN KEY (following_id) REFERENCES auth.users(id)
 );
@@ -245,7 +283,7 @@ CREATE TABLE public.question_sources (
   relevance_note text,
   answers_question boolean DEFAULT false,
   added_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT question_sources_pkey PRIMARY KEY (source_id, question_id),
+  CONSTRAINT question_sources_pkey PRIMARY KEY (question_id, source_id),
   CONSTRAINT question_sources_question_id_fkey FOREIGN KEY (question_id) REFERENCES public.research_questions(id),
   CONSTRAINT question_sources_source_id_fkey FOREIGN KEY (source_id) REFERENCES public.sources(id)
 );
@@ -282,7 +320,7 @@ CREATE TABLE public.source_concepts (
   relevance double precision DEFAULT 0.5,
   mentions integer DEFAULT 1,
   context text,
-  CONSTRAINT source_concepts_pkey PRIMARY KEY (concept_id, source_id),
+  CONSTRAINT source_concepts_pkey PRIMARY KEY (source_id, concept_id),
   CONSTRAINT source_concepts_source_id_fkey FOREIGN KEY (source_id) REFERENCES public.sources(id),
   CONSTRAINT source_concepts_concept_id_fkey FOREIGN KEY (concept_id) REFERENCES public.concepts(id)
 );
@@ -305,7 +343,7 @@ CREATE TABLE public.source_likes (
   source_id uuid NOT NULL,
   user_id uuid NOT NULL,
   created_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT source_likes_pkey PRIMARY KEY (source_id, user_id),
+  CONSTRAINT source_likes_pkey PRIMARY KEY (user_id, source_id),
   CONSTRAINT source_likes_source_id_fkey FOREIGN KEY (source_id) REFERENCES public.sources(id),
   CONSTRAINT source_likes_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
@@ -334,6 +372,12 @@ CREATE TABLE public.sources (
   tags ARRAY DEFAULT '{}'::text[],
   metadata jsonb DEFAULT '{}'::jsonb,
   notes text,
+  audio_url text,
+  audio_duration integer,
+  transcript text,
+  youtube_id text,
+  youtube_title text,
+  youtube_channel text,
   CONSTRAINT sources_pkey PRIMARY KEY (id),
   CONSTRAINT sources_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
@@ -376,6 +420,20 @@ CREATE TABLE public.user_follows (
   CONSTRAINT user_follows_pkey PRIMARY KEY (follower_id, following_id),
   CONSTRAINT user_follows_follower_id_fkey FOREIGN KEY (follower_id) REFERENCES auth.users(id),
   CONSTRAINT user_follows_following_id_fkey FOREIGN KEY (following_id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.user_preferences (
+  user_id uuid NOT NULL,
+  digest_frequency text DEFAULT 'weekly'::text,
+  digest_day integer DEFAULT 1,
+  digest_time time without time zone DEFAULT '09:00:00'::time without time zone,
+  digest_enabled boolean DEFAULT true,
+  email_notifications boolean DEFAULT true,
+  capture_email text,
+  preferences jsonb DEFAULT '{}'::jsonb,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT user_preferences_pkey PRIMARY KEY (user_id),
+  CONSTRAINT user_preferences_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
 CREATE TABLE public.user_profiles (
   user_id uuid NOT NULL,

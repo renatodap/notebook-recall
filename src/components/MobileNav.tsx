@@ -38,10 +38,10 @@ export default function MobileNav() {
       activeIcon: '🛠️'
     },
     {
-      name: 'More',
-      path: '/profile',
-      icon: '👤',
-      activeIcon: '👤'
+      name: 'Settings',
+      path: '/settings',
+      icon: '⚙️',
+      activeIcon: '⚙️'
     },
   ]
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import MobileNav from '@/components/MobileNav'
 
 export default function AnalyticsPage() {
   const [analytics, setAnalytics] = useState<any>(null)
@@ -27,22 +28,31 @@ export default function AnalyticsPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <p>Loading analytics...</p>
+      <div className="min-h-screen bg-gray-50 pb-20 md:pb-0 md:pl-64">
+        <MobileNav />
+        <div className="container mx-auto px-4 py-8">
+          <p>Loading analytics...</p>
+        </div>
       </div>
     )
   }
 
   if (!analytics) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <p>Failed to load analytics</p>
+      <div className="min-h-screen bg-gray-50 pb-20 md:pb-0 md:pl-64">
+        <MobileNav />
+        <div className="container mx-auto px-4 py-8">
+          <p>Failed to load analytics</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gray-50 pb-20 md:pb-0 md:pl-64">
+      <MobileNav />
+
+      <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Analytics Dashboard</h1>
         <div className="flex gap-4 items-center">
@@ -227,6 +237,7 @@ export default function AnalyticsPage() {
           </div>
         </div>
       )}
+      </div>
     </div>
   )
 }

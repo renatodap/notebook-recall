@@ -6,8 +6,17 @@ import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
 import SourceCard from '@/components/SourceCard'
 import Loading from '@/components/ui/Loading'
+import MobileNav from '@/components/MobileNav'
 
 type SearchMode = 'semantic' | 'keyword' | 'hybrid'
+
+interface ParsedQueryInfo {
+  keywords: string[]
+  timeRange?: { start: Date; end: Date; relative?: string }
+  contentType?: string
+  topics?: string[]
+  intent: string
+}
 
 export default function SearchPage() {
   const [query, setQuery] = useState('')
@@ -15,6 +24,8 @@ export default function SearchPage() {
   const [loading, setLoading] = useState(false)
   const [searched, setSearched] = useState(false)
   const [searchMode, setSearchMode] = useState<SearchMode>('hybrid')
+  const [parsedQuery, setParsedQuery] = useState<ParsedQueryInfo | null>(null)
+  const [useConversational, setUseConversational] = useState(true)
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -24,17 +35,62 @@ export default function SearchPage() {
     setSearched(true)
 
     try {
+      let searchQuery = query
+      let parsedInfo: ParsedQueryInfo | null = null
+
+      // Use conversational parsing for natural language queries
+      if (useConversational && query.length > 10) {
+        try {
+          const parseResponse = await fetch('/api/search/parse', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query })
+          })
+
+          if (parseResponse.ok) {
+            const parsed = await parseResponse.json()
+            parsedInfo = parsed
+            setParsedQuery(parsed)
+
+            // Use extracted keywords for better search
+            if (parsed.keywords && parsed.keywords.length > 0) {
+              searchQuery = parsed.keywords.join(' ')
+            }
+          }
+        } catch (err) {
+          console.log('Conversational parsing failed, using raw query')
+        }
+      }
+
       const response = await fetch('/api/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          query,
+          query: searchQuery,
           mode: searchMode,
         }),
       })
 
       const data = await response.json()
-      setResults(data.results || [])
+      let finalResults = data.results || []
+
+      // Apply additional filters from parsed query
+      if (parsedInfo) {
+        if (parsedInfo.timeRange) {
+          finalResults = finalResults.filter((r: any) => {
+            const created = new Date(r.source?.created_at || r.created_at)
+            return created >= parsedInfo.timeRange!.start && created <= parsedInfo.timeRange!.end
+          })
+        }
+
+        if (parsedInfo.contentType) {
+          finalResults = finalResults.filter((r: any) =>
+            (r.source?.content_type || r.content_type) === parsedInfo.contentType
+          )
+        }
+      }
+
+      setResults(finalResults)
     } catch (error) {
       console.error('Search error:', error)
       setResults([])
@@ -44,31 +100,69 @@ export default function SearchPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b border-gray-200 mb-8">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <Link href="/dashboard">
-            <Button variant="ghost">← Back to Dashboard</Button>
-          </Link>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-gray-50 pb-20 md:pb-0 md:pl-64">
+      <MobileNav />
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">Search Your Knowledge</h1>
+          <div className="flex justify-between items-center mb-4">
+            <h1 className="text-3xl font-bold text-gray-900">Search Your Knowledge</h1>
+            <Link href="/dashboard" className="text-blue-600 hover:underline text-sm">
+              ← Dashboard
+            </Link>
+          </div>
 
           <form onSubmit={handleSearch} className="space-y-4">
-            <div className="flex gap-2">
-              <Input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="What did I learn about AI in August?"
-                className="flex-1"
-                disabled={loading}
-              />
-              <Button type="submit" loading={loading}>
-                Search
-              </Button>
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <Input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="What did I learn about AI last month?"
+                  className="flex-1"
+                  disabled={loading}
+                />
+                <Button type="submit" loading={loading}>
+                  Search
+                </Button>
+              </div>
+
+              {/* Conversational toggle */}
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={useConversational}
+                  onChange={(e) => setUseConversational(e.target.checked)}
+                  className="rounded"
+                />
+                <span className="text-gray-700">
+                  🗣️ Use conversational search (understands time, topics, intent)
+                </span>
+              </label>
+
+              {/* Show parsed query info */}
+              {parsedQuery && (
+                <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3 text-sm">
+                  <p className="font-semibold text-indigo-900 mb-2">🤖 Query understood as:</p>
+                  <div className="space-y-1 text-indigo-800">
+                    {parsedQuery.keywords.length > 0 && (
+                      <p><strong>Keywords:</strong> {parsedQuery.keywords.join(', ')}</p>
+                    )}
+                    {parsedQuery.timeRange?.relative && (
+                      <p><strong>Time:</strong> {parsedQuery.timeRange.relative}</p>
+                    )}
+                    {parsedQuery.topics && parsedQuery.topics.length > 0 && (
+                      <p><strong>Topics:</strong> {parsedQuery.topics.join(', ')}</p>
+                    )}
+                    {parsedQuery.intent && (
+                      <p><strong>Intent:</strong> {parsedQuery.intent}</p>
+                    )}
+                    {parsedQuery.contentType && (
+                      <p><strong>Type:</strong> {parsedQuery.contentType}</p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Search Mode Selector */}

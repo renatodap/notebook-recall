@@ -1,6 +1,6 @@
 // Popup script for Recall Notebook extension
 
-const API_URL = 'https://notebook-recall.vercel.app/'; // Change to production URL
+const API_URL = 'http://localhost:3000'; // Change to your production URL when deployed
 
 // Initialize popup
 document.addEventListener('DOMContentLoaded', async () => {

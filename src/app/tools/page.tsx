@@ -23,7 +23,7 @@ export default async function ToolsPage() {
     },
     {
       name: 'Synthesis',
-      description: 'Generate research reports',
+      description: 'Generate research reports & reviews',
       icon: '📝',
       href: '/synthesis',
       color: 'bg-purple-500',
@@ -50,29 +50,8 @@ export default async function ToolsPage() {
       color: 'bg-pink-500',
     },
     {
-      name: 'Literature Review',
-      description: 'Academic analysis',
-      icon: '📚',
-      href: '/literature-review',
-      color: 'bg-indigo-500',
-    },
-    {
-      name: 'Methodology',
-      description: 'Compare research methods',
-      icon: '🔬',
-      href: '/methodology',
-      color: 'bg-teal-500',
-    },
-    {
-      name: 'Research Questions',
-      description: 'Track your inquiries',
-      icon: '❓',
-      href: '/research-questions',
-      color: 'bg-red-500',
-    },
-    {
       name: 'Analytics',
-      description: 'Usage insights',
+      description: 'Usage insights & productivity',
       icon: '📊',
       href: '/analytics',
       color: 'bg-yellow-500',
@@ -86,14 +65,14 @@ export default async function ToolsPage() {
     },
     {
       name: 'Search',
-      description: 'Semantic search',
+      description: 'Semantic & keyword search',
       icon: '🔍',
       href: '/search',
       color: 'bg-gray-500',
     },
     {
       name: 'Workspaces',
-      description: 'Collaborative spaces',
+      description: 'Team collaboration',
       icon: '👥',
       href: '/workspaces',
       color: 'bg-violet-500',
@@ -137,7 +116,7 @@ export default async function ToolsPage() {
         {/* Quick Stats */}
         <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-white rounded-xl p-4 border border-gray-200">
-            <div className="text-2xl font-bold text-indigo-600 mb-1">12</div>
+            <div className="text-2xl font-bold text-indigo-600 mb-1">{tools.length}</div>
             <div className="text-sm text-gray-600">AI Tools</div>
           </div>
           <div className="bg-white rounded-xl p-4 border border-gray-200">

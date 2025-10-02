@@ -12,7 +12,7 @@ export default function SynthesisGenerator({ sourceIds, onClose }: SynthesisGene
   const router = useRouter()
   const [title, setTitle] = useState('')
   const [focus, setFocus] = useState('')
-  const [reportType, setReportType] = useState<'literature_review' | 'comparative' | 'thematic' | 'chronological'>('literature_review')
+  const [reportType, setReportType] = useState<'literature_review' | 'comparative' | 'thematic' | 'chronological' | 'systematic_review' | 'narrative_review' | 'meta_analysis' | 'scoping_review'>('literature_review')
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState('')
 
@@ -122,16 +122,28 @@ export default function SynthesisGenerator({ sourceIds, onClose }: SynthesisGene
               onChange={(e) => setReportType(e.target.value as any)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
-              <option value="literature_review">Literature Review</option>
-              <option value="comparative">Comparative Analysis</option>
-              <option value="thematic">Thematic Analysis</option>
-              <option value="chronological">Chronological Analysis</option>
+              <optgroup label="General Synthesis">
+                <option value="literature_review">Literature Review</option>
+                <option value="comparative">Comparative Analysis</option>
+                <option value="thematic">Thematic Analysis</option>
+                <option value="chronological">Chronological Analysis</option>
+              </optgroup>
+              <optgroup label="Academic Reviews">
+                <option value="systematic_review">Systematic Review (PRISMA)</option>
+                <option value="narrative_review">Narrative Review</option>
+                <option value="meta_analysis">Meta-Analysis</option>
+                <option value="scoping_review">Scoping Review</option>
+              </optgroup>
             </select>
             <p className="text-xs text-gray-500 mt-1">
               {reportType === 'literature_review' && 'Comprehensive review with themes, findings, and gaps'}
               {reportType === 'comparative' && 'Compare and contrast sources'}
               {reportType === 'thematic' && 'Identify recurring themes across sources'}
               {reportType === 'chronological' && 'Show evolution of ideas over time'}
+              {reportType === 'systematic_review' && 'Rigorous review following PRISMA guidelines'}
+              {reportType === 'narrative_review' && 'Traditional narrative synthesis for publication'}
+              {reportType === 'meta_analysis' && 'Quantitative synthesis with statistical analysis'}
+              {reportType === 'scoping_review' && 'Map key concepts and identify research gaps'}
             </p>
           </div>
 

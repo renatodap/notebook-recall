@@ -1,0 +1,82 @@
+{
+  "name": "Recall Notebook - AI Knowledge Base",
+  "short_name": "Recall",
+  "description": "Capture, organize, and recall everything with AI-powered summaries and semantic search",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#F9FAFB",
+  "theme_color": "#4F46E5",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "education", "utilities"],
+  "shortcuts": [
+    {
+      "name": "Add Source",
+      "short_name": "Add",
+      "description": "Quickly add new content",
+      "url": "/add",
+      "icons": [
+        {
+          "src": "/icon-192.svg",
+          "sizes": "192x192",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "Search",
+      "short_name": "Search",
+      "description": "Search your knowledge",
+      "url": "/search",
+      "icons": [
+        {
+          "src": "/icon-192.svg",
+          "sizes": "192x192",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "AI Chat",
+      "short_name": "Chat",
+      "description": "Chat with AI assistant",
+      "url": "/chat",
+      "icons": [
+        {
+          "src": "/icon-192.svg",
+          "sizes": "192x192",
+          "type": "image/svg+xml"
+        }
+      ]
+    }
+  ],
+  "share_target": {
+    "action": "/api/share-target",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [
+        {
+          "name": "file",
+          "accept": ["image/*", "application/pdf", "text/*"]
+        }
+      ]
+    }
+  }
+}

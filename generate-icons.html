@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Generate PWA Icons</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 40px;
+      background: #f3f4f6;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    button {
+      background: #6366f1;
+      color: white;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 10px 0;
+    }
+    button:hover {
+      background: #4f46e5;
+    }
+    canvas {
+      border: 1px solid #ddd;
+      margin: 10px 0;
+      display: block;
+    }
+    .success {
+      color: #10b981;
+      margin: 10px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Generate PWA & Extension Icons</h1>
+    <p>Click the buttons below to generate and download icon files.</p>
+
+    <h2 style="margin-top: 30px;">PWA Icons (save to /public)</h2>
+    <button onclick="generateIcon(192, 'pwa')">Generate icon-192.png</button>
+    <div id="successpwa192" class="success"></div>
+    <canvas id="canvaspwa192" width="192" height="192"></canvas>
+
+    <button onclick="generateIcon(512, 'pwa')">Generate icon-512.png</button>
+    <div id="successpwa512" class="success"></div>
+    <canvas id="canvaspwa512" width="512" height="512"></canvas>
+
+    <h2 style="margin-top: 30px;">Browser Extension Icons (save to /browser-extension/icons)</h2>
+    <button onclick="generateIcon(16, 'ext')">Generate icon16.png</button>
+    <div id="successext16" class="success"></div>
+    <canvas id="canvasext16" width="16" height="16"></canvas>
+
+    <button onclick="generateIcon(48, 'ext')">Generate icon48.png</button>
+    <div id="successext48" class="success"></div>
+    <canvas id="canvasext48" width="48" height="48"></canvas>
+
+    <button onclick="generateIcon(128, 'ext')">Generate icon128.png</button>
+    <div id="successext128" class="success"></div>
+    <canvas id="canvasext128" width="128" height="128"></canvas>
+
+    <p style="margin-top: 30px; color: #6b7280; font-size: 14px;">
+      <strong>Instructions:</strong><br>
+      1. Click each button to download the icon<br>
+      2. PWA icons go in <code>/public</code> directory<br>
+      3. Extension icons go in <code>/browser-extension/icons</code> directory
+    </p>
+  </div>
+
+  <script>
+    function generateIcon(size, type) {
+      const canvas = document.getElementById(`canvas${type}${size}`);
+      const ctx = canvas.getContext('2d');
+
+      // Background
+      ctx.fillStyle = '#6366f1';
+      ctx.fillRect(0, 0, size, size);
+
+      // Text "RN" - adjust font size for small icons
+      ctx.fillStyle = 'white';
+      const fontSize = size < 32 ? size * 0.5 : size * 0.25;
+      ctx.font = `bold ${fontSize}px Arial, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('RN', size / 2, size / 2);
+
+      // Dot below (skip for very small icons)
+      if (size >= 48) {
+        ctx.beginPath();
+        ctx.arc(size / 2, size * 0.7, size * 0.04, 0, 2 * Math.PI);
+        ctx.fill();
+      }
+
+      // Download
+      const filename = type === 'pwa' ? `icon-${size}.png` : `icon${size}.png`;
+
+      canvas.toBlob(function(blob) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        document.getElementById(`success${type}${size}`).textContent = `✓ ${filename} downloaded!`;
+      });
+    }
+  </script>
+</body>
+</html>

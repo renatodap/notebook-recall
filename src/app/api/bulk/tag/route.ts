@@ -82,8 +82,8 @@ export async function POST(request: NextRequest) {
     // Create new tag entries (avoid duplicates)
     const newTags: Array<{ source_id: string; tag_name: string }> = [];
 
-    validSourceIds.forEach((sourceId) => {
-      normalizedTags.forEach((tag) => {
+    validSourceIds.forEach((sourceId: string) => {
+      normalizedTags.forEach((tag: string) => {
         const key = `${sourceId}:${tag}`;
         if (!existingSet.has(key)) {
           newTags.push({

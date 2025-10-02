@@ -14,11 +14,17 @@ Save web pages to your Recall Notebook with one click!
 
 ### Chrome / Edge
 
-1. Open Chrome/Edge and go to `chrome://extensions/`
-2. Enable "Developer mode" (toggle in top-right)
-3. Click "Load unpacked"
-4. Select the `browser-extension` folder
-5. Click the extension icon and configure your API token
+1. **Generate Icons** (if not already done):
+   - Open `generate-icons.html` in your browser (from project root)
+   - Download all 3 extension icons (16px, 48px, 128px)
+   - Save them to `browser-extension/icons/` folder
+
+2. **Install Extension**:
+   - Open Chrome/Edge and go to `chrome://extensions/`
+   - Enable "Developer mode" (toggle in top-right)
+   - Click "Load unpacked"
+   - Select the `browser-extension` folder
+   - Extension is now ready!
 
 ### Firefox
 
@@ -28,11 +34,16 @@ Save web pages to your Recall Notebook with one click!
 
 ## Configuration
 
-1. Click the extension icon
-2. Click "⚙️ Extension Settings"
-3. Enter your Recall Notebook API token
-   - Get your token from https://notebook-recall.vercel.app/settings
-4. Save settings
+**Already configured for localhost!**
+
+The extension is pre-configured to work with `http://localhost:3000`.
+
+If you deploy to production, update `API_URL` in `popup.js`:
+```javascript
+const API_URL = 'https://your-production-url.com';
+```
+
+**Note:** The extension uses Supabase authentication from your browser session, so you must be logged into the app in the same browser.
 
 ## Usage
 

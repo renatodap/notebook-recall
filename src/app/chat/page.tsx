@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import MobileNav from '@/components/MobileNav'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -87,13 +88,16 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Research Assistant Chat</h1>
-        <Link href="/dashboard" className="text-blue-600 hover:underline">
-          ← Dashboard
-        </Link>
-      </div>
+    <div className="min-h-screen bg-gray-50 pb-20 md:pb-0 md:pl-64">
+      <MobileNav />
+
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">Research Assistant Chat</h1>
+          <Link href="/dashboard" className="text-blue-600 hover:underline">
+            ← Dashboard
+          </Link>
+        </div>
 
       <div className="grid grid-cols-4 gap-6 h-[calc(100vh-200px)]">
         {/* Sidebar - Sessions */}
@@ -210,6 +214,7 @@ export default function ChatPage() {
             </p>
           </div>
         </div>
+      </div>
       </div>
     </div>
   )

@@ -1,6 +1,9 @@
 import { redirect } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase/server'
 import Link from 'next/link'
+import MobileNav from '@/components/MobileNav'
+
+export const dynamic = 'force-dynamic'
 
 export default async function SynthesisListPage() {
   const supabase = await createServerClient()
@@ -18,16 +21,18 @@ export default async function SynthesisListPage() {
     .order('created_at', { ascending: false })
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-20 md:pb-0 md:pl-64">
+      <MobileNav />
+
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
           <Link href="/dashboard" className="text-blue-600 hover:underline text-sm mb-2 inline-block">
             ← Back to Dashboard
           </Link>
-          <h1 className="text-3xl font-bold text-gray-900">Synthesis Reports</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Synthesis & Literature Reviews</h1>
           <p className="text-gray-600 mt-2">
-            AI-generated literature reviews and analyses
+            AI-generated research reports, literature reviews, and thematic analyses
           </p>
         </div>
 

@@ -1,9 +1,12 @@
 import { redirect } from 'next/navigation'
-import { createRouteHandlerClient } from '@/lib/supabase/server'
+import { createServerClient } from '@/lib/supabase/server'
 import Link from 'next/link'
+import MobileNav from '@/components/MobileNav'
+
+export const dynamic = 'force-dynamic'
 
 export default async function PublishingPage() {
-  const supabase = await createRouteHandlerClient()
+  const supabase = await createServerClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -17,13 +20,16 @@ export default async function PublishingPage() {
     .order('created_at', { ascending: false })
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Publishing Dashboard</h1>
-        <Link href="/dashboard" className="text-blue-600 hover:underline">
-          ← Back to Dashboard
-        </Link>
-      </div>
+    <div className="min-h-screen bg-gray-50 pb-20 md:pb-0 md:pl-64">
+      <MobileNav />
+
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold">Publishing Dashboard</h1>
+          <Link href="/dashboard" className="text-blue-600 hover:underline">
+            ← Back to Dashboard
+          </Link>
+        </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         <div className="bg-white p-6 rounded-lg shadow">
@@ -89,6 +95,7 @@ export default async function PublishingPage() {
           <div>✅ Book Outline Generator</div>
           <div>✅ Literature Review Templates</div>
         </div>
+      </div>
       </div>
     </div>
   )
