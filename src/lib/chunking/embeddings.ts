@@ -162,6 +162,13 @@ export async function backfillChunks(
       throw fetchError;
     }
 
+    // Type assertion for sources
+    type SourceForChunking = {
+      id: string;
+      original_content: string;
+      content_type: string;
+    };
+
     if (!sources || sources.length === 0) {
       return {
         sources_processed: 0,
@@ -173,12 +180,8 @@ export async function backfillChunks(
     }
 
     // Filter sources that don't have chunks yet
-    const sourcesNeedingChunks: Array<{
-      id: string;
-      original_content: string;
-      content_type: string;
-    }> = [];
-    for (const source of sources) {
+    const sourcesNeedingChunks: SourceForChunking[] = [];
+    for (const source of (sources as SourceForChunking[])) {
       const { count } = await supabase
         .from('content_chunks')
         .select('*', { count: 'exact', head: true })
