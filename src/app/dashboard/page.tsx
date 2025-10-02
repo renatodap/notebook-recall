@@ -3,6 +3,7 @@ import { createServerClient } from '@/lib/supabase/server'
 import MobileNav from '@/components/MobileNav'
 import SourcesView from '@/components/SourcesView'
 import UnifiedDropZone from '@/components/capture/UnifiedDropZone'
+import PARADashboard from '@/components/para/PARADashboard'
 import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
@@ -53,6 +54,9 @@ export default async function DashboardPage() {
         <div className="mb-12">
           <UnifiedDropZone />
         </div>
+
+        {/* PARA Organization */}
+        <PARADashboard userId={user.id} />
 
         {/* Sources Section */}
         <div className="mb-6">

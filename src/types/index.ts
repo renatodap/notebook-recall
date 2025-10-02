@@ -10,6 +10,8 @@ export interface Source {
   url: string | null;
   created_at: string;
   updated_at: string;
+  archived?: boolean;
+  archived_at?: string | null;
 }
 
 export interface Summary {
@@ -673,4 +675,153 @@ export interface Recommendation {
 export interface RecommendationsResponse {
   recommendations: Recommendation[];
   total: number;
+}
+
+// ============================================================================
+// PARA SYSTEM - Types
+// ============================================================================
+
+// Projects: Short-term efforts with specific goals and deadlines
+export interface Project {
+  id: string;
+  user_id: string;
+  name: string;
+  description: string | null;
+  goal: string | null;
+  deadline: string | null;
+  status: 'active' | 'completed' | 'paused' | 'archived';
+  metadata: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
+// Areas: Long-term responsibilities and areas of focus
+export interface Area {
+  id: string;
+  user_id: string;
+  name: string;
+  description: string | null;
+  standard: string | null; // The standard of success for this area
+  review_frequency: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
+  metadata: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
+// Resources: Topics of interest and reference materials
+export interface Resource {
+  id: string;
+  user_id: string;
+  name: string;
+  description: string | null;
+  category: string | null; // e.g., 'reference', 'learning', 'inspiration'
+  metadata: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
+// Junction table types
+export interface ProjectSource {
+  project_id: string;
+  source_id: string;
+  added_at: string;
+  note: string | null;
+}
+
+export interface AreaSource {
+  area_id: string;
+  source_id: string;
+  added_at: string;
+  note: string | null;
+}
+
+export interface ResourceSource {
+  resource_id: string;
+  source_id: string;
+  added_at: string;
+  note: string | null;
+}
+
+// Extended Source type with PARA and archive info
+export interface SourceWithPARA extends Source {
+  archived: boolean;
+  archived_at: string | null;
+  projects?: Project[];
+  areas?: Area[];
+  resources?: Resource[];
+}
+
+// PARA Stats
+export interface PARAStats {
+  total_sources: number;
+  archived_sources: number;
+  unassigned_sources: number;
+  project_count: number;
+  area_count: number;
+  resource_count: number;
+}
+
+// PARA API Request/Response types
+export interface CreateProjectRequest {
+  name: string;
+  description?: string;
+  goal?: string;
+  deadline?: string;
+  status?: 'active' | 'completed' | 'paused' | 'archived';
+}
+
+export interface CreateAreaRequest {
+  name: string;
+  description?: string;
+  standard?: string;
+  review_frequency?: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
+}
+
+export interface CreateResourceRequest {
+  name: string;
+  description?: string;
+  category?: string;
+}
+
+export interface AddSourceToPARARequest {
+  source_id: string;
+  project_ids?: string[];
+  area_ids?: string[];
+  resource_ids?: string[];
+}
+
+export interface RemoveSourceFromPARARequest {
+  source_id: string;
+  project_id?: string;
+  area_id?: string;
+  resource_id?: string;
+}
+
+export interface ArchiveSourceRequest {
+  source_id: string;
+  archived: boolean;
+}
+
+export interface GetSourcePARAStatusResponse {
+  source_id: string;
+  archived: boolean;
+  projects: { id: string; name: string }[];
+  areas: { id: string; name: string }[];
+  resources: { id: string; name: string }[];
+  has_para_assignment: boolean;
+}
+
+export interface ProjectWithSources extends Project {
+  source_count: number;
+  sources?: SourceWithSummary[];
+}
+
+export interface AreaWithSources extends Area {
+  source_count: number;
+  sources?: SourceWithSummary[];
+}
+
+export interface ResourceWithSources extends Resource {
+  source_count: number;
+  sources?: SourceWithSummary[];
 }
