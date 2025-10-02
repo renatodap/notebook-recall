@@ -15,7 +15,7 @@ export async function GET() {
     }
 
     // Use the database function to get stats
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .rpc('get_para_stats', { p_user_id: session.user.id })
       .single();
 
