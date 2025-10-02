@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createRouteHandlerClient } from '@/lib/supabase/server';
 import type { CreateAreaRequest, Area } from '@/types';
 
 export const dynamic = 'force-dynamic';
@@ -8,7 +7,7 @@ export const dynamic = 'force-dynamic';
 // GET /api/para/areas - Get all areas for the authenticated user
 export async function GET() {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
+    const supabase = await createRouteHandlerClient();
 
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
@@ -40,7 +39,7 @@ export async function GET() {
 // POST /api/para/areas - Create a new area
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
+    const supabase = await createRouteHandlerClient();
 
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {

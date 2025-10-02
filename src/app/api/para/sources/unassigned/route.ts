@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createRouteHandlerClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
 
 // GET /api/para/sources/unassigned - Get all unassigned sources
 export async function GET() {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
+    const supabase = await createRouteHandlerClient();
 
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {

@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createRouteHandlerClient } from '@/lib/supabase/server';
 import type { PARAStats } from '@/types';
 
 export const dynamic = 'force-dynamic';
@@ -8,7 +7,7 @@ export const dynamic = 'force-dynamic';
 // GET /api/para/stats - Get PARA statistics for the authenticated user
 export async function GET() {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
+    const supabase = await createRouteHandlerClient();
 
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
