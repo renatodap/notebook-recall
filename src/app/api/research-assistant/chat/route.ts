@@ -59,46 +59,78 @@ export async function POST(request: NextRequest) {
       conversationHistory = session?.messages || []
     }
 
-    // Get relevant sources if context provided
+    // Get relevant sources
     let sourceContext = ''
     let sourcesUsed: string[] = []
 
-    if (context_source_ids && context_source_ids.length > 0) {
+    // Check if user is asking about their sources
+    const isAskingAboutSources = /summarize|source|recent|paper|article|document|what did i|what have i/i.test(message)
+
+    let sourceIds = context_source_ids
+
+    // If no explicit source IDs provided but user is asking about sources, get recent ones
+    if (!sourceIds && isAskingAboutSources) {
+      const { data: recentSources } = await (supabase as any)
+        .from('sources')
+        .select('id')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(10)
+
+      if (recentSources && recentSources.length > 0) {
+        sourceIds = recentSources.map((s: any) => s.id)
+      }
+    }
+
+    // Retrieve source content
+    if (sourceIds && sourceIds.length > 0) {
       const { data: sources } = await (supabase as any)
         .from('sources')
-        .select('id, title, summaries (summary_text)')
-        .in('id', context_source_ids)
+        .select(`
+          id,
+          title,
+          content_type,
+          original_content,
+          summaries (summary_text, key_topics, key_actions)
+        `)
+        .in('id', sourceIds)
         .eq('user_id', user.id)
         .limit(10)
 
       if (sources && sources.length > 0) {
-        sourceContext = '\n\nRelevant Sources:\n' +
-          sources.map((s: any, idx: number) =>
-            `[Source ${idx + 1}: ${s.title}]\n${s.summaries?.[0]?.summary_text || ''}`
-          ).join('\n\n')
+        sourceContext = '\n\nUser\'s Sources:\n' +
+          sources.map((s: any, idx: number) => {
+            const summary = s.summaries?.[0]
+            return `[Source ${idx + 1}: ${s.title}]
+Content Type: ${s.content_type}
+Summary: ${summary?.summary_text || 'No summary available'}
+${summary?.key_topics ? `Key Topics: ${summary.key_topics.join(', ')}` : ''}
+${s.original_content ? `\nFull Content:\n${s.original_content.substring(0, 2000)}${s.original_content.length > 2000 ? '...' : ''}` : ''}`
+          }).join('\n\n---\n\n')
 
         sourcesUsed = sources.map((s: any) => s.id)
       }
     }
 
     // Build conversation context
-    const systemPrompt = `You are an expert research assistant helping an academic researcher. You can:
+    const systemPrompt = `You are an expert research assistant helping an academic researcher. You have access to the user's research sources and can help them understand, analyze, and synthesize their materials.
 
-1. **Answer Research Questions**: Provide detailed, accurate answers with citations
-2. **Analyze Sources**: Summarize, compare, and critique research papers
-3. **Suggest Directions**: Recommend research questions, methodologies, and areas to explore
-4. **Writing Help**: Assist with academic writing, citations, and structuring papers
-5. **Methodology Advice**: Help design studies and choose appropriate methods
+Your capabilities:
+1. **Analyze & Summarize**: Provide clear summaries and insights from the user's sources
+2. **Answer Questions**: Use the user's sources to answer research questions
+3. **Compare & Contrast**: Identify similarities, differences, and connections between sources
+4. **Suggest Directions**: Recommend research questions, methodologies, and areas to explore
+5. **Writing Help**: Assist with academic writing, citations, and structuring papers
 6. **Literature Synthesis**: Identify themes, gaps, and connections across sources
 
 Always:
-- Be precise and evidence-based
-- Cite sources when using them (e.g., [Source 1])
-- Ask clarifying questions when needed
-- Suggest next steps or related questions
+- Use the provided sources to answer questions accurately
+- Cite sources when referencing them (e.g., [Source 1])
+- Be specific and evidence-based in your responses
+- If the user asks about "my source" or "recent sources", refer to the sources provided below
 - Be supportive and encouraging
 
-${sourceContext}`
+${sourceContext || '\n\nNote: No sources are currently available. If the user asks about their sources, let them know they need to add sources first.'}`
 
     // Build messages array for Claude
     const messages = [
