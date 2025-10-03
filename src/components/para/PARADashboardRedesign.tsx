@@ -96,7 +96,14 @@ export default function PARADashboardRedesign({
 
     setCreating(true);
     try {
-      const endpoint = `/api/para/${createType}s`;
+      // Map singular to plural for API endpoint
+      const pluralMap: Record<string, string> = {
+        'project': 'projects',
+        'area': 'areas',
+        'resource': 'resources'
+      };
+      const endpoint = `/api/para/${pluralMap[createType]}`;
+
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -104,7 +111,7 @@ export default function PARADashboardRedesign({
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
         throw new Error(errorData.error || `Failed to create ${createType}`);
       }
 
@@ -281,60 +288,107 @@ export default function PARADashboardRedesign({
 
         {/* Create Modal */}
         {showCreateModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <span className="text-3xl">{getCategoryIcon(createType)}</span>
-                <span>Create New {createType.charAt(0).toUpperCase() + createType.slice(1)}</span>
-              </h2>
-              <form onSubmit={handleCreate}>
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+            onClick={() => !creating && setShowCreateModal(false)}
+          >
+            <div
+              className="bg-white rounded-lg max-w-lg w-full shadow-xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                    <span className="text-4xl">{getCategoryIcon(createType)}</span>
+                    <span>Create New {createType.charAt(0).toUpperCase() + createType.slice(1)}</span>
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateModal(false)}
+                    disabled={creating}
+                    className="text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                <p className="text-sm text-gray-600 mt-2">
+                  {createType === 'project' && 'Short-term goals with specific outcomes and deadlines'}
+                  {createType === 'area' && 'Long-term responsibilities that require ongoing attention'}
+                  {createType === 'resource' && 'Reference materials and useful information for later use'}
+                </p>
+              </div>
+
+              {/* Modal Body */}
+              <form onSubmit={handleCreate} className="p-6">
                 <input type="hidden" name="icon" value={getCategoryIcon(createType)} />
-                <div className="mb-4">
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                    Name *
+
+                <div className="mb-5">
+                  <label htmlFor="name" className="block text-sm font-semibold text-gray-700 mb-2">
+                    Name <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     id="name"
                     name="name"
                     required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    placeholder={`My ${createType.charAt(0).toUpperCase() + createType.slice(1)}`}
+                    autoFocus
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow"
+                    placeholder={`e.g., ${
+                      createType === 'project' ? 'Launch marketing campaign' :
+                      createType === 'area' ? 'Health & Fitness' :
+                      'Design resources'
+                    }`}
                   />
                 </div>
+
                 <div className="mb-6">
-                  <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="description" className="block text-sm font-semibold text-gray-700 mb-2">
                     Description
                   </label>
                   <textarea
                     id="description"
                     name="description"
-                    rows={3}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    placeholder={`Describe your ${createType}...`}
+                    rows={4}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow resize-none"
+                    placeholder={`Add more details about this ${createType}...`}
                   />
                 </div>
-                <div className="flex gap-3">
+
+                {/* Modal Footer */}
+                <div className="flex gap-3 pt-4 border-t border-gray-200">
                   <button
                     type="button"
                     onClick={() => setShowCreateModal(false)}
                     disabled={creating}
-                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
+                    className="flex-1 px-5 py-3 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={creating}
-                    className={`flex-1 px-4 py-2 text-white rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50 ${
+                    className={`flex-1 px-5 py-3 text-white rounded-lg font-semibold hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md ${
                       createType === 'project'
-                        ? 'bg-indigo-600'
+                        ? 'bg-indigo-600 hover:bg-indigo-700'
                         : createType === 'area'
-                        ? 'bg-green-600'
-                        : 'bg-purple-600'
+                        ? 'bg-green-600 hover:bg-green-700'
+                        : 'bg-purple-600 hover:bg-purple-700'
                     }`}
                   >
-                    {creating ? 'Creating...' : 'Create'}
+                    {creating ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        Creating...
+                      </span>
+                    ) : (
+                      `Create ${createType.charAt(0).toUpperCase() + createType.slice(1)}`
+                    )}
                   </button>
                 </div>
               </form>
