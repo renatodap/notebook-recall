@@ -304,45 +304,49 @@ export default function PARADashboardRedesign({
         {/* Create Modal */}
         {showCreateModal && (
           <div
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+            className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4"
             onClick={() => !creating && setShowCreateModal(false)}
           >
             <div
-              className="bg-white rounded-lg max-w-lg w-full shadow-xl"
+              className="bg-white rounded-xl max-w-2xl w-full shadow-2xl border border-gray-200 animate-in fade-in zoom-in-95 duration-200"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Modal Header */}
-              <div className="p-6 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                    <span className="text-4xl">{getCategoryIcon(createType)}</span>
-                    <span>Create New {createType.charAt(0).toUpperCase() + createType.slice(1)}</span>
-                  </h2>
+              <div className="p-8 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-4">
+                    <div className="text-5xl">{getCategoryIcon(createType)}</div>
+                    <div>
+                      <h2 className="text-3xl font-bold text-gray-900">
+                        Create {createType.charAt(0).toUpperCase() + createType.slice(1)}
+                      </h2>
+                      <p className="text-sm text-gray-500 mt-1">
+                        {createType === 'project' && 'Short-term goals with outcomes & deadlines'}
+                        {createType === 'area' && 'Long-term responsibilities & standards'}
+                        {createType === 'resource' && 'Reference materials & useful info'}
+                      </p>
+                    </div>
+                  </div>
                   <button
                     type="button"
                     onClick={() => setShowCreateModal(false)}
                     disabled={creating}
-                    className="text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
+                    className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full p-2 transition-all disabled:opacity-50"
                   >
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
                 </div>
-                <p className="text-sm text-gray-600 mt-2">
-                  {createType === 'project' && 'Short-term goals with specific outcomes and deadlines'}
-                  {createType === 'area' && 'Long-term responsibilities that require ongoing attention'}
-                  {createType === 'resource' && 'Reference materials and useful information for later use'}
-                </p>
               </div>
 
               {/* Modal Body */}
-              <form onSubmit={handleCreate} className="p-6">
+              <form onSubmit={handleCreate} className="p-8">
                 <input type="hidden" name="icon" value={getCategoryIcon(createType)} />
 
-                <div className="mb-5">
-                  <label htmlFor="name" className="block text-sm font-semibold text-gray-700 mb-2">
-                    Name <span className="text-red-500">*</span>
+                <div className="mb-6">
+                  <label htmlFor="name" className="block text-base font-semibold text-gray-900 mb-3">
+                    {createType.charAt(0).toUpperCase() + createType.slice(1)} Name <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -350,7 +354,7 @@ export default function PARADashboardRedesign({
                     name="name"
                     required
                     autoFocus
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow"
+                    className="w-full px-5 py-4 text-lg border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white"
                     placeholder={`e.g., ${
                       createType === 'project' ? 'Launch marketing campaign' :
                       createType === 'area' ? 'Health & Fitness' :
@@ -359,38 +363,38 @@ export default function PARADashboardRedesign({
                   />
                 </div>
 
-                <div className="mb-6">
-                  <label htmlFor="description" className="block text-sm font-semibold text-gray-700 mb-2">
-                    Description
+                <div className="mb-8">
+                  <label htmlFor="description" className="block text-base font-semibold text-gray-900 mb-3">
+                    Description <span className="text-gray-400 text-sm font-normal">(Optional)</span>
                   </label>
                   <textarea
                     id="description"
                     name="description"
-                    rows={4}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow resize-none"
+                    rows={5}
+                    className="w-full px-5 py-4 text-base border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all resize-none bg-white"
                     placeholder={`Add more details about this ${createType}...`}
                   />
                 </div>
 
                 {/* Modal Footer */}
-                <div className="flex gap-3 pt-4 border-t border-gray-200">
+                <div className="flex gap-4 pt-6 border-t border-gray-200">
                   <button
                     type="button"
                     onClick={() => setShowCreateModal(false)}
                     disabled={creating}
-                    className="flex-1 px-5 py-3 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 px-6 py-4 text-base border-2 border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 hover:border-gray-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={creating}
-                    className={`flex-1 px-5 py-3 text-white rounded-lg font-semibold hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md ${
+                    className={`flex-1 px-6 py-4 text-base text-white rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl ${
                       createType === 'project'
-                        ? 'bg-indigo-600 hover:bg-indigo-700'
+                        ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800'
                         : createType === 'area'
-                        ? 'bg-green-600 hover:bg-green-700'
-                        : 'bg-purple-600 hover:bg-purple-700'
+                        ? 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800'
+                        : 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800'
                     }`}
                   >
                     {creating ? (
