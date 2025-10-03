@@ -53,12 +53,21 @@ export default function PARADashboardRedesign({
     }
   };
 
-  const getCategoryIcon = (category: PARACategory) => {
+  const getCategoryIcon = (category: PARACategory | 'project' | 'area' | 'resource') => {
     switch (category) {
-      case 'projects': return '🎯';
-      case 'areas': return '🌳';
-      case 'resources': return '💎';
-      case 'archive': return '📦';
+      case 'projects':
+      case 'project':
+        return '🎯';
+      case 'areas':
+      case 'area':
+        return '🌳';
+      case 'resources':
+      case 'resource':
+        return '💎';
+      case 'archive':
+        return '📦';
+      default:
+        return '📄';
     }
   };
 
@@ -81,7 +90,7 @@ export default function PARADashboardRedesign({
     const formData = new FormData(e.currentTarget);
     const name = formData.get('name') as string;
     const description = formData.get('description') as string;
-    const icon = formData.get('icon') as string || getCategoryIcon(activeCategory);
+    const icon = formData.get('icon') as string || getCategoryIcon(createType);
 
     if (!name.trim()) return;
 
@@ -94,7 +103,10 @@ export default function PARADashboardRedesign({
         body: JSON.stringify({ name, description, icon }),
       });
 
-      if (!response.ok) throw new Error(`Failed to create ${createType}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Failed to create ${createType}`);
+      }
 
       const { [createType]: newItem } = await response.json();
 
@@ -110,7 +122,7 @@ export default function PARADashboardRedesign({
       setShowCreateModal(false);
     } catch (error) {
       console.error(`Error creating ${createType}:`, error);
-      alert(`Failed to create ${createType}`);
+      alert(`Failed to create ${createType}: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setCreating(false);
     }
@@ -272,11 +284,11 @@ export default function PARADashboardRedesign({
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
               <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <span className="text-3xl">{getCategoryIcon(activeCategory)}</span>
+                <span className="text-3xl">{getCategoryIcon(createType)}</span>
                 <span>Create New {createType.charAt(0).toUpperCase() + createType.slice(1)}</span>
               </h2>
               <form onSubmit={handleCreate}>
-                <input type="hidden" name="icon" value={getCategoryIcon(activeCategory)} />
+                <input type="hidden" name="icon" value={getCategoryIcon(createType)} />
                 <div className="mb-4">
                   <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
                     Name *
