@@ -80,6 +80,15 @@ export default function PARADashboardRedesign({
     }
   };
 
+  const convertToSingular = (category: PARACategory): 'project' | 'area' | 'resource' => {
+    switch (category) {
+      case 'projects': return 'project';
+      case 'areas': return 'area';
+      case 'resources': return 'resource';
+      case 'archive': return 'project'; // fallback
+    }
+  };
+
   const openCreateModal = (type: 'project' | 'area' | 'resource') => {
     setCreateType(type);
     setShowCreateModal(true);
@@ -102,7 +111,13 @@ export default function PARADashboardRedesign({
         'area': 'areas',
         'resource': 'resources'
       };
-      const endpoint = `/api/para/${pluralMap[createType]}`;
+
+      const pluralType = pluralMap[createType];
+      if (!pluralType) {
+        throw new Error(`Invalid type: ${createType}`);
+      }
+
+      const endpoint = `/api/para/${pluralType}`;
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -258,8 +273,8 @@ export default function PARADashboardRedesign({
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {/* Create New Card */}
               <CreateNewPARACard
-                type={activeCategory as 'project' | 'area' | 'resource'}
-                onClick={() => openCreateModal(activeCategory as 'project' | 'area' | 'resource')}
+                type={convertToSingular(activeCategory)}
+                onClick={() => openCreateModal(convertToSingular(activeCategory))}
               />
 
               {/* PARA Item Cards */}
