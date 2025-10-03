@@ -29,6 +29,13 @@ export default function CreateNewPARACard({ type, onClick }: CreateNewPARACardPr
           text: 'text-purple-700',
           hoverBg: 'hover:bg-purple-100',
         };
+      default:
+        return {
+          bg: 'bg-gray-50',
+          border: 'border-gray-300 hover:border-gray-500',
+          text: 'text-gray-700',
+          hoverBg: 'hover:bg-gray-100',
+        };
     }
   };
 

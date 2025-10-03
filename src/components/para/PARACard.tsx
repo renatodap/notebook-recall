@@ -35,6 +35,13 @@ export default function PARACard({ id, name, description, icon, type, sourceCoun
           text: 'text-purple-900',
           badge: 'bg-purple-100 text-purple-700',
         };
+      default:
+        return {
+          bg: 'bg-gray-50',
+          border: 'border-gray-200 hover:border-gray-400',
+          text: 'text-gray-900',
+          badge: 'bg-gray-100 text-gray-700',
+        };
     }
   };
 
