@@ -132,13 +132,23 @@ export default function PARADashboardRedesign({
 
       const { [createType]: newItem } = await response.json();
 
-      // Update local state
+      if (!newItem || !newItem.id) {
+        throw new Error('Invalid response from server');
+      }
+
+      // Update local state with proper structure
+      const itemWithCount = {
+        ...newItem,
+        source_count: 0,
+        icon: newItem.icon || icon
+      };
+
       if (createType === 'project') {
-        setProjects([{ ...newItem, source_count: 0, icon: icon }, ...projects]);
+        setProjects([itemWithCount, ...projects]);
       } else if (createType === 'area') {
-        setAreas([{ ...newItem, source_count: 0, icon: icon }, ...areas]);
+        setAreas([itemWithCount, ...areas]);
       } else {
-        setResources([{ ...newItem, source_count: 0, icon: icon }, ...resources]);
+        setResources([itemWithCount, ...resources]);
       }
 
       setShowCreateModal(false);
@@ -285,7 +295,7 @@ export default function PARADashboardRedesign({
                   name={item.name}
                   description={item.description || undefined}
                   icon={item.icon || getCategoryIcon(activeCategory)}
-                  type={activeCategory as 'project' | 'area' | 'resource'}
+                  type={convertToSingular(activeCategory)}
                   sourceCount={item.source_count}
                 />
               ))}
