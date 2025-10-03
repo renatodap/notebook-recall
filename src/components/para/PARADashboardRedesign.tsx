@@ -42,12 +42,14 @@ export default function PARADashboardRedesign({
   const [createType, setCreateType] = useState<'project' | 'area' | 'resource'>('project');
   const [creating, setCreating] = useState(false);
 
-  const getCategoryColor = (category: PARACategory) => {
+  const getCategoryButtonClass = (category: PARACategory, isActive: boolean) => {
+    if (!isActive) return 'text-gray-700 hover:bg-gray-100';
+
     switch (category) {
-      case 'projects': return 'indigo';
-      case 'areas': return 'green';
-      case 'resources': return 'purple';
-      case 'archive': return 'gray';
+      case 'projects': return 'bg-indigo-600 text-white shadow-md';
+      case 'areas': return 'bg-green-600 text-white shadow-md';
+      case 'resources': return 'bg-purple-600 text-white shadow-md';
+      case 'archive': return 'bg-gray-600 text-white shadow-md';
     }
   };
 
@@ -163,11 +165,7 @@ export default function PARADashboardRedesign({
                       <button
                         key={category}
                         onClick={() => setActiveCategory(category)}
-                        className={`px-5 py-2.5 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 ${
-                          activeCategory === category
-                            ? `bg-${getCategoryColor(category)}-600 text-white shadow-md`
-                            : 'text-gray-700 hover:bg-gray-100'
-                        }`}
+                        className={`px-5 py-2.5 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 ${getCategoryButtonClass(category, activeCategory === category)}`}
                       >
                         <span className="text-lg">{getCategoryIcon(category)}</span>
                         <span className="capitalize">{category}</span>
