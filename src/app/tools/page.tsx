@@ -104,19 +104,8 @@ export default async function ToolsPage() {
         {/* Tools Grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {tools.map((tool) => {
-            const CardWrapper = tool.available ? Link : 'div'
-            const cardProps = tool.available ? { href: tool.href } : {}
-
-            return (
-              <CardWrapper
-                key={tool.href}
-                {...cardProps}
-                className={`group bg-white rounded-2xl p-6 border border-gray-200 flex flex-col items-center text-center ${
-                  tool.available
-                    ? 'hover:border-indigo-300 hover:shadow-lg cursor-pointer'
-                    : 'opacity-40 cursor-not-allowed'
-                } transition-all duration-200`}
-              >
+            const cardContent = (
+              <>
                 <div className={`w-16 h-16 ${tool.color} rounded-2xl flex items-center justify-center mb-4 ${tool.available ? 'group-hover:scale-110' : ''} transition-transform duration-200`}>
                   <span className="text-3xl">{tool.icon}</span>
                 </div>
@@ -126,7 +115,27 @@ export default async function ToolsPage() {
                 <p className="text-xs text-gray-600 line-clamp-2">
                   {tool.description}
                 </p>
-              </CardWrapper>
+              </>
+            )
+
+            const className = `group bg-white rounded-2xl p-6 border border-gray-200 flex flex-col items-center text-center ${
+              tool.available
+                ? 'hover:border-indigo-300 hover:shadow-lg cursor-pointer'
+                : 'opacity-40 cursor-not-allowed'
+            } transition-all duration-200`
+
+            if (tool.available) {
+              return (
+                <Link key={tool.href} href={tool.href} className={className}>
+                  {cardContent}
+                </Link>
+              )
+            }
+
+            return (
+              <div key={tool.href} className={className}>
+                {cardContent}
+              </div>
             )
           })}
         </div>
