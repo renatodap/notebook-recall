@@ -20,6 +20,7 @@ export default async function ToolsPage() {
       icon: '💬',
       href: '/chat',
       color: 'bg-blue-500',
+      available: true,
     },
     {
       name: 'Synthesis',
@@ -27,6 +28,7 @@ export default async function ToolsPage() {
       icon: '📝',
       href: '/synthesis',
       color: 'bg-purple-500',
+      available: false,
     },
     {
       name: 'Knowledge Graph',
@@ -34,6 +36,7 @@ export default async function ToolsPage() {
       icon: '🕸️',
       href: '/graph',
       color: 'bg-green-500',
+      available: false,
     },
     {
       name: 'Timeline',
@@ -41,6 +44,7 @@ export default async function ToolsPage() {
       icon: '📅',
       href: '/timeline',
       color: 'bg-orange-500',
+      available: false,
     },
     {
       name: 'Publishing',
@@ -48,6 +52,7 @@ export default async function ToolsPage() {
       icon: '📄',
       href: '/publishing',
       color: 'bg-pink-500',
+      available: false,
     },
     {
       name: 'Analytics',
@@ -55,6 +60,7 @@ export default async function ToolsPage() {
       icon: '📊',
       href: '/analytics',
       color: 'bg-yellow-500',
+      available: false,
     },
     {
       name: 'Import',
@@ -62,6 +68,7 @@ export default async function ToolsPage() {
       icon: '📥',
       href: '/import',
       color: 'bg-cyan-500',
+      available: false,
     },
     {
       name: 'Search',
@@ -69,6 +76,7 @@ export default async function ToolsPage() {
       icon: '🔍',
       href: '/search',
       color: 'bg-gray-500',
+      available: false,
     },
     {
       name: 'Workspaces',
@@ -76,6 +84,7 @@ export default async function ToolsPage() {
       icon: '👥',
       href: '/workspaces',
       color: 'bg-violet-500',
+      available: false,
     },
   ]
 
@@ -94,23 +103,32 @@ export default async function ToolsPage() {
 
         {/* Tools Grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {tools.map((tool) => (
-            <Link
-              key={tool.href}
-              href={tool.href}
-              className="group bg-white rounded-2xl p-6 border border-gray-200 hover:border-indigo-300 hover:shadow-lg transition-all duration-200 flex flex-col items-center text-center"
-            >
-              <div className={`w-16 h-16 ${tool.color} rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-200`}>
-                <span className="text-3xl">{tool.icon}</span>
-              </div>
-              <h3 className="text-base font-semibold text-gray-900 mb-1">
-                {tool.name}
-              </h3>
-              <p className="text-xs text-gray-600 line-clamp-2">
-                {tool.description}
-              </p>
-            </Link>
-          ))}
+          {tools.map((tool) => {
+            const CardWrapper = tool.available ? Link : 'div'
+            const cardProps = tool.available ? { href: tool.href } : {}
+
+            return (
+              <CardWrapper
+                key={tool.href}
+                {...cardProps}
+                className={`group bg-white rounded-2xl p-6 border border-gray-200 flex flex-col items-center text-center ${
+                  tool.available
+                    ? 'hover:border-indigo-300 hover:shadow-lg cursor-pointer'
+                    : 'opacity-40 cursor-not-allowed'
+                } transition-all duration-200`}
+              >
+                <div className={`w-16 h-16 ${tool.color} rounded-2xl flex items-center justify-center mb-4 ${tool.available ? 'group-hover:scale-110' : ''} transition-transform duration-200`}>
+                  <span className="text-3xl">{tool.icon}</span>
+                </div>
+                <h3 className="text-base font-semibold text-gray-900 mb-1">
+                  {tool.name}
+                </h3>
+                <p className="text-xs text-gray-600 line-clamp-2">
+                  {tool.description}
+                </p>
+              </CardWrapper>
+            )
+          })}
         </div>
 
         {/* Quick Stats */}

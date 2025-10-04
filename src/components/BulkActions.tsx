@@ -170,146 +170,67 @@ export default function BulkActions({
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          {/* Add Tags Button */}
+          {/* Add Tags Button - DISABLED */}
           <Button
-            onClick={() => setShowTagInput(!showTagInput)}
+            disabled
             variant="secondary"
-            disabled={isDeleting || isAddingTags}
+            className="opacity-40 cursor-not-allowed"
           >
             🏷️ Add Tags
           </Button>
 
-          {/* Export Button */}
-          <ExportButton sourceIds={selectedSourceIds} />
-
-          {/* Add to Collection Button */}
+          {/* Export Button - DISABLED */}
           <Button
-            onClick={() => setShowCollectionModal(true)}
+            disabled
             variant="secondary"
+            className="opacity-40 cursor-not-allowed"
+          >
+            📤 Export
+          </Button>
+
+          {/* Add to Collection Button - DISABLED */}
+          <Button
+            disabled
+            variant="secondary"
+            className="opacity-40 cursor-not-allowed"
           >
             📁 Add to Collection
           </Button>
 
-          {/* Export Citations Button */}
+          {/* Export Citations Button - DISABLED */}
           <Button
-            onClick={() => setShowCitationExport(!showCitationExport)}
+            disabled
             variant="secondary"
-            disabled={exportingCitations}
+            className="opacity-40 cursor-not-allowed"
           >
             📚 Export Citations
           </Button>
 
-          {/* Generate Synthesis Button */}
+          {/* Generate Blog Button - DISABLED */}
           <Button
-            onClick={() => setShowSynthesisGenerator(true)}
+            disabled
             variant="secondary"
-            disabled={selectedSourceIds.length < 2}
-          >
-            📝 Synthesis
-          </Button>
-
-          {/* Analyze Gaps Button */}
-          <Button
-            onClick={async () => {
-              if (selectedSourceIds.length < 2) {
-                alert('Select at least 2 sources to analyze research gaps')
-                return
-              }
-              const response = await fetch('/api/analysis/gaps', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ source_ids: selectedSourceIds }),
-              })
-              const data = await response.json()
-              if (response.ok) {
-                alert(`Gap Analysis Complete!\n\n${data.analysis.total_gaps} gaps identified:\n${Object.entries(data.analysis.gaps_by_category).map(([cat, count]) => `- ${cat}: ${count}`).join('\n')}`)
-              }
-            }}
-            variant="secondary"
-            disabled={selectedSourceIds.length < 2}
-          >
-            🔍 Find Gaps
-          </Button>
-
-          {/* Generate Blog Button */}
-          <Button
-            onClick={() => setShowBlogGenerator(true)}
-            variant="secondary"
-            disabled={selectedSourceIds.length === 0}
+            className="opacity-40 cursor-not-allowed"
           >
             ✨ Blog Post
           </Button>
 
-          {/* Generate Newsletter Button */}
+          {/* Generate Newsletter Button - DISABLED */}
           <Button
-            onClick={() => setShowNewsletterGenerator(true)}
+            disabled
             variant="secondary"
-            disabled={selectedSourceIds.length === 0}
+            className="opacity-40 cursor-not-allowed"
           >
             📧 Newsletter
           </Button>
 
-          {/* Generate Paper Button */}
+          {/* Generate Presentation Button - DISABLED */}
           <Button
-            onClick={async () => {
-              const title = prompt('Enter paper title:')
-              if (!title) return
-              const response = await fetch('/api/publishing/generate-paper', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ source_ids: selectedSourceIds, title }),
-              })
-              if (response.ok) {
-                const data = await response.json()
-                alert('Paper generated! Check the Publishing page.')
-                window.open(`/publishing`, '_blank')
-              }
-            }}
+            disabled
             variant="secondary"
-            disabled={selectedSourceIds.length < 3}
-          >
-            📄 Paper
-          </Button>
-
-          {/* Generate Presentation Button */}
-          <Button
-            onClick={async () => {
-              const title = prompt('Enter presentation title:')
-              if (!title) return
-              const response = await fetch('/api/publishing/generate-presentation', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ source_ids: selectedSourceIds, title }),
-              })
-              if (response.ok) {
-                alert('Presentation generated! Check the Publishing page.')
-                window.open(`/publishing`, '_blank')
-              }
-            }}
-            variant="secondary"
-            disabled={selectedSourceIds.length === 0}
+            className="opacity-40 cursor-not-allowed"
           >
             🎤 Presentation
-          </Button>
-
-          {/* Generate Book Outline Button */}
-          <Button
-            onClick={async () => {
-              const title = prompt('Enter book title (optional):')
-              const response = await fetch('/api/publishing/generate-book-outline', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ source_ids: selectedSourceIds, book_title: title }),
-              })
-              if (response.ok) {
-                alert('Book outline generated! Check the Publishing page.')
-                window.open(`/publishing`, '_blank')
-              }
-            }}
-            variant="secondary"
-            disabled={selectedSourceIds.length < 5}
-          >
-            📚 Book Outline
           </Button>
 
           {/* Delete Button */}

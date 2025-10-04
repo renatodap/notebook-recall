@@ -77,12 +77,19 @@ export default function SourceDetailClient({ source, onDelete }: SourceDetailCli
                       📂 <span className="hidden xs:inline">Organize</span>
                     </Button>
                     <ShareButton sourceId={source.id} />
-                    <ExportDocumentButton sourceId={source.id} />
                     <Button
-                      onClick={() => setShowCitationManager(true)}
+                      disabled
                       variant="secondary"
                       size="sm"
-                      className="flex-1 sm:flex-none"
+                      className="flex-1 sm:flex-none opacity-40 cursor-not-allowed"
+                    >
+                      📤 <span className="hidden xs:inline">Export</span>
+                    </Button>
+                    <Button
+                      disabled
+                      variant="secondary"
+                      size="sm"
+                      className="flex-1 sm:flex-none opacity-40 cursor-not-allowed"
                     >
                       📚 <span className="hidden xs:inline">Cite</span>
                     </Button>
@@ -164,7 +171,7 @@ export default function SourceDetailClient({ source, onDelete }: SourceDetailCli
                 )}
 
                 {source.tags && source.tags.length > 0 && (
-                  <div className="mb-6">
+                  <div className="mb-6 opacity-40">
                     <h2 className="text-lg font-semibold text-gray-900 mb-2">Tags</h2>
                     <div className="flex flex-wrap gap-2">
                       {source.tags.map((tag) => (
