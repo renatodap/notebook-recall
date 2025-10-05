@@ -168,7 +168,7 @@ export default function AddPage() {
         router.push('/dashboard')
       }, 1500)
     } catch (err: unknown) {
-      setError(err.message || 'An error occurred')
+      setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
       setLoading(false)
     }

@@ -31,14 +31,14 @@ export async function POST(request: NextRequest) {
         )
       `)
       .in('id', source_ids)
-      .eq('user_id', user.id)
+      .eq('user_id', user.id as never)
 
     if (sourcesError || !sources || sources.length < 2) {
       return NextResponse.json({ error: 'Sources not found or access denied' }, { status: 404 })
     }
 
     // Prepare sources for analysis
-    const sourcesForAnalysis = sources.map((s: DatabaseRecord) => ({
+    const sourcesForAnalysis = (sources as any[]).map((s: any) => ({
       id: s.id,
       title: s.title,
       summary: s.summaries?.[0]?.summary_text || '',
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
         identified_gaps: analysis.identified_gaps,
         recommendations: analysis.recommendations,
         future_directions: analysis.future_directions,
-      })
+      } as any)
       .select()
       .single()
 
@@ -105,7 +105,7 @@ export async function GET() {
     const { data: analyses, error } = await supabase
       .from('research_gap_analyses')
       .select('id, focus, total_gaps, created_at, source_ids')
-      .eq('user_id', user.id)
+      .eq('user_id', user.id as never)
       .order('created_at', { ascending: false })
       .limit(20)
 

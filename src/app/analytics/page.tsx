@@ -161,9 +161,9 @@ export default function AnalyticsPage() {
           <h2 className="text-xl font-semibold mb-4">Top Tags</h2>
           {analytics.topItems?.tags && analytics.topItems.tags.length > 0 ? (
             <div className="flex flex-wrap gap-2">
-              {analytics.topItems.tags.map((item: DatabaseRecord) => (
-                <span key={item.tag} className="bg-blue-100 px-3 py-1 rounded-full text-sm">
-                  {item.tag} ({item.count})
+              {analytics.topItems.tags.map((item: DatabaseRecord, index: number) => (
+                <span key={`tag-${index}`} className="bg-blue-100 px-3 py-1 rounded-full text-sm">
+                  {String(item.tag)} ({String(item.count)})
                 </span>
               ))}
             </div>
@@ -224,16 +224,16 @@ export default function AnalyticsPage() {
         <div className="bg-white p-6 rounded-lg shadow mt-8">
           <h2 className="text-xl font-semibold mb-4">Activity Over Time</h2>
           <div className="space-y-1">
-            {analytics.trends.sourcesOverTime.slice(-14).map((day: DatabaseRecord) => (
-              <div key={day.date} className="flex items-center gap-2 text-sm">
-                <span className="w-24 text-gray-600">{new Date(day.date).toLocaleDateString()}</span>
+            {analytics.trends.sourcesOverTime.slice(-14).map((day: DatabaseRecord, index: number) => (
+              <div key={`day-${index}`} className="flex items-center gap-2 text-sm">
+                <span className="w-24 text-gray-600">{new Date(String(day.date)).toLocaleDateString()}</span>
                 <div className="flex-1 bg-gray-200 rounded h-6" style={{ width: '100%' }}>
                   <div
                     className="bg-blue-500 h-full rounded"
-                    style={{ width: `${Math.min(100, (day.count / Math.max(...analytics.trends.sourcesOverTime.map((d: DatabaseRecord) => d.count))) * 100)}%` }}
+                    style={{ width: `${Math.min(100, (Number(day.count) / Math.max(...analytics.trends.sourcesOverTime.map((d: DatabaseRecord) => Number(d.count)))) * 100)}%` }}
                   />
                 </div>
-                <span className="w-8 text-right">{day.count}</span>
+                <span className="w-8 text-right">{String(day.count)}</span>
               </div>
             ))}
           </div>
