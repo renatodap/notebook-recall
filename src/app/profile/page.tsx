@@ -20,7 +20,7 @@ export default async function ProfilePage() {
     .select('id', { count: 'exact', head: true })
     .eq('user_id', user.id)
 
-  const { data: collections } = await (supabase as any)
+  const { data: collections } = await supabase
     .from('collections')
     .select('id', { count: 'exact', head: true })
     .eq('user_id', user.id)

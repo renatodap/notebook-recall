@@ -1,6 +1,7 @@
 import { createServerClient as createClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { Database } from '@/types/database'
+import type { CookieOptions } from '@/types/supabase-helpers'
 
 /**
  * Creates a Supabase client for use in Server Components
@@ -25,7 +26,7 @@ export async function createServerClient() {
       get(name: string) {
         return cookieStore.get(name)?.value
       },
-      set(name: string, value: string, options: any) {
+      set(name: string, value: string, options: CookieOptions) {
         try {
           cookieStore.set({ name, value, ...options })
         } catch (error) {
@@ -33,7 +34,7 @@ export async function createServerClient() {
           // This is expected behavior
         }
       },
-      remove(name: string, options: any) {
+      remove(name: string, options: CookieOptions) {
         try {
           cookieStore.set({ name, value: '', ...options, maxAge: 0 })
         } catch (error) {
@@ -68,10 +69,10 @@ export async function createServerActionClient() {
       get(name: string) {
         return cookieStore.get(name)?.value
       },
-      set(name: string, value: string, options: any) {
+      set(name: string, value: string, options: CookieOptions) {
         cookieStore.set({ name, value, ...options })
       },
-      remove(name: string, options: any) {
+      remove(name: string, options: CookieOptions) {
         cookieStore.set({ name, value: '', ...options, maxAge: 0 })
       },
     },
@@ -101,10 +102,10 @@ export async function createRouteHandlerClient() {
       get(name: string) {
         return cookieStore.get(name)?.value
       },
-      set(name: string, value: string, options: any) {
+      set(name: string, value: string, options: CookieOptions) {
         cookieStore.set({ name, value, ...options })
       },
-      remove(name: string, options: any) {
+      remove(name: string, options: CookieOptions) {
         cookieStore.set({ name, value: '', ...options, maxAge: 0 })
       },
     },

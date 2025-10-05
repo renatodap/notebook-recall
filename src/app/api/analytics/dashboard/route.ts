@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
     }
 
     // OVERVIEW STATISTICS
-    let sourceQuery = (supabase as any)
+    let sourceQuery = supabase
       .from('sources')
       .select('id, source_type, tags, created_at')
       .eq('user_id', user.id)
@@ -59,17 +59,17 @@ export async function GET(request: NextRequest) {
 
     const { data: sources, count: totalSources } = await sourceQuery
 
-    const { count: collectionsCount } = await (supabase as any)
+    const { count: collectionsCount } = await supabase
       .from('collections')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', user.id)
 
-    const { count: synthesisCount } = await (supabase as any)
+    const { count: synthesisCount } = await supabase
       .from('synthesis_reports')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', user.id)
 
-    const { count: publishedOutputsCount } = await (supabase as any)
+    const { count: publishedOutputsCount } = await supabase
       .from('published_outputs')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', user.id)
@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
     }
 
     // BREAKDOWN BY SOURCE TYPE
-    const sourceTypeBreakdown = (sources || []).reduce((acc: any, s: any) => {
+    const sourceTypeBreakdown = (sources || []).reduce((acc: any, s: unknown) => {
       const type = s.source_type || 'unknown'
       acc[type] = (acc[type] || 0) + 1
       return acc
@@ -91,21 +91,21 @@ export async function GET(request: NextRequest) {
     analytics.breakdown.bySourceType = sourceTypeBreakdown
 
     // TAG ANALYSIS
-    const allTags = (sources || []).flatMap((s: any) => s.tags || [])
+    const allTags = (sources || []).flatMap((s: unknown) => s.tags || [])
     const tagFrequency = allTags.reduce((acc: any, tag: string) => {
       acc[tag] = (acc[tag] || 0) + 1
       return acc
     }, {})
 
     const topTags = Object.entries(tagFrequency)
-      .sort((a: any, b: any) => b[1] - a[1])
+      .sort((a: any, b: unknown) => b[1] - a[1])
       .slice(0, 10)
       .map(([tag, count]) => ({ tag, count }))
 
     analytics.topItems.tags = topTags
 
     // ACTIVITY TRENDS (sources added over time)
-    const sourcesGrouped = (sources || []).reduce((acc: any, s: any) => {
+    const sourcesGrouped = (sources || []).reduce((acc: any, s: unknown) => {
       const date = new Date(s.created_at).toISOString().split('T')[0]
       acc[date] = (acc[date] || 0) + 1
       return acc
@@ -113,20 +113,20 @@ export async function GET(request: NextRequest) {
 
     analytics.trends.sourcesOverTime = Object.entries(sourcesGrouped)
       .map(([date, count]) => ({ date, count }))
-      .sort((a: any, b: any) => a.date.localeCompare(b.date))
+      .sort((a: any, b: unknown) => a.date.localeCompare(b.date))
 
     // AI FEATURE USAGE
-    const { count: connectionsCount } = await (supabase as any)
+    const { count: connectionsCount } = await supabase
       .from('source_connections')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', user.id)
 
-    const { count: conceptsCount } = await (supabase as any)
+    const { count: conceptsCount } = await supabase
       .from('concepts')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', user.id)
 
-    const { count: contradictionsCount } = await (supabase as any)
+    const { count: contradictionsCount } = await supabase
       .from('contradictions')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', user.id)
@@ -138,17 +138,17 @@ export async function GET(request: NextRequest) {
     }
 
     // PUBLISHING ANALYTICS
-    const { data: outputs } = await (supabase as any)
+    const { data: outputs } = await supabase
       .from('published_outputs')
       .select('output_type, status, created_at')
       .eq('user_id', user.id)
 
-    const outputTypeBreakdown = (outputs || []).reduce((acc: any, o: any) => {
+    const outputTypeBreakdown = (outputs || []).reduce((acc: any, o: unknown) => {
       acc[o.output_type] = (acc[o.output_type] || 0) + 1
       return acc
     }, {})
 
-    const outputStatusBreakdown = (outputs || []).reduce((acc: any, o: any) => {
+    const outputStatusBreakdown = (outputs || []).reduce((acc: any, o: unknown) => {
       acc[o.status] = (acc[o.status] || 0) + 1
       return acc
     }, {})
@@ -160,17 +160,17 @@ export async function GET(request: NextRequest) {
     }
 
     // COLLABORATION STATS
-    const { count: sharesCount } = await (supabase as any)
+    const { count: sharesCount } = await supabase
       .from('source_shares')
       .select('id', { count: 'exact', head: true })
       .eq('owner_id', user.id)
 
-    const { count: followingCount } = await (supabase as any)
+    const { count: followingCount } = await supabase
       .from('user_follows')
       .select('id', { count: 'exact', head: true })
       .eq('follower_id', user.id)
 
-    const { count: followersCount } = await (supabase as any)
+    const { count: followersCount } = await supabase
       .from('user_follows')
       .select('id', { count: 'exact', head: true })
       .eq('following_id', user.id)

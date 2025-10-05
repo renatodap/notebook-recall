@@ -34,9 +34,10 @@ export function cosineSimilarity(vec1: Embedding, vec2: Embedding): number {
     return 0;
   }
 
-  // Clamp to [0, 1] range
+  // Return standard cosine similarity [-1, 1]
+  // -1 = opposite, 0 = orthogonal, 1 = identical
   const similarity = dotProduct / (mag1 * mag2);
-  return Math.max(0, Math.min(1, (similarity + 1) / 2));
+  return Math.max(-1, Math.min(1, similarity));
 }
 
 /**

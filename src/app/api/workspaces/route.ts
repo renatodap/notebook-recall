@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
+import type { DatabaseRecord } from '@/types/api-types'
 
 /**
  * Feature 29: Team Workspaces
@@ -23,7 +24,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create workspace
-    const { data: workspace, error: workspaceError } = await (supabase as any)
+    const { data: workspace, error: workspaceError } = await supabase
       .from('workspaces')
       .insert({
         name,
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest) {
       }))
     ]
 
-    const { error: membersError } = await (supabase as any)
+    const { error: membersError } = await supabase
       .from('workspace_members')
       .insert(members)
 
@@ -62,7 +63,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const supabase = await createRouteHandlerClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -72,14 +73,14 @@ export async function GET(request: NextRequest) {
     }
 
     // Get workspaces where user is a member
-    const { data: memberships, error } = await (supabase as any)
+    const { data: memberships, error } = await supabase
       .from('workspace_members')
       .select('workspace_id, role, workspaces (*)')
       .eq('user_id', user.id)
 
     if (error) throw error
 
-    const workspaces = memberships?.map((m: any) => ({
+    const workspaces = memberships?.map((m: DatabaseRecord) => ({
       ...m.workspaces,
       my_role: m.role
     })) || []

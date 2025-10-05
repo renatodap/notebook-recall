@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     const { from, subject, body: emailBody, user_email } = body
 
     // Find user by capture email
-    const { data: userPref } = await (supabase as any)
+    const { data: userPref } = await supabase
       .from('user_preferences')
       .select('user_id')
       .eq('capture_email', user_email)
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Save email capture
-    const { data: capture, error: captureError } = await (supabase as any)
+    const { data: capture, error: captureError } = await supabase
       .from('email_captures')
       .insert({
         user_id: userPref.user_id,
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
 
     // Create source from email
     const title = subject || `Email from ${from}`
-    const { data: source } = await (supabase as any)
+    const { data: source } = await supabase
       .from('sources')
       .insert({
         user_id: userPref.user_id,
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     // Update capture with source_id
-    await (supabase as any)
+    await supabase
       .from('email_captures')
       .update({ source_id: source.id, processed: true })
       .eq('id', capture.id)
@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: pref } = await (supabase as any)
+    const { data: pref } = await supabase
       .from('user_preferences')
       .select('capture_email')
       .eq('user_id', user.id)

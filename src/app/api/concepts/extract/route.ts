@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify user owns this source
-    const { data: source, error: sourceError } = await (supabase as any)
+    const { data: source, error: sourceError } = await supabase
       .from('sources')
       .select(`
         id,
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
       const normalizedName = normalizeConcept(extracted.name)
 
       // Check if concept exists
-      let { data: existingConcept } = await (supabase as any)
+      let { data: existingConcept } = await supabase
         .from('concepts')
         .select('*')
         .eq('normalized_name', normalizedName)
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
         const openaiKey = process.env.OPENAI_API_KEY
         const embedding = openaiKey ? await generateConceptEmbedding(extracted.name, openaiKey) : null
 
-        const { data: newConcept, error } = await (supabase as any)
+        const { data: newConcept, error } = await supabase
           .from('concepts')
           .insert({
             name: extracted.name,
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
         }
       } else {
         // Increment frequency
-        await (supabase as any)
+        await supabase
           .from('concepts')
           .update({ frequency: existingConcept.frequency + 1 })
           .eq('id', existingConcept.id)
@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
         })
 
         // Link concept to source
-        const { data: existingLink } = await (supabase as any)
+        const { data: existingLink } = await supabase
           .from('source_concepts')
           .select('*')
           .eq('source_id', source_id)
@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
           .single()
 
         if (!existingLink) {
-          await (supabase as any)
+          await supabase
             .from('source_concepts')
             .insert({
               source_id,

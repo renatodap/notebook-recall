@@ -63,32 +63,39 @@ export function EnhancedSearch({ collectionId, onSourceSelect }: EnhancedSearchP
   return (
     <div className="w-full max-w-6xl mx-auto">
       {/* Search Form */}
-      <form onSubmit={handleSearch} className="mb-6">
+      <form onSubmit={handleSearch} className="mb-6" role="search" aria-label="Enhanced search">
         <div className="flex gap-2">
+          <label htmlFor="search-input" className="sr-only">Search query</label>
           <input
+            id="search-input"
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search for specific passages, concepts, or ideas..."
             className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg"
+            aria-describedby="search-help"
           />
           <button
             type="submit"
             disabled={loading}
             className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium"
+            aria-label={loading ? 'Searching...' : 'Search sources'}
           >
             {loading ? 'Searching...' : 'Search'}
           </button>
         </div>
+        <span id="search-help" className="sr-only">Search across all your sources for specific passages, concepts, or ideas</span>
 
         {/* Search Options */}
         <div className="flex items-center gap-6 mt-4">
           <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-700">Mode:</label>
+            <label htmlFor="search-mode" className="text-sm font-medium text-gray-700">Mode:</label>
             <select
+              id="search-mode"
               value={mode}
               onChange={(e) => setMode(e.target.value as SearchMode)}
               className="px-3 py-1 border border-gray-300 rounded-md text-sm"
+              aria-label="Select search mode"
             >
               <option value="hybrid">Hybrid (Best)</option>
               <option value="chunks">Passages Only</option>
@@ -97,10 +104,11 @@ export function EnhancedSearch({ collectionId, onSourceSelect }: EnhancedSearchP
           </div>
 
           <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-700">
+            <label htmlFor="relevance-threshold" className="text-sm font-medium text-gray-700">
               Min Relevance:
             </label>
             <input
+              id="relevance-threshold"
               type="range"
               min="0"
               max="1"
@@ -108,13 +116,18 @@ export function EnhancedSearch({ collectionId, onSourceSelect }: EnhancedSearchP
               value={threshold}
               onChange={(e) => setThreshold(parseFloat(e.target.value))}
               className="w-32"
+              aria-label="Minimum relevance threshold"
+              aria-valuemin={0}
+              aria-valuemax={1}
+              aria-valuenow={threshold}
+              aria-valuetext={`${Math.round(threshold * 100)} percent`}
             />
-            <span className="text-sm text-gray-600">{Math.round(threshold * 100)}%</span>
+            <span className="text-sm text-gray-600" aria-hidden="true">{Math.round(threshold * 100)}%</span>
           </div>
 
           {results && results.grouped_by_source && (
-            <div className="flex items-center gap-2 ml-auto">
-              <label className="text-sm font-medium text-gray-700">View:</label>
+            <div className="flex items-center gap-2 ml-auto" role="group" aria-label="View mode">
+              <span className="text-sm font-medium text-gray-700">View:</span>
               <button
                 type="button"
                 onClick={() => setViewMode('grouped')}
@@ -123,6 +136,8 @@ export function EnhancedSearch({ collectionId, onSourceSelect }: EnhancedSearchP
                     ? 'bg-blue-100 text-blue-700'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
+                aria-label="Grouped view"
+                aria-pressed={viewMode === 'grouped'}
               >
                 Grouped
               </button>
@@ -134,6 +149,8 @@ export function EnhancedSearch({ collectionId, onSourceSelect }: EnhancedSearchP
                     ? 'bg-blue-100 text-blue-700'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
+                aria-label="Flat view"
+                aria-pressed={viewMode === 'flat'}
               >
                 Flat
               </button>
@@ -144,14 +161,14 @@ export function EnhancedSearch({ collectionId, onSourceSelect }: EnhancedSearchP
 
       {/* Error Message */}
       {error && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700" role="alert" aria-live="assertive">
           {error}
         </div>
       )}
 
       {/* Results */}
       {results && (
-        <div>
+        <div role="region" aria-label="Search results">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-xl font-semibold text-gray-900">
               {results.total} {results.total === 1 ? 'Result' : 'Results'}

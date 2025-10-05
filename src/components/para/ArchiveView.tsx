@@ -6,7 +6,7 @@ import SourceCard from '@/components/SourceCard';
 import type { Source } from '@/types';
 
 interface ArchiveViewProps {
-  initialSources: any[];
+  initialSources: unknown[];
 }
 
 export default function ArchiveView({ initialSources }: ArchiveViewProps) {

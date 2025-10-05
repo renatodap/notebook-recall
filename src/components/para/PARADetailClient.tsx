@@ -7,11 +7,12 @@ import SourceCard from '@/components/SourceCard';
 import AddSourcesToPARAModal from './AddSourcesToPARAModal';
 import RelationshipModal from './RelationshipModal';
 import type { Project, Area, Resource } from '@/types';
+import type { DatabaseRecord } from '@/types/api-types'
 
 interface PARADetailClientProps {
   item: Project | Area | Resource;
   type: 'project' | 'area' | 'resource';
-  initialSources: any[];
+  initialSources: unknown[];
   icon: string;
   colorClass: 'indigo' | 'green' | 'purple';
 }
@@ -319,14 +320,14 @@ export default function PARADetailClient({
       {(() => {
         const itemWithRelations = item as any;
         const relatedProjects = type === 'project' ? [] :
-          (type === 'area' ? (itemWithRelations.project_areas || []).map((pa: any) => pa.projects).filter(Boolean) :
-          (itemWithRelations.project_resources || []).map((pr: any) => pr.projects).filter(Boolean));
+          (type === 'area' ? (itemWithRelations.project_areas || []).map((pa: DatabaseRecord) => pa.projects).filter(Boolean) :
+          (itemWithRelations.project_resources || []).map((pr: DatabaseRecord) => pr.projects).filter(Boolean));
         const relatedAreas = type === 'area' ? [] :
-          (type === 'project' ? (itemWithRelations.project_areas || []).map((pa: any) => pa.areas).filter(Boolean) :
-          (itemWithRelations.area_resources || []).map((ar: any) => ar.areas).filter(Boolean));
+          (type === 'project' ? (itemWithRelations.project_areas || []).map((pa: DatabaseRecord) => pa.areas).filter(Boolean) :
+          (itemWithRelations.area_resources || []).map((ar: DatabaseRecord) => ar.areas).filter(Boolean));
         const relatedResources = type === 'resource' ? [] :
-          (type === 'project' ? (itemWithRelations.project_resources || []).map((pr: any) => pr.resources).filter(Boolean) :
-          (itemWithRelations.area_resources || []).map((ar: any) => ar.resources).filter(Boolean));
+          (type === 'project' ? (itemWithRelations.project_resources || []).map((pr: DatabaseRecord) => pr.resources).filter(Boolean) :
+          (itemWithRelations.area_resources || []).map((ar: DatabaseRecord) => ar.resources).filter(Boolean));
 
         const hasRelations = relatedProjects.length > 0 || relatedAreas.length > 0 || relatedResources.length > 0;
 
@@ -345,7 +346,7 @@ export default function PARADetailClient({
                       <span>Projects</span>
                     </h3>
                     <div className="flex flex-wrap gap-2">
-                      {relatedProjects.map((project: any) => (
+                      {relatedProjects.map((project: DatabaseRecord) => (
                         <Link
                           key={project.id}
                           href={`/para/projects/${project.id}`}
@@ -365,7 +366,7 @@ export default function PARADetailClient({
                       <span>Areas</span>
                     </h3>
                     <div className="flex flex-wrap gap-2">
-                      {relatedAreas.map((area: any) => (
+                      {relatedAreas.map((area: DatabaseRecord) => (
                         <Link
                           key={area.id}
                           href={`/para/areas/${area.id}`}
@@ -385,7 +386,7 @@ export default function PARADetailClient({
                       <span>Resources</span>
                     </h3>
                     <div className="flex flex-wrap gap-2">
-                      {relatedResources.map((resource: any) => (
+                      {relatedResources.map((resource: DatabaseRecord) => (
                         <Link
                           key={resource.id}
                           href={`/para/resources/${resource.id}`}
@@ -423,7 +424,7 @@ export default function PARADetailClient({
             {/* Sort */}
             <select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
+              onChange={(e) => setSortBy(e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
             >
               <option value="recent">Most Recent</option>

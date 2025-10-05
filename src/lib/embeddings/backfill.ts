@@ -6,6 +6,7 @@
 
 import { createServiceRoleClient } from '@/lib/supabase/server';
 import { generateEmbedding } from './client';
+import type { DatabaseRecord } from '@/types/api-types'
 import type {
   BackfillConfig,
   BackfillResult,
@@ -31,7 +32,7 @@ export async function backfillEmbeddings(
 
   try {
     // Get summaries without embeddings
-    let query: any = (supabase as any)
+    let query: any = supabase
       .from('summaries')
       .select('id, summary_text, key_topics, source_id');
 
@@ -46,13 +47,13 @@ export async function backfillEmbeddings(
       if (error) throw error;
 
       // Filter summaries by user ownership through sources
-      const { data: userSources } = await (supabase as any)
+      const { data: userSources } = await supabase
         .from('sources')
         .select('id')
         .eq('user_id', userId);
 
-      const userSourceIds = new Set(userSources?.map((s: any) => s.id) || []);
-      const filteredSummaries = summaries?.filter((s: any) => userSourceIds.has(s.source_id)) || [];
+      const userSourceIds = new Set(userSources?.map((s: DatabaseRecord) => s.id) || []);
+      const filteredSummaries = summaries?.filter((s: DatabaseRecord) => userSourceIds.has(s.source_id)) || [];
 
       return await processSummaries(filteredSummaries, supabase, maxRetries, dryRun, startTime);
     }
@@ -75,7 +76,7 @@ export async function backfillEmbeddings(
  * Process a batch of summaries to generate embeddings
  */
 async function processSummaries(
-  summaries: any[] | null,
+  summaries: unknown[] | null,
   supabase: any,
   maxRetries: number,
   dryRun: boolean,
@@ -127,7 +128,7 @@ async function processSummaries(
         });
 
         // Store in database
-        const { error: updateError } = await (supabase as any)
+        const { error: updateError } = await supabase
           .from('summaries')
           .update({ embedding: result.embedding })
           .eq('id', summary.id);
@@ -175,7 +176,7 @@ async function processSummaries(
 export async function getPendingCount(): Promise<number> {
   const supabase = createServiceRoleClient();
 
-  const { count, error } = await (supabase as any)
+  const { count, error } = await supabase
     .from('summaries')
     .select('*', { count: 'exact', head: true })
     .isNull('embedding');
@@ -193,7 +194,7 @@ export async function getPendingCount(): Promise<number> {
 export async function getCompletedCount(): Promise<number> {
   const supabase = createServiceRoleClient();
 
-  const { count, error } = await (supabase as any)
+  const { count, error } = await supabase
     .from('summaries')
     .select('*', { count: 'exact', head: true })
     .not('embedding', 'is', null);

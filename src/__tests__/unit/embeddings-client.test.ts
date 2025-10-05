@@ -1,7 +1,7 @@
 /**
  * Unit Tests: Embedding Client
  *
- * Tests for embedding generation via Claude API
+ * Tests for embedding generation via OpenAI API
  */
 
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
@@ -10,15 +10,9 @@ import type {
   BatchEmbeddingRequest,
 } from '@/lib/embeddings/types';
 
-// Mock Anthropic SDK
-const mockCreate = jest.fn();
-jest.mock('@anthropic-ai/sdk', () => ({
-  default: jest.fn().mockImplementation(() => ({
-    embeddings: {
-      create: mockCreate,
-    },
-  })),
-}));
+// Mock global fetch
+const mockFetch = jest.fn();
+global.fetch = mockFetch as unknown as typeof fetch;
 
 describe('Embedding Client', () => {
   beforeEach(() => {
@@ -29,20 +23,23 @@ describe('Embedding Client', () => {
     it('creates valid embedding', async () => {
       // Mock API response
       const mockEmbedding = new Array(1536).fill(0).map(() => Math.random() * 2 - 1);
-      mockCreate.mockResolvedValue({
-        object: 'embedding',
-        data: [
-          {
-            object: 'embedding',
-            embedding: mockEmbedding,
-            index: 0,
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          object: 'list',
+          data: [
+            {
+              object: 'embedding',
+              embedding: mockEmbedding,
+              index: 0,
+            },
+          ],
+          model: 'text-embedding-3-small',
+          usage: {
+            prompt_tokens: 8,
+            total_tokens: 8,
           },
-        ],
-        model: 'text-embedding-3-small',
-        usage: {
-          prompt_tokens: 8,
-          total_tokens: 8,
-        },
+        }),
       });
 
       const request: EmbeddingGenerationRequest = {
@@ -56,8 +53,7 @@ describe('Embedding Client', () => {
 
       expect(result.embedding).toHaveLength(1536);
       expect(result.model).toBe('text-embedding-3-small');
-      expect(result.tokens).toBe(8);
-      expect(result.dimensions).toBe(1536);
+      expect(result.tokenCount).toBe(8);
 
       // Verify all values are numbers between -1 and 1
       result.embedding.forEach((val) => {
@@ -68,7 +64,12 @@ describe('Embedding Client', () => {
     });
 
     it('handles API errors', async () => {
-      mockCreate.mockRejectedValue(new Error('API Error'));
+      mockFetch.mockResolvedValue({
+        ok: false,
+        json: async () => ({
+          error: { message: 'API Error' },
+        }),
+      });
 
       const request: EmbeddingGenerationRequest = {
         text: 'test',
@@ -82,20 +83,29 @@ describe('Embedding Client', () => {
 
     it('retries on transient failures', async () => {
       // Fail twice, succeed third time
-      mockCreate
-        .mockRejectedValueOnce(new Error('Network error'))
-        .mockRejectedValueOnce(new Error('Network error'))
+      mockFetch
         .mockResolvedValueOnce({
-          object: 'embedding',
-          data: [
-            {
-              object: 'embedding',
-              embedding: new Array(1536).fill(0.5),
-              index: 0,
-            },
-          ],
-          model: 'text-embedding-3-small',
-          usage: { prompt_tokens: 10, total_tokens: 10 },
+          ok: false,
+          json: async () => ({ error: { message: 'Network error' } }),
+        })
+        .mockResolvedValueOnce({
+          ok: false,
+          json: async () => ({ error: { message: 'Network error' } }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            object: 'list',
+            data: [
+              {
+                object: 'embedding',
+                embedding: new Array(1536).fill(0.5),
+                index: 0,
+              },
+            ],
+            model: 'text-embedding-3-small',
+            usage: { prompt_tokens: 10, total_tokens: 10 },
+          }),
         });
 
       const request: EmbeddingGenerationRequest = {
@@ -106,7 +116,7 @@ describe('Embedding Client', () => {
       const { generateEmbedding } = await import('@/lib/embeddings/client');
       const result = await generateEmbedding(request);
 
-      expect(mockCreate).toHaveBeenCalledTimes(3);
+      expect(mockFetch).toHaveBeenCalledTimes(3);
       expect(result.embedding).toHaveLength(1536);
     });
 
@@ -125,17 +135,20 @@ describe('Embedding Client', () => {
     it('normalizes vectors when requested', async () => {
       // Unnormalized vector
       const unnormalizedVector = new Array(1536).fill(2.0);
-      mockCreate.mockResolvedValue({
-        object: 'embedding',
-        data: [
-          {
-            object: 'embedding',
-            embedding: unnormalizedVector,
-            index: 0,
-          },
-        ],
-        model: 'text-embedding-3-small',
-        usage: { prompt_tokens: 5, total_tokens: 5 },
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          object: 'list',
+          data: [
+            {
+              object: 'embedding',
+              embedding: unnormalizedVector,
+              index: 0,
+            },
+          ],
+          model: 'text-embedding-3-small',
+          usage: { prompt_tokens: 5, total_tokens: 5 },
+        }),
       });
 
       const request: EmbeddingGenerationRequest = {
@@ -163,21 +176,27 @@ describe('Embedding Client', () => {
       const mockEmbedding2 = new Array(1536).fill(0.2);
       const mockEmbedding3 = new Array(1536).fill(0.3);
 
-      mockCreate
+      mockFetch
         .mockResolvedValueOnce({
-          object: 'embedding',
-          data: [{ embedding: mockEmbedding1, index: 0 }],
-          usage: { total_tokens: 5 },
+          ok: true,
+          json: async () => ({
+            data: [{ embedding: mockEmbedding1, index: 0 }],
+            usage: { total_tokens: 5 },
+          }),
         })
         .mockResolvedValueOnce({
-          object: 'embedding',
-          data: [{ embedding: mockEmbedding2, index: 0 }],
-          usage: { total_tokens: 5 },
+          ok: true,
+          json: async () => ({
+            data: [{ embedding: mockEmbedding2, index: 0 }],
+            usage: { total_tokens: 5 },
+          }),
         })
         .mockResolvedValueOnce({
-          object: 'embedding',
-          data: [{ embedding: mockEmbedding3, index: 0 }],
-          usage: { total_tokens: 5 },
+          ok: true,
+          json: async () => ({
+            data: [{ embedding: mockEmbedding3, index: 0 }],
+            usage: { total_tokens: 5 },
+          }),
         });
 
       const request: BatchEmbeddingRequest = {
@@ -190,13 +209,14 @@ describe('Embedding Client', () => {
 
       expect(result.results).toHaveLength(3);
       expect(result.successful).toBe(3);
-      expect(result.failures).toBe(0);
+      expect(result.failed).toBe(0);
       expect(result.totalTokens).toBe(15);
 
       // Verify all embeddings valid
       result.results.forEach((item) => {
-        expect(item.embedding).toHaveLength(1536);
-        expect(item.error).toBeUndefined();
+        if (!item.error) {
+          expect(item.embedding).toHaveLength(1536);
+        }
       });
     });
 
@@ -204,17 +224,44 @@ describe('Embedding Client', () => {
       const mockEmbedding1 = new Array(1536).fill(0.1);
       const mockEmbedding3 = new Array(1536).fill(0.3);
 
-      mockCreate
+      mockFetch
         .mockResolvedValueOnce({
-          object: 'embedding',
-          data: [{ embedding: mockEmbedding1, index: 0 }],
-          usage: { total_tokens: 5 },
+          ok: true,
+          json: async () => ({
+            data: [{ embedding: mockEmbedding1, index: 0 }],
+            usage: { total_tokens: 5 },
+          }),
         })
-        .mockRejectedValueOnce(new Error('API error on item 2'))
         .mockResolvedValueOnce({
-          object: 'embedding',
-          data: [{ embedding: mockEmbedding3, index: 0 }],
-          usage: { total_tokens: 5 },
+          ok: false,
+          json: async () => ({
+            error: { message: 'API error on item 2' },
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: false,
+          json: async () => ({
+            error: { message: 'API error on item 2' },
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: false,
+          json: async () => ({
+            error: { message: 'API error on item 2' },
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: false,
+          json: async () => ({
+            error: { message: 'API error on item 2' },
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            data: [{ embedding: mockEmbedding3, index: 0 }],
+            usage: { total_tokens: 5 },
+          }),
         });
 
       const request: BatchEmbeddingRequest = {
@@ -227,7 +274,7 @@ describe('Embedding Client', () => {
 
       expect(result.results).toHaveLength(3);
       expect(result.successful).toBe(2);
-      expect(result.failures).toBe(1);
+      expect(result.failed).toBe(1);
 
       // Check successful items
       expect(result.results[0].embedding).toHaveLength(1536);
@@ -240,12 +287,20 @@ describe('Embedding Client', () => {
 
     it('respects rate limits', async () => {
       // Simulate rate limit error followed by success
-      mockCreate
-        .mockRejectedValueOnce({ status: 429, message: 'Rate limit exceeded' })
-        .mockResolvedValue({
-          object: 'embedding',
-          data: [{ embedding: new Array(1536).fill(0.5), index: 0 }],
-          usage: { total_tokens: 5 },
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 429,
+          json: async () => ({
+            error: { message: 'Rate limit exceeded' },
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            data: [{ embedding: new Array(1536).fill(0.5), index: 0 }],
+            usage: { total_tokens: 5 },
+          }),
         });
 
       const request: BatchEmbeddingRequest = {
@@ -257,7 +312,7 @@ describe('Embedding Client', () => {
       const result = await generateEmbeddings(request);
 
       expect(result.successful).toBe(1);
-      expect(mockCreate).toHaveBeenCalledTimes(2); // Initial + retry
+      expect(mockFetch).toHaveBeenCalledTimes(2); // Initial + retry
     });
   });
 });

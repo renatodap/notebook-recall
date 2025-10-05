@@ -1,10 +1,9 @@
 /**
  * Embedding Client
  *
- * Handles embedding generation via Anthropic API
+ * Handles embedding generation via OpenAI API
  */
 
-import Anthropic from '@anthropic-ai/sdk';
 import {
   EmbeddingGenerationRequest,
   EmbeddingGenerationResult,
@@ -23,11 +22,6 @@ const DEFAULT_RETRY_CONFIG: RetryConfig = {
   maxDelay: 10000,
   backoffMultiplier: 2,
 };
-
-// Initialize Anthropic client
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
 
 /**
  * Generate embedding for a single text

@@ -139,7 +139,7 @@ export default function UnifiedDropZone({ onCapture }: UnifiedDropZoneProps) {
 
       setInput('')
       router.refresh()
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err.message || 'Failed to process files')
     } finally {
       setIsProcessing(false)
@@ -235,7 +235,7 @@ export default function UnifiedDropZone({ onCapture }: UnifiedDropZoneProps) {
       setInput('')
       setMode('idle')
       router.refresh()
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err.message || 'Failed to process content')
     } finally {
       setIsProcessing(false)

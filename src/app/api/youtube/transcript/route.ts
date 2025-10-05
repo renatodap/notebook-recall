@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create source entry
-    const { data: source, error: sourceError } = await (supabase as any)
+    const { data: source, error: sourceError } = await supabase
       .from('sources')
       .insert({
         user_id: user.id,

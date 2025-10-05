@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     // If source_id provided, save to database
     if (source_id) {
       // Verify user owns this source
-      const { data: source } = await (supabase as any)
+      const { data: source } = await supabase
         .from('sources')
         .select('id')
         .eq('id', source_id)
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Check if citation already exists
-      const { data: existingCitation } = await (supabase as any)
+      const { data: existingCitation } = await supabase
         .from('citations')
         .select('id')
         .eq('source_id', source_id)
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
 
       if (existingCitation) {
         // Update existing
-        const { data: citation, error } = await (supabase as any)
+        const { data: citation, error } = await supabase
           .from('citations')
           .update(citationData)
           .eq('id', existingCitation.id)
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ citation, metadata, formatted })
       } else {
         // Create new
-        const { data: citation, error } = await (supabase as any)
+        const { data: citation, error } = await supabase
           .from('citations')
           .insert(citationData)
           .select()

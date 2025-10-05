@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     const parsed = await parseConversationalQuery(query)
 
     return NextResponse.json(parsed)
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Parse query error:', error)
     return NextResponse.json(
       { error: error.message || 'Failed to parse query' },

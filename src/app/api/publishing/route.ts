@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const outputType = searchParams.get('type') // optional filter
 
-    let query = (supabase as any)
+    let query = supabase
       .from('published_outputs')
       .select('id, output_type, title, status, created_at, metadata')
       .eq('user_id', user.id)

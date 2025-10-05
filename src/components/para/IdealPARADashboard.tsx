@@ -8,6 +8,7 @@ import SemanticSidebar from './SemanticSidebar';
 import SpotlightPalette from './SpotlightPalette';
 import KnowledgeGraphPanel from './KnowledgeGraphPanel';
 import MobileNav from '../MobileNav';
+import type { DatabaseRecord } from '@/types/api-types'
 
 type PARACategory = 'projects' | 'areas' | 'resources' | 'archive';
 
@@ -119,7 +120,7 @@ export default function IdealPARADashboard({
       if (pinsResponse.ok) {
         const pinsData = await pinsResponse.json();
         const pinnedIds = new Set<string>(
-          pinsData.pinned_items?.map((item: any) => item.source_id as string) || []
+          pinsData.pinned_items?.map((item: DatabaseRecord) => item.source_id as string) || []
         );
         setPinnedSourceIds(pinnedIds);
       } else {
@@ -392,7 +393,7 @@ export default function IdealPARADashboard({
                 {/* Sort */}
                 <select
                   value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as any)}
+                  onChange={(e) => setSortBy(e.target.value)}
                   className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
                 >
                   <option value="recent">Most Recent</option>

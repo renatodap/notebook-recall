@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify ownership
-    const { data: source } = await (supabase as any)
+    const { data: source } = await supabase
       .from('sources')
       .select('id')
       .eq('id', source_id)
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create or update share
-    const { data: share, error } = await (supabase as any)
+    const { data: share, error } = await supabase
       .from('source_shares')
       .upsert({
         source_id,
@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
 
     if (type === 'owned') {
       // Get shares I created
-      const { data: shares, error } = await (supabase as any)
+      const { data: shares, error } = await supabase
         .from('source_shares')
         .select('*, sources (id, title, created_at)')
         .eq('owner_id', user.id)
@@ -81,13 +81,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ shares })
     } else if (type === 'shared_with_me') {
       // Get public shares + shares specifically with me
-      const { data: publicShares } = await (supabase as any)
+      const { data: publicShares } = await supabase
         .from('source_shares')
         .select('*, sources (id, title, created_at)')
         .eq('visibility', 'public')
         .neq('owner_id', user.id)
 
-      const { data: specificShares } = await (supabase as any)
+      const { data: specificShares } = await supabase
         .from('source_shares')
         .select('*, sources (id, title, created_at)')
         .contains('shared_with_user_ids', [user.id])

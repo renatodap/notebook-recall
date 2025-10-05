@@ -3,6 +3,7 @@
  */
 
 import OpenAI from 'openai'
+import type { DatabaseRecord } from '@/types/api-types'
 
 let openRouterClient: OpenAI | null = null
 
@@ -135,7 +136,7 @@ export interface OpenRouterTool {
   function: {
     name: string
     description: string
-    parameters: Record<string, any>
+    parameters: Record<string, unknown>
   }
 }
 
@@ -143,7 +144,7 @@ export async function openRouterFunctionCall(
   messages: OpenRouterChatMessage[],
   tools: OpenRouterTool[],
   model: string = 'anthropic/claude-3.5-sonnet'
-): Promise<{ response: string; toolCalls: any[] }> {
+): Promise<{ response: string; toolCalls: unknown[] }> {
   const client = getOpenRouterClient()
 
   const response = await client.chat.completions.create({
@@ -158,7 +159,7 @@ export async function openRouterFunctionCall(
 
   return {
     response: message?.content || '',
-    toolCalls: toolCalls.map((tc: any) => ({
+    toolCalls: toolCalls.map((tc: DatabaseRecord) => ({
       name: tc.function.name,
       arguments: typeof tc.function.arguments === 'string'
         ? JSON.parse(tc.function.arguments)

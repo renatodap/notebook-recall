@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     const result = await processImage(buffer, file.type)
 
     return NextResponse.json(result)
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
       { error: error.message || 'Failed to process image' },
       { status: 500 }

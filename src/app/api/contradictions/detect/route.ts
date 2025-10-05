@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
 import { detectAllContradictions, groupContradictionsByTopic, getContradictionStats } from '@/lib/contradictions/detector'
+import type { DatabaseRecord } from '@/types/api-types'
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,7 +20,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify user owns all sources
-    const { data: sources, error: sourcesError } = await (supabase as any)
+    const { data: sources, error: sourcesError } = await supabase
       .from('sources')
       .select(`
         id,
@@ -36,7 +37,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Prepare sources for analysis
-    const sourcesForAnalysis = sources.map((s: any) => ({
+    const sourcesForAnalysis = sources.map((s: DatabaseRecord) => ({
       id: s.id,
       title: s.title,
       summary: s.summaries?.[0]?.summary_text || '',
@@ -69,7 +70,7 @@ export async function POST(request: NextRequest) {
         auto_detected: true,
       }))
 
-      await (supabase as any)
+      await supabase
         .from('contradictions')
         .insert(contradictionsToInsert)
     }

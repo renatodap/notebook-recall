@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import MobileNav from '@/components/MobileNav'
+import type { DatabaseRecord } from '@/types/api-types'
 
 export default function AnalyticsPage() {
   const [analytics, setAnalytics] = useState<any>(null)
@@ -11,6 +12,7 @@ export default function AnalyticsPage() {
 
   useEffect(() => {
     fetchAnalytics()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [period])
 
   const fetchAnalytics = async () => {
@@ -159,7 +161,7 @@ export default function AnalyticsPage() {
           <h2 className="text-xl font-semibold mb-4">Top Tags</h2>
           {analytics.topItems?.tags && analytics.topItems.tags.length > 0 ? (
             <div className="flex flex-wrap gap-2">
-              {analytics.topItems.tags.map((item: any) => (
+              {analytics.topItems.tags.map((item: DatabaseRecord) => (
                 <span key={item.tag} className="bg-blue-100 px-3 py-1 rounded-full text-sm">
                   {item.tag} ({item.count})
                 </span>
@@ -222,13 +224,13 @@ export default function AnalyticsPage() {
         <div className="bg-white p-6 rounded-lg shadow mt-8">
           <h2 className="text-xl font-semibold mb-4">Activity Over Time</h2>
           <div className="space-y-1">
-            {analytics.trends.sourcesOverTime.slice(-14).map((day: any) => (
+            {analytics.trends.sourcesOverTime.slice(-14).map((day: DatabaseRecord) => (
               <div key={day.date} className="flex items-center gap-2 text-sm">
                 <span className="w-24 text-gray-600">{new Date(day.date).toLocaleDateString()}</span>
                 <div className="flex-1 bg-gray-200 rounded h-6" style={{ width: '100%' }}>
                   <div
                     className="bg-blue-500 h-full rounded"
-                    style={{ width: `${Math.min(100, (day.count / Math.max(...analytics.trends.sourcesOverTime.map((d: any) => d.count))) * 100)}%` }}
+                    style={{ width: `${Math.min(100, (day.count / Math.max(...analytics.trends.sourcesOverTime.map((d: DatabaseRecord) => d.count))) * 100)}%` }}
                   />
                 </div>
                 <span className="w-8 text-right">{day.count}</span>

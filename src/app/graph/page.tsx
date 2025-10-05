@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import KnowledgeGraphClient from '@/components/visualization/KnowledgeGraphClient'
+import KnowledgeGraphLoader from '@/components/visualization/KnowledgeGraphLoader'
 
 export default async function GraphPage() {
   const supabase = await createServerClient()
@@ -27,7 +27,7 @@ export default async function GraphPage() {
 
         {/* Graph Container */}
         <div className="bg-white rounded-lg shadow-lg" style={{ height: 'calc(100vh - 250px)' }}>
-          <KnowledgeGraphClient />
+          <KnowledgeGraphLoader />
         </div>
       </div>
     </div>

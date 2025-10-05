@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/lib/supabase/server';
 import { exportToMarkdown } from '@/lib/export/markdown';
 import { exportToJSON } from '@/lib/export/json';
+import type { DatabaseRecord } from '@/types/api-types'
 
 export const dynamic = 'force-dynamic';
 
@@ -37,7 +38,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Build query
-    let query = (supabase as any)
+    let query = supabase
       .from('sources')
       .select(
         `
@@ -68,7 +69,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Transform data
-    const sourcesWithSummaries = data.map((item: any) => ({
+    const sourcesWithSummaries = data.map((item: DatabaseRecord) => ({
       source: {
         id: item.id,
         user_id: item.user_id,

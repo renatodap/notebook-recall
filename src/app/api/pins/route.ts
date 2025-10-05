@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const category = searchParams.get('category');
 
-    let query = (supabase as any)
+    let query = supabase
       .from('pinned_items')
       .select(
         `
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
     const { source_id, category } = validation.data;
 
     // Check if user owns the source
-    const { data: source, error: sourceError } = await (supabase as any)
+    const { data: source, error: sourceError } = await supabase
       .from('sources')
       .select('id')
       .eq('id', source_id)
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check limit: max 3 pins per category
-    const { data: existingPins, error: countError } = await (supabase as any)
+    const { data: existingPins, error: countError } = await supabase
       .from('pinned_items')
       .select('id')
       .eq('user_id', user.id)
@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Pin the source
-    const { data: pinnedItem, error: pinError } = await (supabase as any)
+    const { data: pinnedItem, error: pinError } = await supabase
       .from('pinned_items')
       .insert({
         user_id: user.id,
@@ -178,7 +178,7 @@ export async function DELETE(request: NextRequest) {
     const { source_id, category } = validation.data;
 
     // Delete the pin
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from('pinned_items')
       .delete()
       .eq('user_id', user.id)

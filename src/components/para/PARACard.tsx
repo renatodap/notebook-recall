@@ -48,12 +48,12 @@ export default function PARACard({ id, name, description, icon, type, sourceCoun
   const colors = getColorClasses();
 
   return (
-    <Link href={`/para/${type}s/${id}`}>
-      <div
+    <Link href={`/para/${type}s/${id}`} aria-label={`View ${type}: ${name}`}>
+      <article
         className={`${colors.bg} border-2 ${colors.border} rounded-xl p-6 h-full transition-all duration-200 hover:shadow-lg cursor-pointer group`}
       >
         {/* Icon */}
-        <div className="text-6xl mb-4 group-hover:scale-110 transition-transform duration-200">
+        <div className="text-6xl mb-4 group-hover:scale-110 transition-transform duration-200" role="img" aria-hidden="true">
           {icon}
         </div>
 
@@ -72,11 +72,11 @@ export default function PARACard({ id, name, description, icon, type, sourceCoun
         {/* Source Count Badge */}
         <div className="flex items-center justify-between mt-auto">
           <span className={`inline-flex items-center gap-1 px-3 py-1 ${colors.badge} rounded-full text-sm font-medium`}>
-            <span>📄</span>
+            <span role="img" aria-hidden="true">📄</span>
             <span>{sourceCount} {sourceCount === 1 ? 'source' : 'sources'}</span>
           </span>
         </div>
-      </div>
+      </article>
     </Link>
   );
 }

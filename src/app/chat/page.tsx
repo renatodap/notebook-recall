@@ -3,14 +3,15 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import MobileNav from '@/components/MobileNav'
+import type { DatabaseRecord } from '@/types/api-types'
 
 interface Message {
   role: 'user' | 'assistant'
   content: string
   sources_used?: string[]
   timestamp?: string
-  reasoning_steps?: any[]
-  insights?: any[]
+  reasoning_steps?: unknown[]
+  insights?: unknown[]
   query_type?: string
   model_used?: string
   provider_used?: string
@@ -151,7 +152,7 @@ export default function ChatPage() {
             {sessions.length === 0 ? (
               <p className="text-sm text-gray-500">No sessions yet</p>
             ) : (
-              sessions.map((session: any) => (
+              sessions.map((session: DatabaseRecord) => (
                 <button
                   key={session.id}
                   onClick={() => loadSession(session.id)}

@@ -203,15 +203,17 @@ export default function PARADashboardRedesign({
               {/* PARA Navigation */}
               <div className="flex items-center gap-2">
                 <h1 className="text-xl font-bold text-gray-900 mr-4">PARA</h1>
-                <nav className="flex gap-2">
+                <nav className="flex gap-2" aria-label="PARA categories">
                   {(['projects', 'areas', 'resources', 'archive'] as PARACategory[]).map(
                     (category) => (
                       <button
                         key={category}
                         onClick={() => setActiveCategory(category)}
                         className={`px-5 py-2.5 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 ${getCategoryButtonClass(category, activeCategory === category)}`}
+                        aria-label={`View ${category}`}
+                        aria-current={activeCategory === category ? 'page' : undefined}
                       >
-                        <span className="text-lg">{getCategoryIcon(category)}</span>
+                        <span className="text-lg" role="img" aria-hidden="true">{getCategoryIcon(category)}</span>
                         <span className="capitalize">{category}</span>
                       </button>
                     )
@@ -316,6 +318,10 @@ export default function PARADashboardRedesign({
           <div
             className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4"
             onClick={() => !creating && setShowCreateModal(false)}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="create-modal-title"
+            aria-describedby="create-modal-description"
           >
             <div
               className="bg-white rounded-xl max-w-2xl w-full shadow-2xl border border-gray-200 animate-in fade-in zoom-in-95 duration-200"
@@ -325,12 +331,12 @@ export default function PARADashboardRedesign({
               <div className="p-8 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-4">
-                    <div className="text-5xl">{getCategoryIcon(createType)}</div>
+                    <div className="text-5xl" role="img" aria-hidden="true">{getCategoryIcon(createType)}</div>
                     <div>
-                      <h2 className="text-3xl font-bold text-gray-900">
+                      <h2 id="create-modal-title" className="text-3xl font-bold text-gray-900">
                         Create {createType.charAt(0).toUpperCase() + createType.slice(1)}
                       </h2>
-                      <p className="text-sm text-gray-500 mt-1">
+                      <p id="create-modal-description" className="text-sm text-gray-500 mt-1">
                         {createType === 'project' && 'Short-term goals with outcomes & deadlines'}
                         {createType === 'area' && 'Long-term responsibilities & standards'}
                         {createType === 'resource' && 'Reference materials & useful info'}
@@ -342,8 +348,9 @@ export default function PARADashboardRedesign({
                     onClick={() => setShowCreateModal(false)}
                     disabled={creating}
                     className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full p-2 transition-all disabled:opacity-50"
+                    aria-label="Close modal"
                   >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>

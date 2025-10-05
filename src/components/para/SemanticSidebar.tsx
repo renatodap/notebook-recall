@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useDebounce } from '@/hooks/useDebounce';
+import type { DatabaseRecord } from '@/types/api-types'
 
 interface SemanticSidebarProps {
   category: 'projects' | 'areas' | 'resources' | 'archive';
@@ -37,7 +38,7 @@ export default function SemanticSidebar({
       const response = await fetch('/api/tags');
       if (response.ok) {
         const data = await response.json();
-        setAvailableTags(data.tags?.map((t: any) => t.tag_name) || []);
+        setAvailableTags(data.tags?.map((t: DatabaseRecord) => t.tag_name) || []);
       }
     } catch (error) {
       console.error('Error fetching tags:', error);

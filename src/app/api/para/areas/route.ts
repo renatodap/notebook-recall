@@ -14,7 +14,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: areas, error } = await (supabase as any)
+    const { data: areas, error } = await supabase
       .from('areas')
       .select(`
         *,
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
 
     const body: CreateAreaRequest = await request.json();
 
-    const { data: area, error } = await (supabase as any)
+    const { data: area, error } = await supabase
       .from('areas')
       .insert({
         user_id: session.user.id,
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
         description: body.description || null,
         standard: body.standard || null,
         review_frequency: body.review_frequency || 'monthly',
-        icon: (body as any).icon || '🌳',
+        icon: (body).icon || '🌳',
       })
       .select()
       .single();

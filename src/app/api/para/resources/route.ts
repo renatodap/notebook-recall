@@ -14,7 +14,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: resources, error } = await (supabase as any)
+    const { data: resources, error } = await supabase
       .from('resources')
       .select(`
         *,
@@ -47,14 +47,14 @@ export async function POST(request: NextRequest) {
 
     const body: CreateResourceRequest = await request.json();
 
-    const { data: resource, error } = await (supabase as any)
+    const { data: resource, error } = await supabase
       .from('resources')
       .insert({
         user_id: session.user.id,
         name: body.name,
         description: body.description || null,
         category: body.category || null,
-        icon: (body as any).icon || '💎',
+        icon: (body).icon || '💎',
       })
       .select()
       .single();

@@ -1,16 +1,29 @@
 'use client'
 
 import { useState } from 'react'
+import dynamic from 'next/dynamic'
 import { Card, CardBody, CardHeader } from './ui/Card'
 import Button from './ui/Button'
 import CitationManager from './academic/CitationManager'
 import ConnectionsPanel from './ai/ConnectionsPanel'
 import ContradictionsPanel from './ai/ContradictionsPanel'
-import PDFViewer from './pdf/PDFViewer'
 import ShareButton from './ShareButton'
 import ExportDocumentButton from './ExportDocumentButton'
 import PARAAssignmentModal from './para/PARAAssignmentModal'
 import type { Source, Summary, Tag } from '@/types'
+
+// Lazy load PDFViewer (PDF.js is heavy - 500KB+)
+const PDFViewer = dynamic(() => import('./pdf/PDFViewer'), {
+  loading: () => (
+    <div className="flex items-center justify-center h-[800px] bg-gray-50 rounded-lg">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+        <p className="text-gray-600">Loading PDF viewer...</p>
+      </div>
+    </div>
+  ),
+  ssr: false, // Client-only for PDF.js
+})
 
 interface SourceDetailClientProps {
   source: Source & { summary: Summary[]; tags: Tag[] }

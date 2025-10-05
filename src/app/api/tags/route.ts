@@ -10,7 +10,7 @@ import type { GetTagsResponse, TagWithCount } from '@/types';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const supabase = await createRouteHandlerClient();
 
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
 
     // Get tags with counts
     // First get all tags for user's sources
-    const { data: tagsData, error: tagsError } = await (supabase as any)
+    const { data: tagsData, error: tagsError } = await supabase
       .from('tags')
       .select(
         `
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
     // Aggregate tags and count sources
     const tagMap = new Map<string, Set<string>>();
 
-    tagsData?.forEach((tag: any) => {
+    tagsData?.forEach((tag: unknown) => {
       const tagName = tag.tag_name.toLowerCase();
 
       if (!tagMap.has(tagName)) {

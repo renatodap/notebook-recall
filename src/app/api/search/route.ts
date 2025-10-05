@@ -10,6 +10,8 @@ import { generateEmbedding } from '@/lib/embeddings/client';
 import { calculateHybridScore } from '@/lib/embeddings/utils';
 import { z } from 'zod';
 import type { SearchRequest, SearchResponse, SearchMode, SearchResult } from '@/types';
+import type { DatabaseRecord } from '@/types/api-types'
+import type { TypedSupabaseClient } from '@/types/supabase-helpers'
 
 export const dynamic = 'force-dynamic';
 
@@ -67,7 +69,7 @@ export async function POST(request: NextRequest) {
         });
 
         // Use database function for vector similarity search
-        const { data: semanticData, error: semanticError } = await (supabase as any).rpc(
+        const { data: semanticData, error: semanticError } = await supabase.rpc(
           'match_summaries',
           {
             query_embedding: queryEmbedding.embedding,
@@ -88,7 +90,7 @@ export async function POST(request: NextRequest) {
           }
         } else if (semanticData && semanticData.length > 0) {
           // Transform semantic results
-          results = semanticData.map((item: any) => ({
+          results = semanticData.map((item: DatabaseRecord) => ({
             source: {
               id: item.source_id,
               user_id: item.user_id,
@@ -167,7 +169,7 @@ export async function POST(request: NextRequest) {
  * Perform keyword search
  */
 async function getKeywordResults(
-  supabase: any,
+  supabase: TypedSupabaseClient,
   userId: string,
   query: string,
   limit: number,
@@ -175,7 +177,7 @@ async function getKeywordResults(
 ): Promise<SearchResult[]> {
   const searchPattern = `%${query}%`;
 
-  let queryBuilder = (supabase as any)
+  let queryBuilder = supabase
     .from('sources')
     .select(
       `
@@ -202,7 +204,7 @@ async function getKeywordResults(
   }
 
   // Calculate keyword relevance scores
-  return (data || []).map((item: any) => {
+  return (data || []).map((item: DatabaseRecord) => {
     let score = 0;
     const lowerQuery = query.toLowerCase();
 
@@ -246,7 +248,7 @@ async function getKeywordResults(
  * Perform keyword search and return as NextResponse
  */
 async function performKeywordSearch(
-  supabase: any,
+  supabase: TypedSupabaseClient,
   userId: string,
   query: string,
   limit: number,

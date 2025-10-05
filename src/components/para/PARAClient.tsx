@@ -73,7 +73,7 @@ export default function PARAClient({
   };
 
   const renderItems = (
-    items: any[],
+    items: unknown[],
     type: 'project' | 'area' | 'resource',
     emptyMessage: string,
     emptyDescription: string,

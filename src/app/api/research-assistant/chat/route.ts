@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
+import type { DatabaseRecord } from '@/types/api-types'
 
 export interface ChatMessage {
   role: 'user' | 'assistant'
   content: string
   sources_used?: string[]
   timestamp?: string
-  reasoning_steps?: any[]
-  insights?: any[]
+  reasoning_steps?: unknown[]
+  insights?: unknown[]
 }
 
 export interface ChatSession {
@@ -59,7 +60,7 @@ export async function POST(request: NextRequest) {
     let conversationHistory: ChatMessage[] = []
 
     if (session_id) {
-      const { data } = await (supabase as any)
+      const { data } = await supabase
         .from('chat_sessions')
         .select('*')
         .eq('id', session_id)
@@ -83,14 +84,14 @@ export async function POST(request: NextRequest) {
         if (searchResults.length > 0) {
           sourceIds = searchResults.map(r => r.source_id)
         }
-      } catch (error) {
+      } catch {
         console.log('Semantic search failed, using fallback')
       }
     }
 
     // Retrieve source content with SMART CHUNKING (Feature 2)
     if (sourceIds && sourceIds.length > 0) {
-      const { data: sources } = await (supabase as any)
+      const { data: sources } = await supabase
         .from('sources')
         .select(`
           id,
@@ -114,7 +115,7 @@ Summary: ${summary?.summary_text || 'No summary available'}
 ${summary?.key_topics ? `Key Topics: ${summary.key_topics.join(', ')}` : ''}`
           }).join('\n\n---\n\n')
 
-        sourcesUsed = sources.map((s: any) => s.id)
+        sourcesUsed = sources.map((s: DatabaseRecord) => s.id)
       }
     }
 
@@ -194,7 +195,7 @@ ${sourceContext || '\n\nNote: No sources are currently available.'}${insightsTex
 
     // Call AI with intelligent routing (uses Groq for speed, OpenRouter for quality)
     let assistantMessage = ''
-    let toolCalls: any[] = []
+    let toolCalls: unknown[] = []
     let usedModel = ''
     let usedProvider = ''
     let estimatedCost = 0
@@ -254,7 +255,7 @@ ${sourceContext || '\n\nNote: No sources are currently available.'}${insightsTex
           const executionTime = Date.now() - startTime
 
           // Log function call
-          await (supabase as any)
+          await supabase
             .from('function_calls')
             .insert({
               user_id: user.id,
@@ -267,8 +268,8 @@ ${sourceContext || '\n\nNote: No sources are currently available.'}${insightsTex
             })
 
           assistantMessage += `\n\n✓ Executed: ${toolCall.name}`
-        } catch (error) {
-          await (supabase as any)
+        } catch {
+          await supabase
             .from('function_calls')
             .insert({
               user_id: user.id,
@@ -306,7 +307,7 @@ ${sourceContext || '\n\nNote: No sources are currently available.'}${insightsTex
 
     // Save or update session
     if (session_id && session) {
-      const { data: updatedSession } = await (supabase as any)
+      const { data: updatedSession } = await supabase
         .from('chat_sessions')
         .update({
           messages: updatedMessages,
@@ -321,7 +322,7 @@ ${sourceContext || '\n\nNote: No sources are currently available.'}${insightsTex
     } else {
       const sessionTitle = message.substring(0, 50) + (message.length > 50 ? '...' : '')
 
-      const { data: newSession } = await (supabase as any)
+      const { data: newSession } = await supabase
         .from('chat_sessions')
         .insert({
           user_id: user.id,
@@ -335,7 +336,7 @@ ${sourceContext || '\n\nNote: No sources are currently available.'}${insightsTex
     }
 
     // Feature 8: Update user profile with interaction
-    await (supabase as any)
+    await supabase
       .from('user_profiles')
       .update({
         interaction_count: userProfile.interaction_count + 1,
@@ -357,7 +358,7 @@ ${sourceContext || '\n\nNote: No sources are currently available.'}${insightsTex
       estimated_cost: estimatedCost,
       cost_savings_vs_claude: ((3.0 - (estimatedCost * 1_000_000)) / 3.0 * 100).toFixed(1) + '%'
     })
-  } catch (error) {
+  } catch {
     console.error('Research assistant chat error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
@@ -379,7 +380,7 @@ export async function GET(request: NextRequest) {
     const sessionId = searchParams.get('session_id')
 
     if (sessionId) {
-      const { data: session, error } = await (supabase as any)
+      const { data: session, error } = await supabase
         .from('chat_sessions')
         .select('*')
         .eq('id', sessionId)
@@ -392,7 +393,7 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json({ session })
     } else {
-      const { data: sessions, error } = await (supabase as any)
+      const { data: sessions, error } = await supabase
         .from('chat_sessions')
         .select('id, title, created_at, updated_at')
         .eq('user_id', user.id)
@@ -403,7 +404,7 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json({ sessions })
     }
-  } catch (error) {
+  } catch {
     console.error('Get chat sessions error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

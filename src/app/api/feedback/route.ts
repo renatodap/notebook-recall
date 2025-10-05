@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Record feedback
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from('message_feedback')
       .insert({
         message_id,

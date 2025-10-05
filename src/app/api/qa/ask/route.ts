@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get sources
-    const { data: sources } = await (supabase as any)
+    const { data: sources } = await supabase
       .from('sources')
       .select('id, title, summaries (summary_text)')
       .in('id', source_ids || [])
@@ -83,12 +83,12 @@ Return JSON:
     try {
       const jsonMatch = content.match(/\{[\s\S]*\}/)
       result = JSON.parse(jsonMatch ? jsonMatch[0] : content)
-    } catch (e) {
+    } catch {
       result = { answer: content, confidence: 0.8, sources_used: [], key_points: [], limitations: '' }
     }
 
     // Save Q&A to database
-    await (supabase as any)
+    await supabase
       .from('qa_history')
       .insert({
         user_id: user.id,

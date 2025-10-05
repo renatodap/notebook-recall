@@ -17,6 +17,24 @@ export async function fetchUrlContent(url: string): Promise<UrlFetchResult> {
       throw new Error('Only HTTP and HTTPS URLs are supported')
     }
 
+    // SSRF Protection: Block access to private IP ranges
+    const hostname = urlObj.hostname
+    const blockedPatterns = [
+      /^localhost$/i,
+      /^127\./,
+      /^10\./,
+      /^172\.(1[6-9]|2[0-9]|3[01])\./,
+      /^192\.168\./,
+      /^169\.254\./,
+      /^0\.0\.0\.0$/,
+      /^\[::\]$/,
+      /^::1$/,
+    ]
+
+    if (blockedPatterns.some(pattern => pattern.test(hostname))) {
+      throw new Error('Access to internal URLs is not allowed')
+    }
+
     // Fetch the page
     const response = await fetch(url, {
       headers: {

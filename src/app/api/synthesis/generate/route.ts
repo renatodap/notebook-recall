@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
 import { generateSynthesisReport } from '@/lib/synthesis/generator'
 import type { GenerateSynthesisRequest } from '@/types'
+import type { DatabaseRecord } from '@/types/api-types'
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,7 +21,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify user owns all sources
-    const { data: sources, error: sourcesError } = await (supabase as any)
+    const { data: sources, error: sourcesError } = await supabase
       .from('sources')
       .select(`
         id,
@@ -42,7 +43,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Prepare sources for synthesis
-    const synthesisInput = sources.map((s: any) => ({
+    const synthesisInput = sources.map((s: DatabaseRecord) => ({
       id: s.id,
       title: s.title,
       summary: s.summaries?.[0]?.summary_text,
@@ -65,7 +66,7 @@ export async function POST(request: NextRequest) {
     )
 
     // Save synthesis report to database
-    const { data: report, error: reportError } = await (supabase as any)
+    const { data: report, error: reportError } = await supabase
       .from('synthesis_reports')
       .insert({
         user_id: user.id,
@@ -96,7 +97,7 @@ export async function POST(request: NextRequest) {
       source_id: sid,
     }))
 
-    await (supabase as any)
+    await supabase
       .from('synthesis_sources')
       .insert(links)
 

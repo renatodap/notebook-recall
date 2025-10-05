@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { summarizeContent } from '@/lib/claude/client'
 import { ContentType } from '@/types'
+import { createServerClient } from '@/lib/supabase/server'
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 import { z } from 'zod'
 
 const SummarizeRequestSchema = z.object({
@@ -10,6 +12,29 @@ const SummarizeRequestSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    // Authentication check
+    const supabase = await createServerClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    // Rate limiting check
+    const rateLimit = checkRateLimit(user.id, RATE_LIMITS.SIMPLE_AI)
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          error: 'Too many requests. Please try again later.',
+          retryAfter: Math.ceil((rateLimit.resetTime - Date.now()) / 1000)
+        },
+        { status: 429 }
+      )
+    }
+
     const body = await request.json()
 
     // Validate request

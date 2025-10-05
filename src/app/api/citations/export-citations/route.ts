@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
 import { formatBibliography } from '@/lib/citations/formatters'
 import type { CitationFormat } from '@/types'
+import type { DatabaseRecord } from '@/types/api-types'
 
 export async function POST(request: NextRequest) {
   try {
@@ -33,7 +34,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch citations for these sources
-    const { data: citations, error } = await (supabase as any)
+    const { data: citations, error } = await supabase
       .from('citations')
       .select(`
         *,
@@ -47,7 +48,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Filter to only user's citations
-    const userCitations = citations.filter((c: any) => c.sources.user_id === user.id)
+    const userCitations = citations.filter((c: DatabaseRecord) => c.sources.user_id === user.id)
 
     if (userCitations.length === 0) {
       return NextResponse.json(
@@ -57,7 +58,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Extract metadata
-    const metadataList = userCitations.map((c: any) => c.citation_metadata)
+    const metadataList = userCitations.map((c: DatabaseRecord) => c.citation_metadata)
 
     // Format bibliography
     const bibliography = formatBibliography(metadataList, format)

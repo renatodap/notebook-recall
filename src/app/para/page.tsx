@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase/server'
 import PARADashboardRedesign from '@/components/para/PARADashboardRedesign'
+import type { DatabaseRecord } from '@/types/api-types'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,7 +14,7 @@ export default async function PARAPage() {
   }
 
   // Fetch projects with source counts
-  const { data: projects } = await (supabase as any)
+  const { data: projects } = await supabase
     .from('projects')
     .select(`
       *,
@@ -22,14 +23,14 @@ export default async function PARAPage() {
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
 
-  const projectsWithCount = projects?.map((p: any) => ({
+  const projectsWithCount = projects?.map((p: DatabaseRecord) => ({
     ...p,
     source_count: p.sources?.[0]?.count || 0,
     sources: undefined,
   })) || []
 
   // Fetch areas with source counts
-  const { data: areas } = await (supabase as any)
+  const { data: areas } = await supabase
     .from('areas')
     .select(`
       *,
@@ -38,14 +39,14 @@ export default async function PARAPage() {
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
 
-  const areasWithCount = areas?.map((a: any) => ({
+  const areasWithCount = areas?.map((a: DatabaseRecord) => ({
     ...a,
     source_count: a.sources?.[0]?.count || 0,
     sources: undefined,
   })) || []
 
   // Fetch resources with source counts
-  const { data: resources } = await (supabase as any)
+  const { data: resources } = await supabase
     .from('resources')
     .select(`
       *,
@@ -54,14 +55,14 @@ export default async function PARAPage() {
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
 
-  const resourcesWithCount = resources?.map((r: any) => ({
+  const resourcesWithCount = resources?.map((r: DatabaseRecord) => ({
     ...r,
     source_count: r.sources?.[0]?.count || 0,
     sources: undefined,
   })) || []
 
   // Fetch PARA stats
-  const { data: statsData } = await (supabase as any)
+  const { data: statsData } = await supabase
     .rpc('get_para_stats', { p_user_id: user.id })
     .single()
 

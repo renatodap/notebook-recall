@@ -24,7 +24,7 @@ export interface CreateSourceWithChunksParams {
 export interface CreateSourceWithChunksResult {
   source: any;
   summary: any;
-  chunks: any[];
+  chunks: unknown[];
   chunksCreated: number;
 }
 
@@ -50,7 +50,7 @@ export async function createSourceWithChunks(
 
   try {
     // 1. Create source
-    const { data: source, error: sourceError } = await (supabase as any)
+    const { data: source, error: sourceError } = await supabase
       .from('sources')
       .insert({
         user_id: userId,
@@ -75,7 +75,7 @@ export async function createSourceWithChunks(
     });
 
     // 3. Create summary with embedding
-    const { data: summary, error: summaryError } = await (supabase as any)
+    const { data: summary, error: summaryError } = await supabase
       .from('summaries')
       .insert({
         source_id: source.id,
@@ -99,11 +99,11 @@ export async function createSourceWithChunks(
         tag_name: topic.toLowerCase(),
       }));
 
-      await (supabase as any).from('tags').insert(tagsData);
+      await supabase.from('tags').insert(tagsData);
     }
 
     // 5. Create chunks (async, non-blocking)
-    let chunks: any[] = [];
+    let chunks: unknown[] = [];
     let chunksCreated = 0;
 
     try {

@@ -18,7 +18,7 @@ export interface UnifiedChatOptions {
   temperature?: number
   max_tokens?: number
   stream?: boolean
-  tools?: any[]
+  tools?: unknown[]
   needsHighAccuracy?: boolean
   needsSpeed?: boolean
   budget?: 'low' | 'medium' | 'high'
@@ -124,8 +124,8 @@ export async function unifiedChatCompletion(
  */
 export async function unifiedFunctionCall(
   messages: UnifiedChatMessage[],
-  tools: any[]
-): Promise<{ response: string; toolCalls: any[]; provider: string }> {
+  tools: unknown[]
+): Promise<{ response: string; toolCalls: unknown[]; provider: string }> {
   const config = MODEL_CONFIGS[TaskType.FUNCTION_CALLING]
 
   if (config.provider === 'groq') {

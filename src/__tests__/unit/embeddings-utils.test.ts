@@ -50,7 +50,7 @@ describe('Embedding Utils', () => {
         expect(() => cosineSimilarity(vec1536, vec512)).toThrow(/dimension/i);
       });
 
-      it('returns value between 0 and 1', async () => {
+      it('returns value between -1 and 1', async () => {
         const { cosineSimilarity } = await import('@/lib/embeddings/utils');
 
         // Random vectors
@@ -59,7 +59,7 @@ describe('Embedding Utils', () => {
 
         const similarity = cosineSimilarity(vec1, vec2);
 
-        expect(similarity).toBeGreaterThanOrEqual(0);
+        expect(similarity).toBeGreaterThanOrEqual(-1);
         expect(similarity).toBeLessThanOrEqual(1);
       });
     });

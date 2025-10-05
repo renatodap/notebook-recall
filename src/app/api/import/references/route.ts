@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Optionally create sources from references with summaries and embeddings
-    const createdSources: any[] = []
+    const createdSources: unknown[] = []
     const errors: string[] = []
 
     if (createSources && result.references.length > 0) {
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
           const content = sourceData.original_content || sourceData.notes || sourceData.title
 
           // Create source first
-          const { data: source, error: sourceError } = await (supabase as any)
+          const { data: source, error: sourceError } = await supabase
             .from('sources')
             .insert({
               user_id: user.id,
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
           })
 
           // Create summary with embedding
-          const { error: summaryError } = await (supabase as any)
+          const { error: summaryError } = await supabase
             .from('summaries')
             .insert({
               source_id: source.id,
@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
           if (summaryError) {
             errors.push(`Failed to create summary for "${sourceData.title}": ${summaryError.message}`)
             // Delete the orphaned source
-            await (supabase as any).from('sources').delete().eq('id', source.id)
+            await supabase.from('sources').delete().eq('id', source.id)
             continue
           }
 
@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
               tag_name: tag.toLowerCase(),
             }))
 
-            await (supabase as any).from('tags').insert(tagsData)
+            await supabase.from('tags').insert(tagsData)
           }
 
           createdSources.push(source)

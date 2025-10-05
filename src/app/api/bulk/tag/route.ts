@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/lib/supabase/server';
 import { z } from 'zod';
+import type { DatabaseRecord } from '@/types/api-types'
 
 export const dynamic = 'force-dynamic';
 
@@ -45,7 +46,7 @@ export async function POST(request: NextRequest) {
     const normalizedTags = tags.map((tag) => tag.toLowerCase().trim());
 
     // Verify all sources belong to the user
-    const { data: sources, error: fetchError } = await (supabase as any)
+    const { data: sources, error: fetchError } = await supabase
       .from('sources')
       .select('id')
       .in('id', source_ids)
@@ -55,7 +56,7 @@ export async function POST(request: NextRequest) {
       throw fetchError;
     }
 
-    const validSourceIds = sources?.map((s: any) => s.id) || [];
+    const validSourceIds = sources?.map((s: DatabaseRecord) => s.id) || [];
 
     if (validSourceIds.length === 0) {
       return NextResponse.json(
@@ -65,7 +66,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get existing tags to avoid duplicates
-    const { data: existingTags, error: existingError } = await (supabase as any)
+    const { data: existingTags, error: existingError } = await supabase
       .from('tags')
       .select('source_id, tag_name')
       .in('source_id', validSourceIds);
@@ -76,7 +77,7 @@ export async function POST(request: NextRequest) {
 
     // Build set of existing tag combinations
     const existingSet = new Set(
-      existingTags?.map((t: any) => `${t.source_id}:${t.tag_name.toLowerCase()}`) || []
+      existingTags?.map((t: DatabaseRecord) => `${t.source_id}:${t.tag_name.toLowerCase()}`) || []
     );
 
     // Create new tag entries (avoid duplicates)
@@ -103,9 +104,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Insert new tags
-    const { error: insertError } = await (supabase as any)
+    const { error: insertError } = await supabase
       .from('tags')
-      .insert(newTags as any);
+      .insert(newTags);
 
     if (insertError) {
       throw insertError;

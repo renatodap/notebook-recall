@@ -45,10 +45,14 @@ export function chunkContent(content: string, maxTokens: number): string[] {
             if (currentChunk) {
               chunks.push(currentChunk.trim())
             }
-            // If even a single sentence is too large, force it as a chunk
+            // If even a single sentence is too large, force-split by maxChars
             if (sentence.length > maxChars) {
-              chunks.push(sentence.trim())
-              currentChunk = ''
+              let remaining = sentence
+              while (remaining.length > maxChars) {
+                chunks.push(remaining.substring(0, maxChars).trim())
+                remaining = remaining.substring(maxChars)
+              }
+              currentChunk = remaining
             } else {
               currentChunk = sentence
             }
@@ -125,7 +129,7 @@ export function sanitizeContent(content: string): string {
 /**
  * Validates summarization response structure
  */
-export function validateSummarizationResponse(data: any): {
+export function validateSummarizationResponse(data: unknown): {
   valid: boolean
   error?: string
 } {

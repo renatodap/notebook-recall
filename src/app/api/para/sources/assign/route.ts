@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     const { source_id, project_ids = [], area_ids = [], resource_ids = [] } = body;
 
     // Verify the source belongs to the user
-    const { data: source, error: sourceError } = await (supabase as any)
+    const { data: source, error: sourceError } = await supabase
       .from('sources')
       .select('user_id')
       .eq('id', source_id)
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
         source_id,
       }));
 
-      const { error: projectError } = await (supabase as any)
+      const { error: projectError } = await supabase
         .from('project_sources')
         .upsert(projectAssignments, { onConflict: 'project_id,source_id' });
 
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
         source_id,
       }));
 
-      const { error: areaError } = await (supabase as any)
+      const { error: areaError } = await supabase
         .from('area_sources')
         .upsert(areaAssignments, { onConflict: 'area_id,source_id' });
 
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
         source_id,
       }));
 
-      const { error: resourceError } = await (supabase as any)
+      const { error: resourceError } = await supabase
         .from('resource_sources')
         .upsert(resourceAssignments, { onConflict: 'resource_id,source_id' });
 

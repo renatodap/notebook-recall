@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import type { DatabaseRecord } from '@/types/api-types'
 
 interface RelationshipModalProps {
   itemId: string;
@@ -79,8 +80,8 @@ export default function RelationshipModal({
         setAvailableResources(secondData.resources || []);
         // Extract current relationships from project data
         const project = currentData.project;
-        const newCurrentAreas = project?.project_areas?.map((pa: any) => pa.area_id) || [];
-        const newCurrentResources = project?.project_resources?.map((pr: any) => pr.resource_id) || [];
+        const newCurrentAreas = project?.project_areas?.map((pa: DatabaseRecord) => pa.area_id) || [];
+        const newCurrentResources = project?.project_resources?.map((pr: DatabaseRecord) => pr.resource_id) || [];
         setCurrentAreas(newCurrentAreas);
         setCurrentResources(newCurrentResources);
         setSelectedAreas(newCurrentAreas);
@@ -89,8 +90,8 @@ export default function RelationshipModal({
         setAvailableProjects(firstData.projects || []);
         setAvailableResources(secondData.resources || []);
         const area = currentData.area;
-        const newCurrentProjects = area?.project_areas?.map((pa: any) => pa.project_id) || [];
-        const newCurrentResources = area?.area_resources?.map((ar: any) => ar.resource_id) || [];
+        const newCurrentProjects = area?.project_areas?.map((pa: DatabaseRecord) => pa.project_id) || [];
+        const newCurrentResources = area?.area_resources?.map((ar: DatabaseRecord) => ar.resource_id) || [];
         setCurrentProjects(newCurrentProjects);
         setCurrentResources(newCurrentResources);
         setSelectedProjects(newCurrentProjects);
@@ -99,8 +100,8 @@ export default function RelationshipModal({
         setAvailableProjects(firstData.projects || []);
         setAvailableAreas(secondData.areas || []);
         const resource = currentData.resource;
-        const newCurrentProjects = resource?.project_resources?.map((pr: any) => pr.project_id) || [];
-        const newCurrentAreas = resource?.area_resources?.map((ar: any) => ar.area_id) || [];
+        const newCurrentProjects = resource?.project_resources?.map((pr: DatabaseRecord) => pr.project_id) || [];
+        const newCurrentAreas = resource?.area_resources?.map((ar: DatabaseRecord) => ar.area_id) || [];
         setCurrentProjects(newCurrentProjects);
         setCurrentAreas(newCurrentAreas);
         setSelectedProjects(newCurrentProjects);

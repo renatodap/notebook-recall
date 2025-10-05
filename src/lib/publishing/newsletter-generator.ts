@@ -135,7 +135,7 @@ Make it engaging and valuable for readers!`
 
   // Combine sections into full content
   const fullContent = result.sections
-    .map((section: any) => {
+    .map((section: DatabaseRecord) => {
       if (format === 'html') {
         return `<h2>${section.title}</h2>\n${section.content}`
       } else {

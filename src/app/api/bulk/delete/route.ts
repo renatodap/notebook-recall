@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/lib/supabase/server';
 import { z } from 'zod';
+import type { DatabaseRecord } from '@/types/api-types'
 
 export const dynamic = 'force-dynamic';
 
@@ -41,7 +42,7 @@ export async function POST(request: NextRequest) {
     const { source_ids } = validation.data;
 
     // Verify all sources belong to the user
-    const { data: sources, error: fetchError } = await (supabase as any)
+    const { data: sources, error: fetchError } = await supabase
       .from('sources')
       .select('id')
       .in('id', source_ids)
@@ -51,7 +52,7 @@ export async function POST(request: NextRequest) {
       throw fetchError;
     }
 
-    const validSourceIds = sources?.map((s: any) => s.id) || [];
+    const validSourceIds = sources?.map((s: DatabaseRecord) => s.id) || [];
     const invalidCount = source_ids.length - validSourceIds.length;
 
     if (validSourceIds.length === 0) {
@@ -62,7 +63,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Delete sources (cascades to summaries and tags via foreign key constraints)
-    const { error: deleteError } = await (supabase as any)
+    const { error: deleteError } = await supabase
       .from('sources')
       .delete()
       .in('id', validSourceIds)

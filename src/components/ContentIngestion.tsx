@@ -112,7 +112,7 @@ export default function ContentIngestion() {
 
       // Auto-dismiss success message after 3 seconds
       setTimeout(() => setSuccess(false), 3000)
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err.message || 'An error occurred')
     } finally {
       setLoading(false)

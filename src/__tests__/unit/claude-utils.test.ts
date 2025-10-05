@@ -40,7 +40,7 @@ describe('Claude Utils', () => {
 
     it('splits by paragraphs when possible', () => {
       const content = 'Paragraph 1\n\nParagraph 2\n\nParagraph 3'
-      const chunks = chunkContent(content, 10)
+      const chunks = chunkContent(content, 5) // 5 tokens = 20 chars, content is 37 chars = ~10 tokens
       expect(chunks.length).toBeGreaterThan(1)
     })
 

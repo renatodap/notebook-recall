@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get source
-    const { data: source } = await (supabase as any)
+    const { data: source } = await supabase
       .from('sources')
       .select('id, title, original_content, summaries (summary_text)')
       .eq('id', source_id)
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     const methodology = await extractMethodology(text, source.title, anthropicKey)
 
     // Save to database
-    await (supabase as any)
+    await supabase
       .from('methodologies')
       .upsert({
         source_id,

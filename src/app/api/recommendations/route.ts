@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
+import type { DatabaseRecord } from '@/types/api-types'
 
 // GET: Get recommendations for a source
 export async function GET(request: NextRequest) {
@@ -20,7 +21,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get source with embedding
-    const { data: source } = await (supabase as any)
+    const { data: source } = await supabase
       .from('sources')
       .select(`
         id,
@@ -37,7 +38,7 @@ export async function GET(request: NextRequest) {
     const embedding = source.summaries[0].embedding
 
     // Find similar sources using vector similarity
-    const { data: similar, error } = await (supabase as any).rpc('match_sources', {
+    const { data: similar, error } = await supabase.rpc('match_sources', {
       query_embedding: embedding,
       match_threshold: 0.7,
       match_count: limit + 1, // +1 to exclude self
@@ -50,7 +51,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Filter out the source itself
-    const recommendations = (similar || []).filter((s: any) => s.id !== sourceId).slice(0, limit)
+    const recommendations = (similar || []).filter((s: DatabaseRecord) => s.id !== sourceId).slice(0, limit)
 
     return NextResponse.json({
       recommendations,

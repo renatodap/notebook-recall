@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import CommandPalette from "@/components/CommandPalette";
 import RegisterServiceWorker from "./register-sw";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ToastProvider } from "@/components/ToastProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -41,9 +43,17 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <RegisterServiceWorker />
-        <CommandPalette />
-        {children}
+        <a href="#main-content" className="skip-to-content">
+          Skip to main content
+        </a>
+        <ErrorBoundary>
+          <RegisterServiceWorker />
+          <CommandPalette />
+          <ToastProvider />
+          <div id="main-content">
+            {children}
+          </div>
+        </ErrorBoundary>
       </body>
     </html>
   );

@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search') || ''
     const limit = parseInt(searchParams.get('limit') || '20')
 
-    let query = (supabase as any)
+    let query = supabase
       .from('user_profiles')
       .select('*')
       .eq('is_public', true)

@@ -2,6 +2,7 @@
 
 import { createBrowserClient as createClient } from '@supabase/ssr'
 import { Database } from '@/types/database'
+import type { CookieOptions } from '@/types/supabase-helpers'
 
 /**
  * Creates a Supabase client for use in Client Components
@@ -28,7 +29,7 @@ export function createBrowserClient() {
         const cookie = cookies.find(c => c.startsWith(`${name}=`))
         return cookie?.split('=')[1]
       },
-      set(name: string, value: string, options: any) {
+      set(name: string, value: string, options: CookieOptions) {
         // Browser cookie setting
         if (typeof document === 'undefined') return
         let cookieString = `${name}=${value}`
@@ -38,7 +39,7 @@ export function createBrowserClient() {
         if (options?.secure) cookieString += '; secure'
         document.cookie = cookieString
       },
-      remove(name: string, options: any) {
+      remove(name: string, options: CookieOptions) {
         // Browser cookie removal
         if (typeof document === 'undefined') return
         let cookieString = `${name}=; max-age=0`

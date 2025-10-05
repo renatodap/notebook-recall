@@ -7,6 +7,7 @@ import Button from '@/components/ui/Button'
 import SourceCard from '@/components/SourceCard'
 import Loading from '@/components/ui/Loading'
 import MobileNav from '@/components/MobileNav'
+import type { DatabaseRecord } from '@/types/api-types'
 
 type SearchMode = 'semantic' | 'keyword' | 'hybrid'
 
@@ -77,14 +78,14 @@ export default function SearchPage() {
       // Apply additional filters from parsed query
       if (parsedInfo) {
         if (parsedInfo.timeRange) {
-          finalResults = finalResults.filter((r: any) => {
+          finalResults = finalResults.filter((r: DatabaseRecord) => {
             const created = new Date(r.source?.created_at || r.created_at)
             return created >= parsedInfo.timeRange!.start && created <= parsedInfo.timeRange!.end
           })
         }
 
         if (parsedInfo.contentType) {
-          finalResults = finalResults.filter((r: any) =>
+          finalResults = finalResults.filter((r: DatabaseRecord) =>
             (r.source?.content_type || r.content_type) === parsedInfo.contentType
           )
         }
@@ -232,7 +233,7 @@ export default function SearchPage() {
                   Found {results.length} {results.length === 1 ? 'result' : 'results'}
                 </p>
                 <div className="grid gap-4">
-                  {results.map((result: any) => (
+                  {results.map((result: DatabaseRecord) => (
                     <SourceCard key={result.id} source={result} />
                   ))}
                 </div>

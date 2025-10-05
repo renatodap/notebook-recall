@@ -14,7 +14,7 @@ export async function GET() {
     }
 
     // Use the database function to get unassigned sources
-    const { data: sources, error } = await (supabase as any)
+    const { data: sources, error } = await supabase
       .rpc('get_unassigned_sources', { p_user_id: session.user.id });
 
     if (error) throw error;

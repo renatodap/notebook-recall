@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/lib/supabase/server';
+import type { DatabaseRecord } from '@/types/api-types'
 
 export const dynamic = 'force-dynamic';
 
@@ -33,7 +34,7 @@ export async function GET(request: NextRequest) {
 
     if (category === 'archive') {
       // Get archived sources
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('sources')
         .select(
           `
@@ -50,7 +51,7 @@ export async function GET(request: NextRequest) {
       sources = data || [];
     } else if (category === 'projects') {
       // Get all sources assigned to any project
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('project_sources')
         .select(
           `
@@ -69,17 +70,17 @@ export async function GET(request: NextRequest) {
 
       // Extract sources from junction table result
       sources = (data || [])
-        .map((item: any) => item.sources)
-        .filter((source: any) => source !== null);
+        .map((item: DatabaseRecord) => item.sources)
+        .filter((source: DatabaseRecord) => source !== null);
 
       // Remove duplicates (a source can be in multiple projects)
       const uniqueSources = Array.from(
-        new Map(sources.map((s: any) => [s.id, s])).values()
+        new Map(sources.map((s: DatabaseRecord) => [s.id, s])).values()
       );
       sources = uniqueSources;
     } else if (category === 'areas') {
       // Get all sources assigned to any area
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('area_sources')
         .select(
           `
@@ -98,17 +99,17 @@ export async function GET(request: NextRequest) {
 
       // Extract sources from junction table result
       sources = (data || [])
-        .map((item: any) => item.sources)
-        .filter((source: any) => source !== null);
+        .map((item: DatabaseRecord) => item.sources)
+        .filter((source: DatabaseRecord) => source !== null);
 
       // Remove duplicates
       const uniqueSources = Array.from(
-        new Map(sources.map((s: any) => [s.id, s])).values()
+        new Map(sources.map((s: DatabaseRecord) => [s.id, s])).values()
       );
       sources = uniqueSources;
     } else if (category === 'resources') {
       // Get all sources assigned to any resource
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('resource_sources')
         .select(
           `
@@ -127,18 +128,18 @@ export async function GET(request: NextRequest) {
 
       // Extract sources from junction table result
       sources = (data || [])
-        .map((item: any) => item.sources)
-        .filter((source: any) => source !== null);
+        .map((item: DatabaseRecord) => item.sources)
+        .filter((source: DatabaseRecord) => source !== null);
 
       // Remove duplicates
       const uniqueSources = Array.from(
-        new Map(sources.map((s: any) => [s.id, s])).values()
+        new Map(sources.map((s: DatabaseRecord) => [s.id, s])).values()
       );
       sources = uniqueSources;
     }
 
     // Flatten summary arrays
-    const flattenedSources = sources.map((source: any) => ({
+    const flattenedSources = sources.map((source: DatabaseRecord) => ({
       ...source,
       summary: Array.isArray(source.summaries)
         ? source.summaries

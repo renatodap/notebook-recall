@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
 import { generateReviewFromTemplate, REVIEW_TEMPLATES, ReviewType } from '@/lib/academic/review-templates'
+import type { DatabaseRecord } from '@/types/api-types'
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     const supabase = await createRouteHandlerClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -23,7 +24,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get sources
-    const { data: sources } = await (supabase as any)
+    const { data: sources } = await supabase
       .from('sources')
       .select('id, title, summaries (summary_text)')
       .in('id', source_ids)
@@ -33,7 +34,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Sources not found' }, { status: 404 })
     }
 
-    const sourcesForReview = sources.map((s: any) => ({
+    const sourcesForReview = sources.map((s: DatabaseRecord) => ({
       title: s.title,
       summary_text: s.summaries?.[0]?.summary_text || ''
     }))
@@ -59,7 +60,7 @@ export async function POST(request: NextRequest) {
       review.sections.map(s => `## ${s.title}\n\n${s.content}`).join('\n\n')
 
     // Save to published_outputs
-    const { data: output } = await (supabase as any)
+    const { data: output } = await supabase
       .from('published_outputs')
       .insert({
         user_id: user.id,
@@ -70,7 +71,7 @@ export async function POST(request: NextRequest) {
           template_type,
           source_count: sources.length,
           word_count: markdownContent.split(/\s+/).length,
-          sections: review.sections.map((s: any) => s.title)
+          sections: review.sections.map((s: DatabaseRecord) => s.title)
         },
         status: 'draft'
       })
@@ -82,7 +83,7 @@ export async function POST(request: NextRequest) {
       output_id: output.id,
       source_id: sid
     }))
-    await (supabase as any).from('output_sources').insert(links)
+    await supabase.from('output_sources').insert(links)
 
     return NextResponse.json({ output, review, template }, { status: 201 })
   } catch (error) {

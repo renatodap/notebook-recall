@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create follow relationship
-    const { data: follow, error } = await (supabase as any)
+    const { data: follow, error } = await supabase
       .from('user_follows')
       .insert({
         follower_id: user.id,
@@ -66,7 +66,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'user_id required' }, { status: 400 })
     }
 
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from('user_follows')
       .delete()
       .eq('follower_id', user.id)
@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
 
     if (type === 'following') {
       // Get users I'm following
-      const { data: following, error } = await (supabase as any)
+      const { data: following, error } = await supabase
         .from('user_follows')
         .select('following_id, created_at')
         .eq('follower_id', user.id)
@@ -104,7 +104,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ following })
     } else if (type === 'followers') {
       // Get my followers
-      const { data: followers, error } = await (supabase as any)
+      const { data: followers, error } = await supabase
         .from('user_follows')
         .select('follower_id, created_at')
         .eq('following_id', user.id)

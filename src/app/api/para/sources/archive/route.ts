@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     const body: ArchiveSourceRequest = await request.json();
     const { source_id, archived } = body;
 
-    const { data: source, error } = await (supabase as any)
+    const { data: source, error } = await supabase
       .from('sources')
       .update({ archived })
       .eq('id', source_id)
@@ -47,7 +47,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: sources, error } = await (supabase as any)
+    const { data: sources, error } = await supabase
       .from('sources')
       .select(`
         *,

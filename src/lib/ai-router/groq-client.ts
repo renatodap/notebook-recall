@@ -4,6 +4,7 @@
 
 import Groq from 'groq-sdk'
 import { ModelConfig } from './index'
+import type { DatabaseRecord } from '@/types/api-types'
 
 let groqClient: Groq | null = null
 
@@ -154,14 +155,14 @@ export interface GroqTool {
   function: {
     name: string
     description: string
-    parameters: Record<string, any>
+    parameters: Record<string, unknown>
   }
 }
 
 export async function groqFunctionCall(
   messages: GroqChatMessage[],
   tools: GroqTool[]
-): Promise<{ response: string; toolCalls: any[] }> {
+): Promise<{ response: string; toolCalls: unknown[] }> {
   const client = getGroqClient()
 
   const response = await client.chat.completions.create({
@@ -177,7 +178,7 @@ export async function groqFunctionCall(
 
   return {
     response: message?.content || '',
-    toolCalls: toolCalls.map((tc: any) => ({
+    toolCalls: toolCalls.map((tc: DatabaseRecord) => ({
       name: tc.function.name,
       arguments: JSON.parse(tc.function.arguments)
     }))

@@ -97,7 +97,7 @@ export async function generateEmbeddingsBatch(
 
       const data = await response.json()
 
-      data.data.forEach((item: any) => {
+      data.data.forEach((item: unknown) => {
         results.push({
           embedding: item.embedding,
           tokenCount: data.usage.total_tokens / batch.length, // Approximate

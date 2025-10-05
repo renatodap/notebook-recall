@@ -9,6 +9,7 @@ import { createRouteHandlerClient } from '@/lib/supabase/server';
 import { backfillChunks } from '@/lib/chunking/embeddings';
 import { z } from 'zod';
 import type { ChunkBackfillRequest, ChunkBackfillResponse } from '@/types/chunks';
+import type { DatabaseRecord } from '@/types/api-types'
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes for backfill operations
@@ -50,7 +51,7 @@ export async function POST(request: NextRequest) {
 
     if (dry_run) {
       // Dry run: just count sources that need chunking
-      const { data: sources } = await (supabase as any)
+      const { data: sources } = await supabase
         .from('sources')
         .select('id, original_content, content_type')
         .eq('user_id', user.id)
@@ -60,12 +61,12 @@ export async function POST(request: NextRequest) {
 
       if (sources && Array.isArray(sources)) {
         for (const source of sources) {
-          const { count } = await (supabase as any)
+          const { count } = await supabase
             .from('content_chunks')
             .select('*', { count: 'exact', head: true })
-            .eq('source_id', (source as any).id);
+            .eq('source_id', (source).id);
 
-          if (count === 0 && (source as any).original_content?.length > 1000) {
+          if (count === 0 && (source).original_content?.length > 1000) {
             needsChunking++;
           }
         }
@@ -125,28 +126,28 @@ export async function GET() {
     }
 
     // Count sources
-    const { count: totalSources } = await (supabase as any)
+    const { count: totalSources } = await supabase
       .from('sources')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', user.id);
 
     // Count sources with chunks
-    const { data: sourcesWithChunks } = await (supabase as any)
+    const { data: sourcesWithChunks } = await supabase
       .from('content_chunks')
       .select('source_id')
       .neq('source_id', '00000000-0000-0000-0000-000000000000');
 
     const uniqueSourcesWithChunks = new Set(
-      sourcesWithChunks?.map((c: any) => c.source_id) || []
+      sourcesWithChunks?.map((c: DatabaseRecord) => c.source_id) || []
     ).size;
 
     // Count total chunks
-    const { count: totalChunks } = await (supabase as any)
+    const { count: totalChunks } = await supabase
       .from('content_chunks')
       .select('*', { count: 'exact', head: true });
 
     // Count chunks with embeddings
-    const { count: chunksWithEmbeddings } = await (supabase as any)
+    const { count: chunksWithEmbeddings } = await supabase
       .from('content_chunks')
       .select('*', { count: 'exact', head: true })
       .not('embedding', 'is', null);

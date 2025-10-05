@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import MobileNav from '@/components/MobileNav'
+import type { DatabaseRecord } from '@/types/api-types'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,7 +15,7 @@ export default async function SynthesisListPage() {
   }
 
   // Fetch all synthesis reports
-  const { data: reports } = await (supabase as any)
+  const { data: reports } = await supabase
     .from('synthesis_reports')
     .select('*')
     .eq('user_id', user.id)
@@ -55,7 +56,7 @@ export default async function SynthesisListPage() {
           </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {reports.map((report: any) => (
+            {reports.map((report: DatabaseRecord) => (
               <Link
                 key={report.id}
                 href={`/synthesis/${report.id}`}

@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/lib/supabase/server';
 import { generateEmbedding } from '@/lib/embeddings/client';
 import { z } from 'zod';
+import type { DatabaseRecord } from '@/types/api-types'
 import type {
   EnhancedSearchRequest,
   EnhancedSearchResponse,
@@ -68,7 +69,7 @@ export async function POST(request: NextRequest) {
 
     if (mode === 'chunks' || mode === 'hybrid') {
       // Search chunks for granular results
-      const { data: chunkData, error: chunkError } = await (supabase as any).rpc(
+      const { data: chunkData, error: chunkError } = await supabase.rpc(
         'match_content_chunks',
         {
           query_embedding: queryEmbedding.embedding,
@@ -82,7 +83,7 @@ export async function POST(request: NextRequest) {
       if (chunkError) {
         console.error('Chunk search error:', chunkError);
       } else if (chunkData) {
-        results = chunkData.map((item: any) => ({
+        results = chunkData.map((item: DatabaseRecord) => ({
           chunk: {
             id: item.chunk_id,
             source_id: item.source_id,
@@ -110,7 +111,7 @@ export async function POST(request: NextRequest) {
 
     if (mode === 'summaries') {
       // Use existing summary search
-      const { data: summaryData, error: summaryError } = await (supabase as any).rpc(
+      const { data: summaryData, error: summaryError } = await supabase.rpc(
         'match_summaries',
         {
           query_embedding: queryEmbedding.embedding,
@@ -125,7 +126,7 @@ export async function POST(request: NextRequest) {
         console.error('Summary search error:', summaryError);
       } else if (summaryData) {
         // Convert summary results to chunk format for consistency
-        results = summaryData.map((item: any) => ({
+        results = summaryData.map((item: DatabaseRecord) => ({
           chunk: {
             id: item.summary_id,
             source_id: item.source_id,

@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
 
     if (action === 'like') {
       // Add like
-      const { data: like, error } = await (supabase as any)
+      const { data: like, error } = await supabase
         .from('likes')
         .insert({
           user_id: user.id,
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'comment_text required' }, { status: 400 })
       }
 
-      const { data: comment, error } = await (supabase as any)
+      const { data: comment, error } = await supabase
         .from('comments')
         .insert({
           user_id: user.id,
@@ -93,11 +93,11 @@ export async function GET(request: NextRequest) {
       }, { status: 400 })
     }
 
-    let likes: any[] = []
-    let comments: any[] = []
+    let likes: unknown[] = []
+    let comments: unknown[] = []
 
     if (interactionType === 'likes' || interactionType === 'all') {
-      const { data } = await (supabase as any)
+      const { data } = await supabase
         .from('likes')
         .select('*')
         .eq('target_type', targetType)
@@ -107,7 +107,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (interactionType === 'comments' || interactionType === 'all') {
-      const { data } = await (supabase as any)
+      const { data } = await supabase
         .from('comments')
         .select('*')
         .eq('target_type', targetType)
@@ -145,7 +145,7 @@ export async function DELETE(request: NextRequest) {
     const commentId = searchParams.get('comment_id')
 
     if (action === 'unlike' && targetType && targetId) {
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from('likes')
         .delete()
         .eq('user_id', user.id)
@@ -155,7 +155,7 @@ export async function DELETE(request: NextRequest) {
       if (error) throw error
       return NextResponse.json({ success: true })
     } else if (action === 'delete_comment' && commentId) {
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from('comments')
         .delete()
         .eq('id', commentId)

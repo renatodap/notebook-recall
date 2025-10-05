@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import type { Project, Area, Resource } from '@/types';
+import type { DatabaseRecord } from '@/types/api-types'
 
 interface PARAAssignmentModalProps {
   sourceId: string;
@@ -45,9 +46,9 @@ export default function PARAAssignmentModal({
         setResources(resourcesData.resources || []);
 
         // Set current assignments
-        setSelectedProjects((statusData.projects || []).map((p: any) => p.id));
-        setSelectedAreas((statusData.areas || []).map((a: any) => a.id));
-        setSelectedResources((statusData.resources || []).map((r: any) => r.id));
+        setSelectedProjects((statusData.projects || []).map((p: DatabaseRecord) => p.id));
+        setSelectedAreas((statusData.areas || []).map((a: DatabaseRecord) => a.id));
+        setSelectedResources((statusData.resources || []).map((r: DatabaseRecord) => r.id));
       } catch (error) {
         console.error('Error fetching PARA data:', error);
       } finally {

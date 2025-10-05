@@ -196,15 +196,23 @@ export default function CommandPalette() {
       <div
         className="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm"
         onClick={() => setIsOpen(false)}
+        aria-hidden="true"
       />
 
       {/* Command Palette */}
-      <div className="fixed top-[20%] left-1/2 -translate-x-1/2 w-full max-w-2xl z-50 px-4">
+      <div
+        className="fixed top-[20%] left-1/2 -translate-x-1/2 w-full max-w-2xl z-50 px-4"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="command-palette-title"
+      >
         <div className="bg-white rounded-2xl shadow-2xl border-2 border-gray-200 overflow-hidden">
           {/* Search Input */}
           <div className="flex items-center gap-3 p-4 border-b border-gray-200">
-            <span className="text-2xl">🔍</span>
+            <span className="text-2xl" role="img" aria-hidden="true">🔍</span>
+            <label htmlFor="command-search" className="sr-only">Search commands</label>
             <input
+              id="command-search"
               ref={inputRef}
               type="text"
               value={query}
@@ -212,22 +220,27 @@ export default function CommandPalette() {
               onKeyDown={handleInputKeyDown}
               placeholder="Search for commands, tools, or pages..."
               className="flex-1 text-lg outline-none bg-transparent"
+              role="combobox"
+              aria-expanded="true"
+              aria-controls="command-results"
+              aria-activedescendant={filteredCommands[selectedIndex] ? `cmd-${filteredCommands[selectedIndex].id}` : undefined}
+              aria-autocomplete="list"
             />
-            <kbd className="px-2 py-1 bg-gray-100 rounded text-xs font-mono text-gray-600">
+            <kbd className="px-2 py-1 bg-gray-100 rounded text-xs font-mono text-gray-600" aria-label="Press Escape to close">
               ESC
             </kbd>
           </div>
 
           {/* Results */}
-          <div className="max-h-[60vh] overflow-y-auto">
+          <div id="command-results" className="max-h-[60vh] overflow-y-auto" role="listbox" aria-label="Command results">
             {filteredCommands.length === 0 ? (
-              <div className="p-8 text-center text-gray-500">
+              <div className="p-8 text-center text-gray-500" role="status">
                 <p>No results found for &quot;{query}&quot;</p>
               </div>
             ) : (
               Object.entries(groupedCommands).map(([category, items]) => (
                 <div key={category} className="py-2">
-                  <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase">
+                  <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase" role="presentation">
                     {category}
                   </div>
                   {items.map((cmd, index) => {
@@ -236,6 +249,7 @@ export default function CommandPalette() {
 
                     return (
                       <button
+                        id={`cmd-${cmd.id}`}
                         key={cmd.id}
                         onClick={() => {
                           cmd.action()
@@ -249,9 +263,12 @@ export default function CommandPalette() {
                             ? 'bg-indigo-50 border-l-4 border-indigo-600'
                             : 'border-l-4 border-transparent hover:bg-gray-50'
                         }`}
+                        role="option"
+                        aria-selected={isSelected}
+                        aria-label={`${cmd.label}${cmd.description ? ': ' + cmd.description : ''}`}
                       >
                         {cmd.icon && (
-                          <span className="text-2xl">{cmd.icon}</span>
+                          <span className="text-2xl" role="img" aria-hidden="true">{cmd.icon}</span>
                         )}
                         <div className="flex-1 text-left">
                           <div className="font-medium text-gray-900">
@@ -264,7 +281,7 @@ export default function CommandPalette() {
                           )}
                         </div>
                         {isSelected && (
-                          <kbd className="px-2 py-1 bg-gray-100 rounded text-xs font-mono text-gray-600">
+                          <kbd className="px-2 py-1 bg-gray-100 rounded text-xs font-mono text-gray-600" aria-hidden="true">
                             ↵
                           </kbd>
                         )}

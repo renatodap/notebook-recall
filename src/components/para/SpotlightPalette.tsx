@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDebounce } from '@/hooks/useDebounce';
+import type { DatabaseRecord } from '@/types/api-types'
 
 interface SpotlightPaletteProps {
   isOpen: boolean;
@@ -121,7 +122,7 @@ export default function SpotlightPalette({ isOpen, onClose }: SpotlightPalettePr
 
       if (sourcesResponse.ok) {
         const sourcesData = await sourcesResponse.json();
-        searchResults = sourcesData.results?.map((result: any) => ({
+        searchResults = sourcesData.results?.map((result: DatabaseRecord) => ({
           id: result.id || result.source?.id,
           type: 'source',
           title: result.title || result.source?.title || 'Untitled',

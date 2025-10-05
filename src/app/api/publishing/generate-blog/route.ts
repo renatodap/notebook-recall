@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
 import { generateBlogPost } from '@/lib/publishing/blog-generator'
+import type { DatabaseRecord } from '@/types/api-types'
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,7 +28,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify user owns all sources
-    const { data: sources, error: sourcesError } = await (supabase as any)
+    const { data: sources, error: sourcesError } = await supabase
       .from('sources')
       .select(`
         id,
@@ -45,7 +46,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Prepare sources for blog generation
-    const blogInput = sources.map((s: any) => ({
+    const blogInput = sources.map((s: DatabaseRecord) => ({
       id: s.id,
       title: s.title,
       summary: s.summaries?.[0]?.summary_text,
@@ -71,7 +72,7 @@ export async function POST(request: NextRequest) {
     )
 
     // Save to database
-    const { data: output, error: outputError } = await (supabase as any)
+    const { data: output, error: outputError } = await supabase
       .from('published_outputs')
       .insert({
         user_id: user.id,
@@ -105,7 +106,7 @@ export async function POST(request: NextRequest) {
       source_id: sid,
     }))
 
-    await (supabase as any)
+    await supabase
       .from('output_sources')
       .insert(links)
 

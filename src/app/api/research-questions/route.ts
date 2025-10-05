@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
 
 // GET: List all research questions
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const supabase = await createRouteHandlerClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: questions, error } = await (supabase as any)
+    const { data: questions, error } = await supabase
       .from('research_questions')
       .select(`
         *,
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create question
-    const { data: question, error: createError } = await (supabase as any)
+    const { data: question, error: createError } = await supabase
       .from('research_questions')
       .insert({
         user_id: user.id,
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
         source_id: sid,
       }))
 
-      await (supabase as any)
+      await supabase
         .from('question_sources')
         .insert(links)
     }

@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'source_id required' }, { status: 400 })
     }
 
-    const { data: source } = await (supabase as any)
+    const { data: source } = await supabase
       .from('sources')
       .select('*, summaries (*)')
       .eq('id', source_id)
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function generateLaTeX(source: any, summary: any): string {
+function generateLaTeX(source: any, summary: unknown): string {
   return `\\documentclass{article}
 \\usepackage[utf8]{inputenc}
 \\usepackage{hyperref}
@@ -96,10 +96,10 @@ ${source.url ? `
 \\end{document}`
 }
 
-async function generateDOCX(source: any, summary: any): Promise<Buffer> {
+async function generateDOCX(source: any, summary: unknown): Promise<Buffer> {
   const { Packer } = await import('docx')
 
-  const children: any[] = [
+  const children: unknown[] = [
     new Paragraph({
       text: source.title,
       heading: HeadingLevel.TITLE,
@@ -163,7 +163,7 @@ async function generateDOCX(source: any, summary: any): Promise<Buffer> {
   return await Packer.toBuffer(doc)
 }
 
-function generateMarkdown(source: any, summary: any): string {
+function generateMarkdown(source: any, summary: unknown): string {
   let markdown = `# ${source.title}\n\n`
   markdown += `*Created: ${new Date(source.created_at).toLocaleDateString()}*\n\n`
 

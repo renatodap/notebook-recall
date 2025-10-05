@@ -48,7 +48,7 @@ export class EmbeddingError extends Error {
   retryable?: boolean
   cause?: any
 
-  constructor(message: string, code?: string, retryable?: boolean, cause?: any) {
+  constructor(message: string, code?: string, retryable?: boolean, cause?: unknown) {
     super(message)
     this.name = 'EmbeddingError'
     this.code = code
@@ -113,7 +113,7 @@ export interface EmbeddingGenerationRequest {
   text: string
   type?: 'summary' | 'chunk' | 'query'
   normalize?: boolean
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 export interface RetryConfig {

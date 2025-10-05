@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Insert relationship (will fail if duplicate due to unique constraint)
-    const { data: relationship, error } = await (supabase as any)
+    const { data: relationship, error } = await supabase
       .from(tableName)
       .insert(data)
       .select()
@@ -103,7 +103,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid relationship type' }, { status: 400 });
     }
 
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from(tableName)
       .delete()
       .match(conditions);

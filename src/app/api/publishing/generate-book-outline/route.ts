@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
+import type { DatabaseRecord } from '@/types/api-types'
 
 /**
  * Feature 30: Book Outline Generator
@@ -28,7 +29,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'source_ids required' }, { status: 400 })
     }
 
-    const { data: sources } = await (supabase as any)
+    const { data: sources } = await supabase
       .from('sources')
       .select('id, title, summaries (summary_text, key_topics)')
       .in('id', source_ids)
@@ -119,7 +120,7 @@ Return JSON:
     try {
       const jsonMatch = content.match(/\{[\s\S]*\}/)
       outline = JSON.parse(jsonMatch ? jsonMatch[0] : content)
-    } catch (e) {
+    } catch {
       outline = { title: book_title || 'Book Outline', chapters: [] }
     }
 
@@ -131,11 +132,11 @@ Return JSON:
       `---\n\n` +
       `## Front Matter\n${outline.frontMatter?.map((fm: string) => `- ${fm}`).join('\n') || ''}\n\n` +
       `## Main Content\n\n` +
-      (outline.parts?.map((part: any) =>
+      (outline.parts?.map((part: DatabaseRecord) =>
         `### Part ${part.number}: ${part.title}\n${part.description}\n\n` +
         outline.chapters
-          .filter((ch: any) => part.chapters?.includes(ch.number))
-          .map((ch: any) =>
+          .filter((ch: DatabaseRecord) => part.chapters?.includes(ch.number))
+          .map((ch: DatabaseRecord) =>
             `#### Chapter ${ch.number}: ${ch.title}\n\n` +
             `${ch.synopsis}\n\n` +
             `**Key Concepts**: ${ch.keyConcepts?.join(', ') || 'TBD'}\n\n` +
@@ -145,7 +146,7 @@ Return JSON:
       ).join('\n---\n\n') || '') +
       `\n## Back Matter\n${outline.backMatter?.map((bm: string) => `- ${bm}`).join('\n') || ''}`
 
-    const { data: output } = await (supabase as any)
+    const { data: output } = await supabase
       .from('published_outputs')
       .insert({
         user_id: user.id,
@@ -170,7 +171,7 @@ Return JSON:
       output_id: output.id,
       source_id: sid
     }))
-    await (supabase as any).from('output_sources').insert(links)
+    await supabase.from('output_sources').insert(links)
 
     return NextResponse.json({ output, outline }, { status: 201 })
   } catch (error) {

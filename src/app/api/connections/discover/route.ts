@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
-import { discoverSimilarSources, scoreConnectionStrength, generateConnectionEvidence } from '@/lib/connections/discovery'
+import { discoverSimilarSources } from '@/lib/connections/discovery'
 import type { DiscoverConnectionsRequest } from '@/types'
+import type { DatabaseRecord } from '@/types/api-types'
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,7 +21,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify user owns this source
-    const { data: source } = await (supabase as any)
+    const { data: source } = await supabase
       .from('sources')
       .select('id, title')
       .eq('id', source_id)
@@ -35,7 +36,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get all user's sources with embeddings
-    const { data: allSources, error: sourcesError } = await (supabase as any)
+    const { data: allSources, error: sourcesError } = await supabase
       .from('sources')
       .select(`
         id,
@@ -54,7 +55,7 @@ export async function POST(request: NextRequest) {
 
     // Discover similar sources
     const typesToFind = connection_types || ['similar']
-    const discoveries: any[] = []
+    const discoveries: unknown[] = []
 
     if (typesToFind.includes('similar')) {
       const similarSources = await discoverSimilarSources(
@@ -76,14 +77,14 @@ export async function POST(request: NextRequest) {
 
     // Check if connections already exist
     const newConnectionIds = discoveries.map(d => d.source_b_id)
-    const { data: existingConnections } = await (supabase as any)
+    const { data: existingConnections } = await supabase
       .from('source_connections')
       .select('source_b_id, connection_type')
       .eq('source_a_id', source_id)
       .in('source_b_id', newConnectionIds)
 
     const existingSet = new Set(
-      existingConnections?.map((c: any) => `${c.source_b_id}:${c.connection_type}`) || []
+      existingConnections?.map((c: DatabaseRecord) => `${c.source_b_id}:${c.connection_type}`) || []
     )
 
     // Filter out existing connections
@@ -102,7 +103,7 @@ export async function POST(request: NextRequest) {
         auto_generated: true,
       }))
 
-      const { error: insertError } = await (supabase as any)
+      const { error: insertError } = await supabase
         .from('source_connections')
         .insert(connectionsToInsert)
 
@@ -113,7 +114,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch full connection data with source details
-    const { data: connections, error: connError } = await (supabase as any)
+    const { data: connections, error: connError } = await supabase
       .from('source_connections')
       .select(`
         *,

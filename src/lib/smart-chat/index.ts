@@ -14,6 +14,7 @@
 import { ChatMessage } from '@/app/api/research-assistant/chat/route'
 import { semanticSearch } from '@/lib/embeddings/search'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
+import type { DatabaseRecord } from '@/types/api-types'
 
 // Feature 3: User Profile for Cross-Session Intelligence
 export interface UserProfile {
@@ -48,8 +49,8 @@ export interface ProactiveInsight {
 export interface ChatTool {
   name: string
   description: string
-  parameters: Record<string, any>
-  handler: (args: any) => Promise<any>
+  parameters: Record<string, unknown>
+  handler: (args: unknown) => Promise<any>
 }
 
 // Feature 7: Reasoning Step
@@ -75,7 +76,7 @@ export interface MessageFeedback {
 export async function getUserProfile(userId: string): Promise<UserProfile> {
   const supabase = await createRouteHandlerClient()
 
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from('user_profiles')
     .select('*')
     .eq('user_id', userId)
@@ -93,7 +94,7 @@ export async function getUserProfile(userId: string): Promise<UserProfile> {
       last_active: new Date().toISOString()
     }
 
-    await (supabase as any)
+    await supabase
       .from('user_profiles')
       .insert(defaultProfile)
 
@@ -191,13 +192,13 @@ export function getPersonaPrompt(queryType: QueryType, profile: UserProfile): st
 export async function generateProactiveInsights(
   userId: string,
   currentMessage: string,
-  recentSources: any[]
+  recentSources: unknown[]
 ): Promise<ProactiveInsight[]> {
   const insights: ProactiveInsight[] = []
 
   // Detect potential connections between sources
   if (recentSources.length >= 2) {
-    const topics = recentSources.flatMap((s: any) =>
+    const topics = recentSources.flatMap((s: unknown) =>
       s.summaries?.[0]?.key_topics || []
     )
 
@@ -215,7 +216,7 @@ export async function generateProactiveInsights(
       insights.push({
         type: 'connection',
         message: `I noticed common themes across your sources: ${sharedTopics.join(', ')}. Would you like me to analyze how these sources relate?`,
-        source_ids: recentSources.map((s: any) => s.id),
+        source_ids: recentSources.map((s: DatabaseRecord) => s.id),
         confidence: 0.8
       })
     }
@@ -231,7 +232,7 @@ export async function generateProactiveInsights(
   }
 
   // Detect contradictions (simplified)
-  const summaryTexts = recentSources.map((s: any) =>
+  const summaryTexts = recentSources.map((s: DatabaseRecord) =>
     s.summaries?.[0]?.summary_text || ''
   )
   const hasConflict = summaryTexts.some((text: string) =>
@@ -261,13 +262,13 @@ export const chatTools: ChatTool[] = [
       content: 'string',
       tags: 'string[]'
     },
-    handler: async (args: any) => {
+    handler: async (args: unknown) => {
       const supabase = await createRouteHandlerClient()
       const { data: { user } } = await supabase.auth.getUser()
 
       if (!user) throw new Error('Unauthorized')
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('notes')
         .insert({
           user_id: user.id,
@@ -288,7 +289,7 @@ export const chatTools: ChatTool[] = [
       query: 'string',
       limit: 'number?'
     },
-    handler: async (args: any) => {
+    handler: async (args: unknown) => {
       const supabase = await createRouteHandlerClient()
       const { data: { user } } = await supabase.auth.getUser()
 
@@ -310,9 +311,9 @@ export const chatTools: ChatTool[] = [
       source_id: 'string',
       style: 'string' // APA, MLA, Chicago
     },
-    handler: async (args: any) => {
+    handler: async (args: unknown) => {
       const supabase = await createRouteHandlerClient()
-      const { data: source } = await (supabase as any)
+      const { data: source } = await supabase
         .from('sources')
         .select('*')
         .eq('id', args.source_id)
@@ -333,7 +334,7 @@ export const chatTools: ChatTool[] = [
  */
 export async function performMultiStepReasoning(
   query: string,
-  sources: any[]
+  sources: unknown[]
 ): Promise<{ steps: ReasoningStep[], conclusion: string }> {
   const steps: ReasoningStep[] = []
 
@@ -374,7 +375,7 @@ export async function recordFeedback(feedback: MessageFeedback): Promise<boolean
   try {
     const supabase = await createRouteHandlerClient()
 
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from('message_feedback')
       .insert(feedback)
 
@@ -385,10 +386,10 @@ export async function recordFeedback(feedback: MessageFeedback): Promise<boolean
 
     // Update user profile based on feedback
     if (feedback.was_helpful) {
-      await (supabase as any)
+      await supabase
         .from('user_profiles')
         .update({
-          interaction_count: (supabase as any).raw('interaction_count + 1')
+          interaction_count: supabase.raw('interaction_count + 1')
         })
         .eq('user_id', feedback.user_id)
     }
@@ -410,7 +411,7 @@ export async function getUserPreferencesFromFeedback(userId: string): Promise<{
 }> {
   const supabase = await createRouteHandlerClient()
 
-  const { data: feedback } = await (supabase as any)
+  const { data: feedback } = await supabase
     .from('message_feedback')
     .select('*')
     .eq('user_id', userId)

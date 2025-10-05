@@ -30,6 +30,8 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         disabled={isDisabled}
         className={`${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}
+        aria-busy={loading}
+        aria-disabled={isDisabled}
         {...props}
       >
         {loading && (
@@ -38,6 +40,8 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
+            aria-hidden="true"
+            role="img"
           >
             <circle
               className="opacity-25"
@@ -54,6 +58,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             />
           </svg>
         )}
+        {loading && <span className="sr-only">Loading...</span>}
         {children}
       </button>
     )

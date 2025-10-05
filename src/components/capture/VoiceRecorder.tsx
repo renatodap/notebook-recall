@@ -65,7 +65,7 @@ export default function VoiceRecorder({ onRecordingComplete, onCancel }: VoiceRe
         setDuration(prev => prev + 1)
       }, 1000)
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError('Failed to access microphone. Please grant permission.')
       console.error('Microphone error:', err)
     }

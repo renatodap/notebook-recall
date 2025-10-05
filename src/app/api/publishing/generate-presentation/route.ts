@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
+import type { DatabaseRecord } from '@/types/api-types'
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,7 +18,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'source_ids required' }, { status: 400 })
     }
 
-    const { data: sources } = await (supabase as any)
+    const { data: sources } = await supabase
       .from('sources')
       .select(`id, title, summaries (summary_text, key_topics)`)
       .in('id', source_ids)
@@ -79,16 +80,16 @@ Return JSON:
     try {
       const jsonMatch = content.match(/\{[\s\S]*\}/)
       presentation = JSON.parse(jsonMatch ? jsonMatch[0] : content)
-    } catch (e) {
+    } catch {
       presentation = { title: 'Presentation', slides: [] }
     }
 
     const markdownContent = `# ${presentation.title}\n\n` +
-      presentation.slides.map((s: any) =>
+      presentation.slides.map((s: DatabaseRecord) =>
         `---\n\n## ${s.title}\n\n${s.content.map((c: string) => `- ${c}`).join('\n')}\n\n*Notes: ${s.notes}*`
       ).join('\n\n')
 
-    const { data: output } = await (supabase as any)
+    const { data: output } = await supabase
       .from('published_outputs')
       .insert({
         user_id: user.id,
@@ -102,7 +103,7 @@ Return JSON:
       .single()
 
     const links = source_ids.map((sid: string) => ({ output_id: output.id, source_id: sid }))
-    await (supabase as any).from('output_sources').insert(links)
+    await supabase.from('output_sources').insert(links)
 
     return NextResponse.json({ output, presentation }, { status: 201 })
   } catch (error) {

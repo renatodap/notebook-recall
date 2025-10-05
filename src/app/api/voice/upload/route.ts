@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
 
     // Upload audio to Supabase Storage
     const fileName = `${user.id}/${Date.now()}-${audioFile.name}`
-    const { data: uploadData, error: uploadError } = await (supabase as any).storage
+    const { data: uploadData, error: uploadError } = await supabase.storage
       .from('voice-notes')
       .upload(fileName, audioFile, {
         contentType: audioFile.type,
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get public URL
-    const { data: urlData } = (supabase as any).storage
+    const { data: urlData } = supabase.storage
       .from('voice-notes')
       .getPublicUrl(fileName)
 
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create source entry
-    const { data: source, error: sourceError } = await (supabase as any)
+    const { data: source, error: sourceError } = await supabase
       .from('sources')
       .insert({
         user_id: user.id,

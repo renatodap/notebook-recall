@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
 import { generateReviewFromTemplate, ReviewType, REVIEW_TEMPLATES } from '@/lib/academic/review-templates'
+import type { DatabaseRecord } from '@/types/api-types'
 
 /**
  * Automated Literature Review
@@ -37,7 +38,7 @@ export async function POST(request: NextRequest) {
     const topicEmbedding = await generateEmbedding(topic, openaiKey)
 
     // Step 2: Find relevant sources using vector similarity
-    const { data: matchedSources } = await (supabase as any)
+    const { data: matchedSources } = await supabase
       .rpc('match_sources', {
         query_embedding: topicEmbedding,
         match_threshold: min_relevance,
@@ -53,14 +54,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Step 3: Get full source details with summaries
-    const sourceIds = matchedSources.map((s: any) => s.id)
+    const sourceIds = matchedSources.map((s: DatabaseRecord) => s.id)
 
-    const { data: sources } = await (supabase as any)
+    const { data: sources } = await supabase
       .from('sources')
       .select('id, title, summaries (summary_text)')
       .in('id', sourceIds)
 
-    const sourcesForReview = sources.map((s: any) => ({
+    const sourcesForReview = sources.map((s: DatabaseRecord) => ({
       title: s.title,
       summary_text: s.summaries?.[0]?.summary_text || ''
     }))
@@ -86,7 +87,7 @@ export async function POST(request: NextRequest) {
       review.sections.map(s => `## ${s.title}\n\n${s.content}`).join('\n\n')
 
     // Step 5: Save to database
-    const { data: output } = await (supabase as any)
+    const { data: output } = await supabase
       .from('published_outputs')
       .insert({
         user_id: user.id,
@@ -98,9 +99,9 @@ export async function POST(request: NextRequest) {
           topic,
           source_count: sources.length,
           auto_generated: true,
-          avg_relevance: matchedSources.reduce((acc: number, s: any) => acc + (s.similarity || 0), 0) / matchedSources.length,
+          avg_relevance: matchedSources.reduce((acc: number, s: unknown) => acc + (s.similarity || 0), 0) / matchedSources.length,
           word_count: markdownContent.split(/\s+/).length,
-          sections: review.sections.map((s: any) => s.title)
+          sections: review.sections.map((s: DatabaseRecord) => s.title)
         },
         status: 'draft'
       })
@@ -112,7 +113,7 @@ export async function POST(request: NextRequest) {
       output_id: output.id,
       source_id: sid
     }))
-    await (supabase as any).from('output_sources').insert(links)
+    await supabase.from('output_sources').insert(links)
 
     return NextResponse.json({
       output,
@@ -121,7 +122,7 @@ export async function POST(request: NextRequest) {
         sourcesFound: sources.length,
         template: template.title,
         topic,
-        relevanceScores: matchedSources.map((s: any) => ({
+        relevanceScores: matchedSources.map((s: DatabaseRecord) => ({
           source_id: s.id,
           similarity: s.similarity
         }))

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/server'
 import Anthropic from '@anthropic-ai/sdk'
+import type { DatabaseRecord } from '@/types/api-types'
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,7 +31,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch sources from period
-    const { data: sources } = await (supabase as any)
+    const { data: sources } = await supabase
       .from('sources')
       .select(`
         id,
@@ -55,7 +56,7 @@ export async function POST(request: NextRequest) {
       apiKey: process.env.ANTHROPIC_API_KEY
     })
 
-    const sourcesText = sources.map((s: any) => {
+    const sourcesText = sources.map((s: DatabaseRecord) => {
       const summary = s.summaries?.[0]
       return `
 **${s.title}** (${s.content_type})
@@ -88,7 +89,7 @@ Format as HTML for an email.`
     const digestContent = message.content[0].type === 'text' ? message.content[0].text : ''
 
     // Save digest to database
-    const { data: digest } = await (supabase as any)
+    const { data: digest } = await supabase
       .from('digest_emails')
       .insert({
         user_id: user.id,

@@ -193,7 +193,7 @@ export default function QuickEntry() {
 
       // Auto-dismiss success message after 3 seconds
       setTimeout(() => setSuccess(false), 3000)
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err.message || 'An error occurred')
     } finally {
       setLoading(false)
@@ -229,12 +229,14 @@ export default function QuickEntry() {
   return (
     <Card>
       <CardBody>
-        <h2 className="text-xl font-semibold mb-2">⚡ Quick Entry</h2>
+        <h2 className="text-xl font-semibold mb-2">
+          <span role="img" aria-label="Lightning bolt">⚡</span> Quick Entry
+        </h2>
         <p className="text-sm text-gray-600 mb-4">
           Paste text, drop a file, or enter a URL. We&apos;ll figure out what to do with it.
         </p>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} aria-label="Quick content entry">
           <div
             className={`relative border-2 border-dashed rounded-lg transition-colors ${
               isDragging
@@ -245,10 +247,16 @@ export default function QuickEntry() {
             onDragLeave={handleDragLeave}
             onDragOver={handleDragOver}
             onDrop={handleDrop}
+            role="region"
+            aria-label="Content input area"
           >
             {getTypeIndicator()}
 
+            <label htmlFor="quick-entry-input" className="sr-only">
+              Enter or paste text, URL, or drop a file
+            </label>
             <textarea
+              id="quick-entry-input"
               value={input}
               onChange={(e) => handleInputChange(e.target.value)}
               onPaste={handlePaste}
@@ -256,13 +264,14 @@ export default function QuickEntry() {
               className="w-full p-4 border-0 rounded-lg focus:outline-none focus:ring-0 resize-none"
               rows={6}
               disabled={loading || !!file}
+              aria-describedby="quick-entry-help"
             />
 
             {file && (
-              <div className="p-4 bg-gray-50 border-t">
+              <div className="p-4 bg-gray-50 border-t" role="status" aria-label="Selected file">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="text-2xl">
+                    <span className="text-2xl" role="img" aria-label={file.type === 'application/pdf' ? 'PDF file' : 'Image file'}>
                       {file.type === 'application/pdf' ? '📄' : '🖼️'}
                     </span>
                     <div>
@@ -280,6 +289,7 @@ export default function QuickEntry() {
                     }}
                     className="text-red-600 hover:text-red-700 text-sm font-medium"
                     disabled={loading}
+                    aria-label="Remove selected file"
                   >
                     Remove
                   </button>
@@ -287,6 +297,9 @@ export default function QuickEntry() {
               </div>
             )}
           </div>
+          <span id="quick-entry-help" className="sr-only">
+            Supports text, URLs, PDFs, and images. Content will be automatically detected and processed.
+          </span>
 
           <div className="mt-3 flex gap-2">
             <Button
@@ -294,10 +307,13 @@ export default function QuickEntry() {
               variant="secondary"
               onClick={() => fileInputRef.current?.click()}
               disabled={loading}
+              aria-label="Select file from computer"
             >
-              📎 Select File
+              <span role="img" aria-hidden="true">📎</span> Select File
             </Button>
+            <label htmlFor="file-input" className="sr-only">Upload file</label>
             <input
+              id="file-input"
               ref={fileInputRef}
               type="file"
               accept=".pdf,image/jpeg,image/png,image/gif,image/webp"
@@ -306,18 +322,24 @@ export default function QuickEntry() {
                 if (selectedFile) handleFileSelect(selectedFile)
               }}
               className="hidden"
+              aria-describedby="file-input-help"
             />
+            <span id="file-input-help" className="sr-only">
+              Accepts PDF and image files (JPEG, PNG, GIF, WebP)
+            </span>
           </div>
 
           {error && (
-            <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg" role="alert" aria-live="assertive">
               <p className="text-sm text-red-600">{error}</p>
             </div>
           )}
 
           {success && (
-            <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-              <p className="text-sm text-green-600">✓ Content saved successfully!</p>
+            <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg" role="status" aria-live="polite">
+              <p className="text-sm text-green-600">
+                <span role="img" aria-label="Success">✓</span> Content saved successfully!
+              </p>
             </div>
           )}
 

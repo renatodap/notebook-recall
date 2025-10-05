@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
 import { analyzeResearchGaps } from '@/lib/analysis/gap-analyzer'
+import type { DatabaseRecord } from '@/types/api-types'
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,7 +20,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify user owns all sources
-    const { data: sources, error: sourcesError } = await (supabase as any)
+    const { data: sources, error: sourcesError } = await supabase
       .from('sources')
       .select(`
         id,
@@ -37,7 +38,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Prepare sources for analysis
-    const sourcesForAnalysis = sources.map((s: any) => ({
+    const sourcesForAnalysis = sources.map((s: DatabaseRecord) => ({
       id: s.id,
       title: s.title,
       summary: s.summaries?.[0]?.summary_text || '',
@@ -57,7 +58,7 @@ export async function POST(request: NextRequest) {
     )
 
     // Save analysis to database
-    const { data: savedAnalysis, error: saveError } = await (supabase as any)
+    const { data: savedAnalysis, error: saveError } = await supabase
       .from('research_gap_analyses')
       .insert({
         user_id: user.id,
@@ -92,7 +93,7 @@ export async function POST(request: NextRequest) {
 }
 
 // GET: List all gap analyses for current user
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const supabase = await createRouteHandlerClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -101,7 +102,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: analyses, error } = await (supabase as any)
+    const { data: analyses, error } = await supabase
       .from('research_gap_analyses')
       .select('id, focus, total_gaps, created_at, source_ids')
       .eq('user_id', user.id)

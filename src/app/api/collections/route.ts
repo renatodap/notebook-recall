@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
 import type { CreateCollectionRequest } from '@/types'
+import type { DatabaseRecord } from '@/types/api-types'
 
 // GET: List all collections for current user
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const supabase = await createRouteHandlerClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -12,7 +13,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: collections, error } = await (supabase as any)
+    const { data: collections, error } = await supabase
       .from('collections')
       .select(`
         *,
@@ -27,7 +28,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Transform to include source count
-    const collectionsWithCount = collections?.map((c: any) => ({
+    const collectionsWithCount = collections?.map((c: DatabaseRecord) => ({
       ...c,
       source_count: c.sources?.[0]?.count || 0,
       sources: undefined,
@@ -64,7 +65,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create collection
-    const { data: collection, error: createError } = await (supabase as any)
+    const { data: collection, error: createError } = await supabase
       .from('collections')
       .insert({
         user_id: user.id,
@@ -89,7 +90,7 @@ export async function POST(request: NextRequest) {
         added_by: user.id,
       }))
 
-      const { error: linkError } = await (supabase as any)
+      const { error: linkError } = await supabase
         .from('collection_sources')
         .insert(sourceLinks)
 

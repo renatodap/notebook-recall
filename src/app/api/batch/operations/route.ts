@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
+import type { DatabaseRecord } from '@/types/api-types'
 
 /**
  * Feature 31: Advanced Batch Operations
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest) {
 
         for (const id of target_ids) {
           try {
-            const { data: source } = await (supabase as any)
+            const { data: source } = await supabase
               .from('sources')
               .select('tags')
               .eq('id', id)
@@ -52,7 +53,7 @@ export async function POST(request: NextRequest) {
 
             if (source) {
               const updatedTags = Array.from(new Set([...(source.tags || []), ...tags]))
-              await (supabase as any)
+              await supabase
                 .from('sources')
                 .update({ tags: updatedTags })
                 .eq('id', id)
@@ -81,7 +82,7 @@ export async function POST(request: NextRequest) {
         }))
 
         try {
-          const { data, error } = await (supabase as any)
+          const { data, error } = await supabase
             .from('collection_sources')
             .insert(sourceCollectionLinks)
             .select()
@@ -150,7 +151,7 @@ export async function POST(request: NextRequest) {
         // Export multiple sources in specified format
         const { export_format = 'json' } = parameters
 
-        const { data: sources, error } = await (supabase as any)
+        const { data: sources, error } = await supabase
           .from('sources')
           .select('*')
           .in('id', target_ids)
@@ -168,7 +169,7 @@ export async function POST(request: NextRequest) {
           const headers = ['id', 'title', 'url', 'source_type', 'created_at']
           const csv = [
             headers.join(','),
-            ...sources.map((s: any) =>
+            ...sources.map((s: DatabaseRecord) =>
               headers.map(h => JSON.stringify(s[h] || '')).join(',')
             )
           ].join('\n')
@@ -178,7 +179,7 @@ export async function POST(request: NextRequest) {
 
       case 'bulk_delete':
         // Delete multiple sources
-        const { data, error: deleteError } = await (supabase as any)
+        const { data, error: deleteError } = await supabase
           .from('sources')
           .delete()
           .in('id', target_ids)
@@ -196,7 +197,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Log batch operation
-    await (supabase as any)
+    await supabase
       .from('batch_operations_log')
       .insert({
         user_id: user.id,

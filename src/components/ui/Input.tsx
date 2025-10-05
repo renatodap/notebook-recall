@@ -7,16 +7,22 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 }
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ label, error, helperText, className = '', ...props }, ref) => {
+  ({ label, error, helperText, className = '', id, ...props }, ref) => {
+    // Generate unique IDs for accessibility
+    const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`
+    const errorId = `${inputId}-error`
+    const helperId = `${inputId}-helper`
+
     return (
       <div className="w-full">
         {label && (
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor={inputId} className="block text-sm font-medium text-gray-700 mb-1">
             {label}
-            {props.required && <span className="text-red-500 ml-1">*</span>}
+            {props.required && <span className="text-red-500 ml-1" aria-label="required">*</span>}
           </label>
         )}
         <input
+          id={inputId}
           ref={ref}
           className={`
             w-full px-3 py-2 border rounded-lg shadow-sm
@@ -25,11 +31,20 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             ${error ? 'border-red-500' : 'border-gray-300'}
             ${className}
           `}
+          aria-invalid={error ? 'true' : 'false'}
+          aria-describedby={error ? errorId : helperText ? helperId : undefined}
+          aria-required={props.required}
           {...props}
         />
-        {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+        {error && (
+          <p id={errorId} className="mt-1 text-sm text-red-600" role="alert">
+            {error}
+          </p>
+        )}
         {helperText && !error && (
-          <p className="mt-1 text-sm text-gray-500">{helperText}</p>
+          <p id={helperId} className="mt-1 text-sm text-gray-500">
+            {helperText}
+          </p>
         )}
       </div>
     )

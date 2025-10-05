@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import MobileNav from '@/components/MobileNav'
+import type { DatabaseRecord } from '@/types/api-types'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,7 +14,7 @@ export default async function PublishingPage() {
     redirect('/login')
   }
 
-  const { data: outputs } = await (supabase as any)
+  const { data: outputs } = await supabase
     .from('published_outputs')
     .select('*')
     .eq('user_id', user.id)
@@ -38,11 +39,11 @@ export default async function PublishingPage() {
         </div>
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="font-semibold mb-2">Drafts</h3>
-          <p className="text-3xl">{outputs?.filter((o: any) => o.status === 'draft').length || 0}</p>
+          <p className="text-3xl">{outputs?.filter((o: DatabaseRecord) => o.status === 'draft').length || 0}</p>
         </div>
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="font-semibold mb-2">Published</h3>
-          <p className="text-3xl">{outputs?.filter((o: any) => o.status === 'published').length || 0}</p>
+          <p className="text-3xl">{outputs?.filter((o: DatabaseRecord) => o.status === 'published').length || 0}</p>
         </div>
       </div>
 
@@ -50,7 +51,7 @@ export default async function PublishingPage() {
         <h2 className="text-xl font-semibold mb-4">Your Outputs</h2>
         {outputs && outputs.length > 0 ? (
           <div className="space-y-4">
-            {outputs.map((output: any) => (
+            {outputs.map((output: DatabaseRecord) => (
               <div key={output.id} className="border-b pb-4">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">

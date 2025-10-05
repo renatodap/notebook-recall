@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const sourceId = searchParams.get('source_id')
 
-    let query = (supabase as any)
+    let query = supabase
       .from('pdf_annotations')
       .select('*')
       .eq('user_id', user.id)
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify user owns the source
-    const { data: source } = await (supabase as any)
+    const { data: source } = await supabase
       .from('sources')
       .select('id')
       .eq('id', source_id)
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Source not found' }, { status: 404 })
     }
 
-    const { data: annotation, error } = await (supabase as any)
+    const { data: annotation, error } = await supabase
       .from('pdf_annotations')
       .insert({
         user_id: user.id,

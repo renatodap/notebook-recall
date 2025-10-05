@@ -24,7 +24,7 @@ export default function ShareButton({ sourceId }: ShareButtonProps) {
       const res = await fetch(`/api/sharing?type=owned`)
       if (res.ok) {
         const data = await res.json()
-        const share = data.shares?.find((s: any) => s.source_id === sourceId)
+        const share = data.shares?.find((s: unknown) => s.source_id === sourceId)
         if (share) {
           setVisibility(share.visibility)
           if (share.visibility === 'public') {

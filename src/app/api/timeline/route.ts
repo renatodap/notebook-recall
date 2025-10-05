@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     const groupBy = searchParams.get('group_by') || 'month' // day, week, month, year
 
     // Fetch all sources with timestamps
-    const { data: sources, error } = await (supabase as any)
+    const { data: sources, error } = await supabase
       .from('sources')
       .select('id, title, content_type, created_at')
       .eq('user_id', user.id)
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     // Group sources by time period
     const timeline: Record<string, any[]> = {}
 
-    sources?.forEach((source: any) => {
+    sources?.forEach((source: unknown) => {
       const date = new Date(source.created_at)
       let key: string
 

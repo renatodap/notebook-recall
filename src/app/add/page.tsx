@@ -167,7 +167,7 @@ export default function AddPage() {
       setTimeout(() => {
         router.push('/dashboard')
       }, 1500)
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err.message || 'An error occurred')
     } finally {
       setLoading(false)

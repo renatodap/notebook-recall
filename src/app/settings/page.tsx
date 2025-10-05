@@ -33,7 +33,7 @@ export default function SettingsPage() {
 
       const data = await response.json()
       setMessage(`✓ Digest generated successfully! ${data.sourceCount} sources summarized.`)
-    } catch (error: any) {
+    } catch (error: unknown) {
       setMessage(`Error: ${error.message}`)
     } finally {
       setLoading(false)
@@ -52,7 +52,7 @@ export default function SettingsPage() {
 
       const data = await response.json()
       setCaptureEmail(data.capture_email)
-    } catch (error: any) {
+    } catch (error: unknown) {
       setMessage(`Error: ${error.message}`)
     } finally {
       setLoadingEmail(false)

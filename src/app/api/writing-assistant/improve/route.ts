@@ -136,7 +136,7 @@ Return JSON:
     }
 
     // Save to history
-    await (supabase as any)
+    await supabase
       .from('writing_assistance_history')
       .insert({
         user_id: user.id,

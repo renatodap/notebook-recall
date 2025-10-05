@@ -24,7 +24,7 @@ export default function FollowButton({ userId, currentUserId, initialFollowing =
       const res = await fetch('/api/social/follow?type=following')
       if (res.ok) {
         const data = await res.json()
-        const isFollowing = data.following?.some((f: any) => f.following_id === userId)
+        const isFollowing = data.following?.some((f: unknown) => f.following_id === userId)
         setFollowing(isFollowing)
       }
     } catch (error) {

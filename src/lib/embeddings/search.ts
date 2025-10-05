@@ -5,6 +5,7 @@
 import { createRouteHandlerClient } from '@/lib/supabase/server'
 import { SemanticSearchOptions, SemanticSearchResult } from './types'
 import { generateEmbedding } from './generator'
+import type { DatabaseRecord } from '@/types/api-types'
 
 /**
  * Perform semantic search for sources using vector similarity
@@ -32,7 +33,7 @@ export async function semanticSearch(
     const supabase = await createRouteHandlerClient()
 
     // Use pgvector's cosine distance operator (<=>)
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .rpc('search_sources_by_embedding', {
         query_embedding: queryEmbedding,
         match_threshold: 1 - threshold, // Convert similarity to distance
@@ -49,7 +50,7 @@ export async function semanticSearch(
       return []
     }
 
-    const results: SemanticSearchResult[] = data.map((row: any) => ({
+    const results: SemanticSearchResult[] = data.map((row: DatabaseRecord) => ({
       source_id: row.source_id,
       chunk_id: row.chunk_id,
       similarity: 1 - row.distance, // Convert distance back to similarity
@@ -82,7 +83,7 @@ export async function storeSourceEmbedding(
 
     const contentPreview = content.substring(0, 200)
 
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from('source_embeddings')
       .upsert({
         source_id: sourceId,
