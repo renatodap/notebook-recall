@@ -136,7 +136,7 @@ export default function PrivacyPage() {
         </section>
 
         <section className="mb-8">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4">9. Children's Privacy</h2>
+          <h2 className="text-2xl font-semibold text-gray-900 mb-4">9. Children&apos;s Privacy</h2>
           <p className="text-gray-700">
             Recall Notebook is not intended for users under 13 years of age. We do not knowingly collect
             personal information from children under 13. If you believe we have collected information from
@@ -160,7 +160,7 @@ export default function PrivacyPage() {
           </p>
           <ul className="list-disc list-inside text-gray-700 space-y-2 ml-4 mt-4">
             <li>Posting the new Privacy Policy on this page</li>
-            <li>Updating the "Last Updated" date</li>
+            <li>Updating the &quot;Last Updated&quot; date</li>
             <li>Sending you an email notification for material changes</li>
           </ul>
         </section>

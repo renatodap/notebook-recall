@@ -19,8 +19,8 @@ export default function TermsPage() {
         <section className="mb-8">
           <h2 className="text-2xl font-semibold text-gray-900 mb-4">1. Acceptance of Terms</h2>
           <p className="text-gray-700">
-            By accessing or using Recall Notebook ("the Service"), you agree to be bound by these Terms of Service
-            ("Terms"). If you do not agree to these Terms, do not use the Service. We reserve the right to modify
+            By accessing or using Recall Notebook (&quot;the Service&quot;), you agree to be bound by these Terms of Service
+            (&quot;Terms&quot;). If you do not agree to these Terms, do not use the Service. We reserve the right to modify
             these Terms at any time, and your continued use constitutes acceptance of any changes.
           </p>
         </section>
@@ -124,7 +124,7 @@ export default function TermsPage() {
             We strive to provide reliable service, but:
           </p>
           <ul className="list-disc list-inside text-gray-700 space-y-2 ml-4">
-            <li>The Service is provided "as is" and "as available"</li>
+            <li>The Service is provided &quot;as is&quot; and &quot;as available&quot;</li>
             <li>We do not guarantee uninterrupted or error-free operation</li>
             <li>We may suspend or discontinue the Service at any time</li>
             <li>Maintenance and updates may temporarily interrupt service</li>
@@ -162,7 +162,7 @@ export default function TermsPage() {
 
           <h3 className="text-xl font-semibold text-gray-900 mb-2 mt-4">11.1 Disclaimers</h3>
           <p className="text-gray-700 mb-4 uppercase">
-            THE SERVICE IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED,
+            THE SERVICE IS PROVIDED &quot;AS IS&quot; AND &quot;AS AVAILABLE&quot; WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED,
             INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
           </p>
 
@@ -196,7 +196,7 @@ export default function TermsPage() {
           <p className="text-gray-700">
             You agree to comply with all applicable export and import laws and regulations. You may not use the
             Service if you are located in a country subject to a U.S. government embargo or designated as a
-            "terrorist supporting" country.
+            &quot;terrorist supporting&quot; country.
           </p>
         </section>
 
