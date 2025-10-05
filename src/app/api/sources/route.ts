@@ -307,9 +307,7 @@ export async function POST(request: NextRequest) {
 
     // Run backfill for this user to catch any failed embeddings (non-blocking)
     backfillEmbeddings({
-      user_id: user.id,
-      batch_size: 10,
-      skipExisting: true,
+      batchSize: 10,
     }).catch(error => {
       console.error('Background backfill error (non-critical):', error)
     })

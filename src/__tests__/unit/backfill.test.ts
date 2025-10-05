@@ -71,7 +71,7 @@ describe('Backfill Service', () => {
       const result = await backfillEmbeddings();
 
       expect(result.processed).toBe(3);
-      expect(result.failed).toBe(0);
+      expect(result.failures).toBe(0);
       expect(result.skipped).toBe(0);
       expect(mockGenerateEmbedding).toHaveBeenCalledTimes(3);
     });
@@ -137,7 +137,7 @@ describe('Backfill Service', () => {
       const result = await backfillEmbeddings();
 
       expect(result.processed).toBe(2);
-      expect(result.failed).toBe(1);
+      expect(result.failures).toBe(1);
       expect(result.failures).toHaveLength(1);
       expect(result.failures[0].summary_id).toBe('2');
       expect(result.failures[0].error).toContain('API error');
@@ -241,7 +241,7 @@ describe('Backfill Service', () => {
       const result = await backfillEmbeddings(config);
 
       expect(result.processed).toBe(1);
-      expect(result.failed).toBe(0);
+      expect(result.failures).toBe(0);
       expect(mockGenerateEmbedding).toHaveBeenCalledTimes(3);
     });
 

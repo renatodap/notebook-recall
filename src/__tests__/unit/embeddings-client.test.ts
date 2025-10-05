@@ -190,7 +190,7 @@ describe('Embedding Client', () => {
 
       expect(result.results).toHaveLength(3);
       expect(result.successful).toBe(3);
-      expect(result.failed).toBe(0);
+      expect(result.failures).toBe(0);
       expect(result.totalTokens).toBe(15);
 
       // Verify all embeddings valid
@@ -227,7 +227,7 @@ describe('Embedding Client', () => {
 
       expect(result.results).toHaveLength(3);
       expect(result.successful).toBe(2);
-      expect(result.failed).toBe(1);
+      expect(result.failures).toBe(1);
 
       // Check successful items
       expect(result.results[0].embedding).toHaveLength(1536);

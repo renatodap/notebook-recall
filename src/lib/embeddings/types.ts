@@ -1,181 +1,138 @@
 /**
- * Embedding Types
- *
- * Type definitions for vector embeddings and semantic search operations.
+ * Semantic Search RAG - Type Definitions
  */
 
-/**
- * Vector embedding (1536 dimensions for text-embedding-3-small)
- */
-export type Embedding = number[];
+export type Embedding = number[]
 
-/**
- * Content types that can be embedded
- */
-export type EmbeddableContentType = 'summary' | 'query' | 'title' | 'topics';
-
-/**
- * Request to generate an embedding
- */
-export interface EmbeddingGenerationRequest {
-  text: string;
-  type: EmbeddableContentType;
-  normalize?: boolean;
+export interface EmbeddingVector {
+  vector: number[]
+  dimensions: number
 }
 
-/**
- * Result of embedding generation
- */
-export interface EmbeddingGenerationResult {
-  embedding: Embedding;
-  model: string;
-  tokens: number;
-  dimensions: number;
+export interface SourceEmbedding {
+  id: string
+  source_id: string
+  chunk_id: number
+  embedding: number[]
+  content_preview: string
+  created_at: string
 }
 
-/**
- * Batch embedding generation request
- */
-export interface BatchEmbeddingRequest {
-  texts: string[];
-  type: EmbeddableContentType;
-  normalize?: boolean;
+export interface SemanticSearchOptions {
+  limit?: number
+  threshold?: number
+  includeMetadata?: boolean
 }
 
-/**
- * Single item in batch embedding result
- */
-export interface BatchEmbeddingItem {
-  index: number;
-  embedding?: Embedding;
-  error?: string;
-}
-
-/**
- * Result of batch embedding generation
- */
-export interface BatchEmbeddingResult {
-  results: BatchEmbeddingItem[];
-  successful: number;
-  failed: number;
-  totalTokens: number;
-}
-
-/**
- * Backfill operation configuration
- */
-export interface BackfillConfig {
-  batch_size?: number;
-  dry_run?: boolean;
-  skipExisting?: boolean;
-  maxRetries?: number;
-}
-
-/**
- * Progress report for backfill operation
- */
-export interface BackfillProgress {
-  processed: number;
-  failed: number;
-  skipped: number;
-  remaining: number;
-  failures: Array<{
-    summary_id: string;
-    error: string;
-  }>;
-}
-
-/**
- * Result of backfill operation
- */
-export interface BackfillResult {
-  processed: number;
-  failed: number;
-  skipped: number;
-  duration_ms: number;
-  failures: Array<{
-    summary_id: string;
-    error: string;
-  }>;
-}
-
-/**
- * Vector similarity score
- */
-export interface SimilarityScore {
-  score: number;
-  type: 'cosine' | 'euclidean' | 'dot_product';
-}
-
-/**
- * Search mode options
- */
-export type SearchMode = 'semantic' | 'keyword' | 'hybrid';
-
-/**
- * Match type in search results
- */
-export type MatchType = 'semantic' | 'keyword' | 'hybrid';
-
-/**
- * Weights for hybrid search scoring
- */
-export interface HybridSearchWeights {
-  semantic: number;
-  keyword: number;
-}
-
-/**
- * Hybrid score calculation result
- */
-export interface HybridScore {
-  finalScore: number;
-  semanticScore: number | null;
-  keywordScore: number | null;
-  weights: HybridSearchWeights;
-}
-
-/**
- * Embedding API error
- */
-export class EmbeddingError extends Error {
-  constructor(
-    message: string,
-    public code: 'API_ERROR' | 'VALIDATION_ERROR' | 'RATE_LIMIT' | 'NETWORK_ERROR',
-    public retryable: boolean = false,
-    public originalError?: unknown
-  ) {
-    super(message);
-    this.name = 'EmbeddingError';
+export interface SemanticSearchResult {
+  source_id: string
+  chunk_id: number
+  similarity: number
+  content_preview: string
+  metadata?: {
+    title?: string
+    content_type?: string
+    created_at?: string
   }
 }
 
-/**
- * Retry configuration for API calls
- */
+export interface EmbeddingGenerationResult {
+  embedding: number[]
+  tokenCount: number
+  tokens?: number
+  model: string
+}
+
+export class EmbeddingError extends Error {
+  code?: string
+  retryable?: boolean
+  cause?: any
+
+  constructor(message: string, code?: string, retryable?: boolean, cause?: any) {
+    super(message)
+    this.name = 'EmbeddingError'
+    this.code = code
+    this.retryable = retryable
+    this.cause = cause
+  }
+}
+
+export interface BatchEmbeddingRequest {
+  texts: string[]
+  sourceIds?: string[]
+  type?: 'summary' | 'chunk' | 'query'
+  normalize?: boolean
+}
+
+export interface BatchEmbeddingResult {
+  successes?: Array<{
+    sourceId: string
+    embeddingId: string
+  }>
+  failures?: Array<{
+    sourceId: string
+    error: string
+  }>
+  results?: Array<{
+    index: number
+    embedding?: number[]
+    error?: string
+  }>
+  successful?: number
+  failed?: number
+  totalTokens?: number
+}
+
+export interface BackfillConfig {
+  batchSize?: number
+  concurrent?: boolean
+  dryRun?: boolean
+  skipExisting?: boolean
+  maxRetries?: number
+  batch_size?: number
+  dry_run?: boolean
+}
+
+export interface BackfillResult {
+  total?: number
+  processed: number
+  successes?: number
+  failed?: number
+  failures: Array<{ summary_id?: string; sourceId?: string; error: string }>
+  skipped?: number
+  duration_ms?: number
+}
+
+export interface BackfillProgress {
+  current: number
+  total: number
+  percentage: number
+}
+
+export interface EmbeddingGenerationRequest {
+  text: string
+  type?: 'summary' | 'chunk' | 'query'
+  normalize?: boolean
+  metadata?: Record<string, any>
+}
+
 export interface RetryConfig {
-  maxRetries: number;
-  initialDelay: number;
-  maxDelay: number;
-  backoffMultiplier: number;
+  maxRetries: number
+  initialDelay: number
+  maxDelay: number
+  backoffMultiplier: number
 }
 
-/**
- * Cache entry for query embeddings
- */
-export interface CachedEmbedding {
-  embedding: Embedding;
-  timestamp: number;
-  text: string;
+export interface HybridSearchWeights {
+  semantic: number
+  keyword: number
 }
 
-/**
- * Embedding generation statistics
- */
-export interface EmbeddingStats {
-  totalGenerated: number;
-  totalFailed: number;
-  averageTokens: number;
-  averageDuration: number;
-  lastGenerated: Date | null;
+export interface HybridScore {
+  sourceId?: string
+  semanticScore: number | null
+  keywordScore: number | null
+  combinedScore?: number
+  finalScore?: number
+  weights?: HybridSearchWeights
 }

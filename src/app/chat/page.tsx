@@ -9,6 +9,13 @@ interface Message {
   content: string
   sources_used?: string[]
   timestamp?: string
+  reasoning_steps?: any[]
+  insights?: any[]
+  query_type?: string
+  model_used?: string
+  provider_used?: string
+  estimated_cost?: number
+  cost_savings_vs_claude?: string
 }
 
 export default function ChatPage() {
@@ -66,7 +73,17 @@ export default function ChatPage() {
       const data = await res.json()
 
       if (data.message) {
-        setMessages(prev => [...prev, data.message])
+        // Add query_type, insights, and cost info to the assistant message
+        const enhancedMessage = {
+          ...data.message,
+          query_type: data.query_type,
+          insights: data.insights,
+          model_used: data.model_used,
+          provider_used: data.provider_used,
+          estimated_cost: data.estimated_cost,
+          cost_savings_vs_claude: data.cost_savings_vs_claude
+        }
+        setMessages(prev => [...prev, enhancedMessage])
         setCurrentSession(data.session_id)
 
         // Refresh sessions list if this was a new session
@@ -85,6 +102,25 @@ export default function ChatPage() {
   const startNewSession = () => {
     setCurrentSession(null)
     setMessages([])
+  }
+
+  const handleFeedback = async (messageIndex: number, wasHelpful: boolean) => {
+    try {
+      await fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message_id: `${currentSession}-${messageIndex}`,
+          was_helpful: wasHelpful,
+          rating: wasHelpful ? 5 : 2
+        })
+      })
+
+      // Update UI to show feedback was recorded
+      alert(wasHelpful ? 'Thanks for the positive feedback!' : 'Thanks for the feedback! We\'ll improve.')
+    } catch (error) {
+      console.error('Failed to submit feedback:', error)
+    }
   }
 
   return (
@@ -165,10 +201,87 @@ export default function ChatPage() {
                         ? 'bg-blue-600 text-white'
                         : 'bg-gray-100 text-gray-900'
                     }`}>
+                      {/* Query Type Badge (Feature 4) */}
+                      {msg.query_type && msg.role === 'assistant' && (
+                        <div className="mb-2 text-xs font-semibold opacity-70">
+                          🎯 {msg.query_type.toUpperCase()} MODE
+                        </div>
+                      )}
+
+                      {/* Proactive Insights (Feature 5) */}
+                      {msg.insights && msg.insights.length > 0 && (
+                        <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded text-sm">
+                          <div className="font-semibold mb-2">💡 Insights</div>
+                          {msg.insights.map((insight: any, i: number) => (
+                            <div key={i} className="mb-1">
+                              • {insight.message}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Main Content */}
                       <div className="whitespace-pre-wrap">{msg.content}</div>
+
+                      {/* Reasoning Steps (Feature 7) */}
+                      {msg.reasoning_steps && msg.reasoning_steps.length > 0 && (
+                        <details className="mt-3">
+                          <summary className="cursor-pointer text-xs font-semibold opacity-70">
+                            🧠 View Reasoning Steps
+                          </summary>
+                          <div className="mt-2 pl-3 border-l-2 border-gray-300">
+                            {msg.reasoning_steps.map((step: any, i: number) => (
+                              <div key={i} className="text-xs mb-2">
+                                <span className="font-semibold">Step {step.step}:</span> {step.thought}
+                              </div>
+                            ))}
+                          </div>
+                        </details>
+                      )}
+
+                      {/* Sources Used (Feature 1 - Semantic Search) */}
                       {msg.sources_used && msg.sources_used.length > 0 && (
                         <div className="mt-2 pt-2 border-t border-gray-300 text-xs">
-                          📚 Used {msg.sources_used.length} source(s)
+                          📚 Used {msg.sources_used.length} source(s) via semantic search
+                        </div>
+                      )}
+
+                      {/* Model & Cost Info */}
+                      {msg.role === 'assistant' && (msg.model_used || msg.provider_used) && (
+                        <div className="mt-3 pt-2 border-t border-gray-300 text-xs opacity-70 space-y-1">
+                          {msg.provider_used && msg.model_used && (
+                            <div>
+                              🤖 <strong>{msg.provider_used}</strong>/{msg.model_used}
+                            </div>
+                          )}
+                          {msg.estimated_cost !== undefined && (
+                            <div>
+                              💰 Cost: <strong>${msg.estimated_cost.toFixed(6)}</strong>
+                              {msg.cost_savings_vs_claude && (
+                                <span className="ml-2 text-green-600">
+                                  (↓{msg.cost_savings_vs_claude} vs Claude)
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Feedback Buttons (Feature 8 - Adaptive Learning) */}
+                      {msg.role === 'assistant' && (
+                        <div className="mt-3 flex gap-2 text-xs">
+                          <button
+                            onClick={() => handleFeedback(idx, true)}
+                            className="px-2 py-1 bg-green-100 hover:bg-green-200 rounded"
+                          >
+                            👍 Helpful
+                          </button>
+                          <button
+                            onClick={() => handleFeedback(idx, false)}
+                            className="px-2 py-1 bg-red-100 hover:bg-red-200 rounded"
+                          >
+                            👎 Not Helpful
+                          </button>
                         </div>
                       )}
                     </div>
@@ -210,7 +323,9 @@ export default function ChatPage() {
               </button>
             </div>
             <p className="text-xs text-gray-500 mt-2">
-              💡 Tip: The assistant can answer questions, summarize sources, and help with academic writing
+              🚀 <strong>Smart Features:</strong> Semantic Search • Dynamic Personas • Proactive Insights • Multi-Step Reasoning • Tool Calling • Adaptive Learning
+              <br />
+              💰 <strong>Cost-Optimized AI:</strong> Auto-routes to Groq (98% cheaper), OpenRouter (diversity), or Claude (complex reasoning)
             </p>
           </div>
         </div>

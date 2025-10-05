@@ -291,7 +291,7 @@ function mergeResults(
 
       merged.set(keywordResult.source.id, {
         ...existing,
-        relevance_score: hybrid.finalScore,
+        relevance_score: hybrid.finalScore || 0,
         match_type: 'hybrid',
       });
     } else {

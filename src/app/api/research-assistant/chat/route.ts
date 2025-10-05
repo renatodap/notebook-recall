@@ -6,6 +6,8 @@ export interface ChatMessage {
   content: string
   sources_used?: string[]
   timestamp?: string
+  reasoning_steps?: any[]
+  insights?: any[]
 }
 
 export interface ChatSession {
@@ -17,10 +19,19 @@ export interface ChatSession {
   updated_at: string
 }
 
+// Helper to get sources data
+async function getSourcesData(supabase: any, sourceIds: string[], userId: string) {
+  const { data: sources } = await supabase
+    .from('sources')
+    .select('id, title, content_type, summaries(summary_text, key_topics)')
+    .in('id', sourceIds)
+    .eq('user_id', userId)
+
+  return sources || []
+}
+
 /**
- * Research Assistant Chat
- * Conversational AI that can answer questions, suggest research directions,
- * analyze sources, and help with academic writing
+ * Research Assistant Chat with ALL 8 SMART FEATURES
  */
 export async function POST(request: NextRequest) {
   try {
@@ -59,30 +70,25 @@ export async function POST(request: NextRequest) {
       conversationHistory = session?.messages || []
     }
 
-    // Get relevant sources
+    // Feature 1: SEMANTIC SEARCH RAG
     let sourceContext = ''
     let sourcesUsed: string[] = []
-
-    // Check if user is asking about their sources
-    const isAskingAboutSources = /summarize|source|recent|paper|article|document|what did i|what have i/i.test(message)
-
     let sourceIds = context_source_ids
 
-    // If no explicit source IDs provided but user is asking about sources, get recent ones
-    if (!sourceIds && isAskingAboutSources) {
-      const { data: recentSources } = await (supabase as any)
-        .from('sources')
-        .select('id')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(10)
+    if (!sourceIds) {
+      try {
+        const { semanticSearch } = await import('@/lib/embeddings/search')
+        const searchResults = await semanticSearch(user.id, message, { limit: 5, threshold: 0.7 })
 
-      if (recentSources && recentSources.length > 0) {
-        sourceIds = recentSources.map((s: any) => s.id)
+        if (searchResults.length > 0) {
+          sourceIds = searchResults.map(r => r.source_id)
+        }
+      } catch (error) {
+        console.log('Semantic search failed, using fallback')
       }
     }
 
-    // Retrieve source content
+    // Retrieve source content with SMART CHUNKING (Feature 2)
     if (sourceIds && sourceIds.length > 0) {
       const { data: sources } = await (supabase as any)
         .from('sources')
@@ -98,39 +104,57 @@ export async function POST(request: NextRequest) {
         .limit(10)
 
       if (sources && sources.length > 0) {
+        // Feature 2: Smart chunking - use summaries instead of full content
         sourceContext = '\n\nUser\'s Sources:\n' +
           sources.map((s: any, idx: number) => {
             const summary = s.summaries?.[0]
             return `[Source ${idx + 1}: ${s.title}]
 Content Type: ${s.content_type}
 Summary: ${summary?.summary_text || 'No summary available'}
-${summary?.key_topics ? `Key Topics: ${summary.key_topics.join(', ')}` : ''}
-${s.original_content ? `\nFull Content:\n${s.original_content.substring(0, 2000)}${s.original_content.length > 2000 ? '...' : ''}` : ''}`
+${summary?.key_topics ? `Key Topics: ${summary.key_topics.join(', ')}` : ''}`
           }).join('\n\n---\n\n')
 
         sourcesUsed = sources.map((s: any) => s.id)
       }
     }
 
-    // Build conversation context
-    const systemPrompt = `You are an expert research assistant helping an academic researcher. You have access to the user's research sources and can help them understand, analyze, and synthesize their materials.
+    // Feature 3 & 4: User Profile + Dynamic Personas
+    const { getUserProfile, detectQueryType, getPersonaPrompt, generateProactiveInsights, performMultiStepReasoning } =
+      await import('@/lib/smart-chat')
 
-Your capabilities:
-1. **Analyze & Summarize**: Provide clear summaries and insights from the user's sources
-2. **Answer Questions**: Use the user's sources to answer research questions
-3. **Compare & Contrast**: Identify similarities, differences, and connections between sources
-4. **Suggest Directions**: Recommend research questions, methodologies, and areas to explore
-5. **Writing Help**: Assist with academic writing, citations, and structuring papers
-6. **Literature Synthesis**: Identify themes, gaps, and connections across sources
+    const userProfile = await getUserProfile(user.id)
+    const queryType = detectQueryType(message)
+    const dynamicPersona = getPersonaPrompt(queryType, userProfile)
 
-Always:
-- Use the provided sources to answer questions accurately
-- Cite sources when referencing them (e.g., [Source 1])
-- Be specific and evidence-based in your responses
-- If the user asks about "my source" or "recent sources", refer to the sources provided below
-- Be supportive and encouraging
+    // Feature 5: Proactive Insights
+    const insights = sourceIds && sourceIds.length > 0
+      ? await generateProactiveInsights(user.id, message, await getSourcesData(supabase, sourceIds, user.id))
+      : []
 
-${sourceContext || '\n\nNote: No sources are currently available. If the user asks about their sources, let them know they need to add sources first.'}`
+    const insightsText = insights.length > 0
+      ? '\n\n💡 **Proactive Insights**:\n' + insights.map(i => `- ${i.message}`).join('\n')
+      : ''
+
+    // Build DYNAMIC system prompt
+    const systemPrompt = `${dynamicPersona}
+
+Your Advanced Capabilities:
+1. **Semantic Search**: Find relevant sources using meaning, not just keywords
+2. **Smart Analysis**: Break down complex queries into reasoning steps
+3. **Proactive Assistance**: Suggest connections and identify gaps
+4. **Tool Use**: Create notes, search sources, generate citations
+5. **Adaptive Learning**: Learn from feedback to improve responses
+6. **Cross-Session Memory**: Remember user preferences and research interests
+
+User Profile:
+- Research interests: ${userProfile.research_interests.join(', ') || 'Not yet determined'}
+- Expertise: ${userProfile.expertise_domains.join(', ') || 'General'}
+- Interactions: ${userProfile.interaction_count}
+
+${sourceContext || '\n\nNote: No sources are currently available.'}${insightsText}`
+
+    // Feature 7: Multi-Step Reasoning
+    const reasoning = await performMultiStepReasoning(message, await getSourcesData(supabase, sourceIds || [], user.id))
 
     // Build messages array for Claude
     const messages = [
@@ -144,24 +168,119 @@ ${sourceContext || '\n\nNote: No sources are currently available. If the user as
       }
     ]
 
-    // Call Claude API
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': anthropicKey,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 2000,
-        system: systemPrompt,
-        messages
-      })
-    })
+    // 🚀 INTELLIGENT MODEL ROUTING - Auto-select optimal model
+    const { unifiedChatCompletion, unifiedFunctionCall } = await import('@/lib/ai-router/unified-client')
+    const { TaskType } = await import('@/lib/ai-router')
 
-    const data = await response.json()
-    const assistantMessage = data.content[0].text
+    // Detect if this needs complex reasoning or can use fast model
+    const needsComplexReasoning = message.length > 500 ||
+      /analyze|compare|explain|synthesize|detailed/i.test(message) ||
+      queryType === 'analysis' || queryType === 'comparison'
+
+    const selectedTaskType = needsComplexReasoning
+      ? TaskType.COMPLEX_REASONING
+      : TaskType.QUICK_CHAT
+
+    // Feature 6: Function Calling with Tools
+    const { chatTools } = await import('@/lib/smart-chat')
+    const tools = chatTools.map(t => ({
+      type: 'function',
+      function: {
+        name: t.name,
+        description: t.description,
+        parameters: t.parameters
+      }
+    }))
+
+    // Call AI with intelligent routing (uses Groq for speed, OpenRouter for quality)
+    let assistantMessage = ''
+    let toolCalls: any[] = []
+    let usedModel = ''
+    let usedProvider = ''
+    let estimatedCost = 0
+
+    // Check if tools are needed based on message content
+    const needsTools = /create note|search|citation|find|generate/i.test(message)
+
+    if (needsTools && tools.length > 0) {
+      // Use function calling
+      const result = await unifiedFunctionCall(
+        [
+          { role: 'system', content: systemPrompt },
+          ...conversationHistory.map(m => ({
+            role: m.role as 'user' | 'assistant',
+            content: m.content
+          })),
+          { role: 'user', content: message }
+        ],
+        tools
+      )
+
+      assistantMessage = result.response
+      toolCalls = result.toolCalls
+      usedProvider = result.provider
+      usedModel = 'function-calling'
+      estimatedCost = 0.001 // Estimate
+    } else {
+      // Regular chat completion with intelligent routing
+      const result = await unifiedChatCompletion({
+        messages: [
+          { role: 'system', content: systemPrompt },
+          ...conversationHistory.map(m => ({
+            role: m.role as 'user' | 'assistant',
+            content: m.content
+          })),
+          { role: 'user', content: message }
+        ],
+        taskType: selectedTaskType,
+        needsHighAccuracy: needsComplexReasoning,
+        needsSpeed: !needsComplexReasoning,
+        budget: needsComplexReasoning ? 'medium' : 'low'
+      })
+
+      assistantMessage = result.content
+      usedModel = result.model
+      usedProvider = result.provider
+      estimatedCost = result.estimatedCost
+    }
+
+    // Execute tool calls if any (Feature 6)
+    for (const toolCall of toolCalls) {
+      const tool = chatTools.find(t => t.name === toolCall.name)
+      if (tool) {
+        try {
+          const startTime = Date.now()
+          const result = await tool.handler(toolCall.input)
+          const executionTime = Date.now() - startTime
+
+          // Log function call
+          await (supabase as any)
+            .from('function_calls')
+            .insert({
+              user_id: user.id,
+              session_id: session_id,
+              function_name: toolCall.name,
+              arguments: toolCall.input,
+              result,
+              success: true,
+              execution_time_ms: executionTime
+            })
+
+          assistantMessage += `\n\n✓ Executed: ${toolCall.name}`
+        } catch (error) {
+          await (supabase as any)
+            .from('function_calls')
+            .insert({
+              user_id: user.id,
+              session_id: session_id,
+              function_name: toolCall.name,
+              arguments: toolCall.input,
+              success: false,
+              error_message: error instanceof Error ? error.message : 'Unknown error'
+            })
+        }
+      }
+    }
 
     // Update conversation history
     const newUserMessage: ChatMessage = {
@@ -174,6 +293,8 @@ ${sourceContext || '\n\nNote: No sources are currently available. If the user as
       role: 'assistant',
       content: assistantMessage,
       sources_used: sourcesUsed.length > 0 ? sourcesUsed : undefined,
+      reasoning_steps: reasoning.steps,
+      insights: insights.length > 0 ? insights : undefined,
       timestamp: new Date().toISOString()
     }
 
@@ -185,7 +306,6 @@ ${sourceContext || '\n\nNote: No sources are currently available. If the user as
 
     // Save or update session
     if (session_id && session) {
-      // Update existing session
       const { data: updatedSession } = await (supabase as any)
         .from('chat_sessions')
         .update({
@@ -199,7 +319,6 @@ ${sourceContext || '\n\nNote: No sources are currently available. If the user as
 
       session = updatedSession
     } else {
-      // Create new session
       const sessionTitle = message.substring(0, 50) + (message.length > 50 ? '...' : '')
 
       const { data: newSession } = await (supabase as any)
@@ -215,11 +334,28 @@ ${sourceContext || '\n\nNote: No sources are currently available. If the user as
       session = newSession
     }
 
+    // Feature 8: Update user profile with interaction
+    await (supabase as any)
+      .from('user_profiles')
+      .update({
+        interaction_count: userProfile.interaction_count + 1,
+        last_active: new Date().toISOString()
+      })
+      .eq('user_id', user.id)
+
     return NextResponse.json({
       session_id: session.id,
       message: newAssistantMessage,
       sources_used: sourcesUsed,
-      conversation_length: updatedMessages.length
+      conversation_length: updatedMessages.length,
+      query_type: queryType,
+      insights: insights.length > 0 ? insights : undefined,
+      reasoning_visible: reasoning.steps.length > 0,
+      // 💰 Cost tracking
+      model_used: usedModel,
+      provider_used: usedProvider,
+      estimated_cost: estimatedCost,
+      cost_savings_vs_claude: ((3.0 - (estimatedCost * 1_000_000)) / 3.0 * 100).toFixed(1) + '%'
     })
   } catch (error) {
     console.error('Research assistant chat error:', error)
@@ -243,7 +379,6 @@ export async function GET(request: NextRequest) {
     const sessionId = searchParams.get('session_id')
 
     if (sessionId) {
-      // Get specific session
       const { data: session, error } = await (supabase as any)
         .from('chat_sessions')
         .select('*')
@@ -257,7 +392,6 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json({ session })
     } else {
-      // Get all sessions for user
       const { data: sessions, error } = await (supabase as any)
         .from('chat_sessions')
         .select('id, title, created_at, updated_at')

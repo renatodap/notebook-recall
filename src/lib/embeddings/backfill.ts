@@ -22,7 +22,7 @@ export async function backfillEmbeddings(
   config?: BackfillConfig & { user_id?: string }
 ): Promise<BackfillResult> {
   const startTime = Date.now();
-  const dryRun = config?.dry_run || false;
+  const dryRun = config?.dryRun || false;
   const skipExisting = config?.skipExisting !== false;
   const maxRetries = config?.maxRetries || DEFAULT_MAX_RETRIES;
   const userId = config?.user_id;
@@ -210,8 +210,8 @@ export async function getCompletedCount(): Promise<number> {
  */
 export async function processBatch(batchSize: number): Promise<number> {
   const result = await backfillEmbeddings({
-    batch_size: batchSize,
-    dry_run: false,
+    batchSize: batchSize,
+    dryRun: false,
     skipExisting: true,
   });
 

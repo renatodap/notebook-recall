@@ -143,9 +143,7 @@ export async function POST(request: NextRequest) {
     if (createSources && createdSources.length > 0) {
       try {
         backfillResult = await backfillEmbeddings({
-          user_id: user.id,
-          batch_size: 20,
-          skipExisting: true,
+          batchSize: 20,
         })
       } catch (backfillError) {
         console.error('Backfill error (non-critical):', backfillError)
@@ -164,7 +162,7 @@ export async function POST(request: NextRequest) {
       failedSources: errors.length,
       backfillResult: backfillResult ? {
         processed: backfillResult.processed,
-        failed: backfillResult.failed,
+        failures: backfillResult.failures,
       } : null,
       sources: createSources ? createdSources : undefined
     }, { status: 201 })

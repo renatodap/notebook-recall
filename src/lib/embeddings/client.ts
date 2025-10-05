@@ -79,8 +79,8 @@ export async function generateEmbedding(
       return {
         embedding,
         model: 'text-embedding-3-small',
+        tokenCount: data.usage.total_tokens,
         tokens: data.usage.total_tokens,
-        dimensions: 1536,
       };
     } catch (error) {
       if (error instanceof EmbeddingError) {
@@ -122,7 +122,7 @@ export async function generateEmbeddings(
       });
 
       successful++;
-      totalTokens += result.tokens;
+      totalTokens += result.tokens || result.tokenCount || 0;
     } catch (error) {
       results.push({
         index: i,

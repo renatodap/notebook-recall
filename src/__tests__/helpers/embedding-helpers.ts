@@ -210,12 +210,12 @@ export function expectValidBackfillResult(result: {
   duration_ms: number;
 }): void {
   expect(result.processed).toBeGreaterThanOrEqual(0);
-  expect(result.failed).toBeGreaterThanOrEqual(0);
+  expect(result.failures).toBeGreaterThanOrEqual(0);
   expect(result.skipped).toBeGreaterThanOrEqual(0);
   expect(result.duration_ms).toBeGreaterThan(0);
 
   expect(typeof result.processed).toBe('number');
-  expect(typeof result.failed).toBe('number');
+  expect(typeof result.failures).toBe('number');
   expect(typeof result.skipped).toBe('number');
   expect(typeof result.duration_ms).toBe('number');
 }

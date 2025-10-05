@@ -48,16 +48,16 @@ export async function POST(request: NextRequest) {
 
     // Run backfill
     const result = await backfillEmbeddings({
-      batch_size,
-      dry_run,
-      skipExisting: true,
+      batchSize: batch_size,
+      dryRun: dry_run,
     });
 
-    const response: BackfillResponse = {
+    const response: any = {
+      total: result.total,
       processed: result.processed,
-      failed: result.failed,
-      skipped: result.skipped,
-      duration_ms: result.duration_ms,
+      successes: result.successes,
+      failures: result.failures,
+      errors: result.failures
     };
 
     return NextResponse.json(response);

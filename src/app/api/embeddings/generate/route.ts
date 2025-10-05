@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     const response: EmbeddingGenerateResponse = {
       embedding: result.embedding,
       model: result.model,
-      tokens: result.tokens,
+      tokens: result.tokens || result.tokenCount || 0,
     };
 
     return NextResponse.json(response);
