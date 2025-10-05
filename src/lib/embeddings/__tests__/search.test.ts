@@ -4,6 +4,7 @@
 
 import { semanticSearch, storeSourceEmbedding } from '../search'
 import * as generator from '../generator'
+import * as supabaseServer from '@/lib/supabase/server'
 
 // Mock dependencies
 jest.mock('../generator')
@@ -49,7 +50,7 @@ describe('SemanticSearch', () => {
         rpc: mockRpc
       }
 
-      jest.spyOn(require('@/lib/supabase/server'), 'createRouteHandlerClient')
+      jest.spyOn(supabaseServer, 'createRouteHandlerClient')
         .mockResolvedValue(mockSupabase)
 
       const results = await semanticSearch(mockUserId, 'machine learning algorithms')
@@ -78,7 +79,7 @@ describe('SemanticSearch', () => {
         rpc: mockRpc
       }
 
-      jest.spyOn(require('@/lib/supabase/server'), 'createRouteHandlerClient')
+      jest.spyOn(supabaseServer, 'createRouteHandlerClient')
         .mockResolvedValue(mockSupabase)
 
       const results = await semanticSearch(mockUserId, 'totally unrelated query xyz123')
@@ -103,7 +104,7 @@ describe('SemanticSearch', () => {
         rpc: mockRpc
       }
 
-      jest.spyOn(require('@/lib/supabase/server'), 'createRouteHandlerClient')
+      jest.spyOn(supabaseServer, 'createRouteHandlerClient')
         .mockResolvedValue(mockSupabase)
 
       await semanticSearch(mockUserId, 'test', { limit: 3 })
@@ -130,7 +131,7 @@ describe('SemanticSearch', () => {
         rpc: mockRpc
       }
 
-      jest.spyOn(require('@/lib/supabase/server'), 'createRouteHandlerClient')
+      jest.spyOn(supabaseServer, 'createRouteHandlerClient')
         .mockResolvedValue(mockSupabase)
 
       await semanticSearch(mockUserId, 'test', { threshold: 0.8 })
@@ -162,7 +163,7 @@ describe('SemanticSearch', () => {
         rpc: mockRpc
       }
 
-      jest.spyOn(require('@/lib/supabase/server'), 'createRouteHandlerClient')
+      jest.spyOn(supabaseServer, 'createRouteHandlerClient')
         .mockResolvedValue(mockSupabase)
 
       const results = await semanticSearch(mockUserId, 'test')
@@ -196,7 +197,7 @@ describe('SemanticSearch', () => {
         })
       }
 
-      jest.spyOn(require('@/lib/supabase/server'), 'createRouteHandlerClient')
+      jest.spyOn(supabaseServer, 'createRouteHandlerClient')
         .mockResolvedValue(mockSupabase)
 
       const result = await storeSourceEmbedding('source-123', 'Test content for embedding')
@@ -228,7 +229,7 @@ describe('SemanticSearch', () => {
         })
       }
 
-      jest.spyOn(require('@/lib/supabase/server'), 'createRouteHandlerClient')
+      jest.spyOn(supabaseServer, 'createRouteHandlerClient')
         .mockResolvedValue(mockSupabase)
 
       const result = await storeSourceEmbedding('source-123', 'Test content')
