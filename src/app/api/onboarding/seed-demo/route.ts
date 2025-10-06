@@ -102,7 +102,7 @@ export async function POST(_request: NextRequest) {
             content_type: demo.content_type,
             original_content: demo.original_content,
             url: null,
-          })
+          } as never)
           .select<'*', Source>()
           .single()
 
@@ -123,7 +123,7 @@ export async function POST(_request: NextRequest) {
           key_topics: demo.summary.key_topics,
           word_count: demo.summary.word_count,
           embedding: null,
-        })
+        } as never)
 
         if (summaryError) {
           const errorMsg = `Failed to create summary for "${demo.title}": ${summaryError.message}`
@@ -143,7 +143,7 @@ export async function POST(_request: NextRequest) {
             source_id: source.id,
             embedding: embeddingVector,
             content_type: 'summary',
-          })
+          } as never)
 
           if (embeddingError) {
             const errorMsg = `Failed to create embedding for "${demo.title}": ${embeddingError.message}`
@@ -163,7 +163,7 @@ export async function POST(_request: NextRequest) {
           const { error: tagError } = await supabase.from('tags').insert({
             source_id: source.id,
             tag_name: topic,
-          })
+          } as never)
 
           if (tagError) {
             console.warn(`[seed-demo POST] Failed to create tag "${topic}": ${tagError.message}`)
@@ -192,7 +192,7 @@ export async function POST(_request: NextRequest) {
           completed: true,
           completed_at: now,
           updated_at: now,
-        },
+        } as never,
         {
           onConflict: 'user_id,win_id',
         }

@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
           completed: true,
           completed_at: now,
           updated_at: now,
-        },
+        } as never,
         {
           onConflict: 'user_id,win_id',
         }
