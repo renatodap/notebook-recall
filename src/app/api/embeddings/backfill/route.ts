@@ -5,8 +5,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@/lib/supabase/server';
 import { backfillEmbeddings } from '@/lib/embeddings/backfill';
+import { requireAdmin } from '@/lib/auth/admin';
 import { z } from 'zod';
 import type { BackfillRequest } from '@/types';
 
@@ -19,19 +19,11 @@ const requestSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    // Authenticate
-    const supabase = await createRouteHandlerClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // Admin-only endpoint
+    const adminCheck = await requireAdmin();
+    if (!adminCheck.authorized) {
+      return adminCheck.response;
     }
-
-    // TODO: Add admin check
-    // For now, allow all authenticated users
-    // In production, check if user.email is in admin list or has admin role
 
     // Parse request
     const body = await request.json();

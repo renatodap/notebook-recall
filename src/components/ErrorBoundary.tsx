@@ -85,11 +85,18 @@ export function ErrorBoundary({ children }: ErrorBoundaryProps) {
     // Log to error reporting service (Sentry, etc.)
     console.error('Error caught by boundary:', error, info);
 
-    // In production, send to error tracking service
-    if (process.env.NODE_ENV === 'production') {
-      // TODO: Send to Sentry/error tracking
-      // Example: Sentry.captureException(error, { contexts: { react: info } });
-    }
+    // Send to error tracking service
+    const { trackError } = require('@/lib/error-tracking');
+    trackError(error, {
+      tags: {
+        errorBoundary: 'react',
+        componentStack: info.componentStack?.split('\n')[0] || 'unknown'
+      },
+      extra: {
+        componentStack: info.componentStack,
+        errorInfo: info
+      }
+    });
   };
 
   return (

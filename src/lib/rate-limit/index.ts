@@ -113,4 +113,51 @@ export const RATE_LIMITS = {
     windowMs: 60 * 1000, // 1 minute
     maxRequests: 60, // 60 requests per minute
   },
+
+  // Embeddings generation
+  EMBEDDINGS: {
+    windowMs: 60 * 1000, // 1 minute
+    maxRequests: 10, // 10 requests per minute
+  },
 } as const
+
+/**
+ * Apply rate limiting to an API route
+ * Returns 429 Too Many Requests if limit exceeded
+ *
+ * @param userId - User ID to track rate limit
+ * @param config - Rate limit configuration
+ * @returns Object with `allowed` boolean and optional `response` if blocked
+ */
+export function applyRateLimit(
+  userId: string,
+  config: RateLimitConfig
+): { allowed: true } | { allowed: false; response: Response } {
+  const result = checkRateLimit(userId, config)
+
+  if (!result.allowed) {
+    const resetTimeSeconds = Math.ceil((result.resetTime - Date.now()) / 1000)
+
+    return {
+      allowed: false,
+      response: Response.json(
+        {
+          error: 'Rate limit exceeded',
+          message: `Too many requests. Please try again in ${resetTimeSeconds} seconds.`,
+          retryAfter: resetTimeSeconds,
+        },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(resetTimeSeconds),
+            'X-RateLimit-Limit': String(config.maxRequests),
+            'X-RateLimit-Remaining': String(result.remaining),
+            'X-RateLimit-Reset': String(Math.floor(result.resetTime / 1000)),
+          },
+        }
+      ),
+    }
+  }
+
+  return { allowed: true }
+}
