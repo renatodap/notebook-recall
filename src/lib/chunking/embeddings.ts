@@ -50,7 +50,7 @@ export async function createSourceChunks(
           content: chunk.content,
           embedding: embeddingResult.embedding,
           metadata: chunk.metadata,
-        })
+        } as never)
         .select()
         .single();
 
@@ -70,7 +70,7 @@ export async function createSourceChunks(
           chunk_index: chunk.index,
           content: chunk.content,
           metadata: chunk.metadata,
-        })
+        } as never)
         .select()
         .single();
 
@@ -230,9 +230,9 @@ export async function backfillChunks(
 export async function getChunkStats(sourceId: string) {
   const supabase = createServiceRoleClient();
 
-  const { data, error } = await supabase.rpc('get_chunk_stats', {
+  const { data, error } = await supabase.rpc('get_chunk_stats' as never, {
     p_source_id: sourceId,
-  });
+  } as never);
 
   if (error) {
     throw new Error(`Failed to get chunk stats: ${error.message}`);
