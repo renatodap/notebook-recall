@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
     const validation = quickWinsPostSchema.safeParse(body)
 
     if (!validation.success) {
-      const errors = validation.error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join(', ')
+      const errors = validation.error.issues.map((e) => `${e.path.join('.')}: ${e.message}`).join(', ')
       console.warn(`[quick-wins POST] Validation failed: ${errors}`)
       return Response.json({ error: 'Invalid request', details: errors }, { status: 400 })
     }
