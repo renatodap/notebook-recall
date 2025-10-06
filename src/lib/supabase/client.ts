@@ -2,7 +2,6 @@
 
 import { createBrowserClient as createClient } from '@supabase/ssr'
 import { Database } from '@/types/database'
-import type { CookieOptions } from '@/types/supabase-helpers'
 
 /**
  * Creates a Supabase client for use in Client Components
@@ -20,32 +19,5 @@ export function createBrowserClient() {
     throw new Error('Missing NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable')
   }
 
-  return createClient<Database>(supabaseUrl, supabaseAnonKey, {
-    cookies: {
-      get(name: string) {
-        // Browser cookie access
-        if (typeof document === 'undefined') return undefined
-        const cookies = document.cookie.split('; ')
-        const cookie = cookies.find(c => c.startsWith(`${name}=`))
-        return cookie?.split('=')[1]
-      },
-      set(name: string, value: string, options: CookieOptions) {
-        // Browser cookie setting
-        if (typeof document === 'undefined') return
-        let cookieString = `${name}=${value}`
-        if (options?.maxAge) cookieString += `; max-age=${options.maxAge}`
-        if (options?.path) cookieString += `; path=${options.path}`
-        if (options?.sameSite) cookieString += `; samesite=${options.sameSite}`
-        if (options?.secure) cookieString += '; secure'
-        document.cookie = cookieString
-      },
-      remove(name: string, options: CookieOptions) {
-        // Browser cookie removal
-        if (typeof document === 'undefined') return
-        let cookieString = `${name}=; max-age=0`
-        if (options?.path) cookieString += `; path=${options.path}`
-        document.cookie = cookieString
-      },
-    },
-  })
+  return createClient<Database>(supabaseUrl, supabaseAnonKey)
 }
