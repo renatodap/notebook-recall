@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
       .from('sources')
       .select('id')
       .eq('id', source_id)
-      .eq('user_id', user.id)
+      .eq('user_id', user.id as never)
       .single()
 
     if (!source) {
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
         visibility,
         shared_with_user_ids: visibility === 'specific' ? shared_with_user_ids : null,
         updated_at: new Date().toISOString()
-      }, {
+      } as never, {
         onConflict: 'source_id'
       })
       .select()
@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
       const { data: shares, error } = await supabase
         .from('source_shares')
         .select('*, sources (id, title, created_at)')
-        .eq('owner_id', user.id)
+        .eq('owner_id', user.id as never)
 
       if (error) throw error
       return NextResponse.json({ shares })
@@ -84,13 +84,13 @@ export async function GET(request: NextRequest) {
       const { data: publicShares } = await supabase
         .from('source_shares')
         .select('*, sources (id, title, created_at)')
-        .eq('visibility', 'public')
-        .neq('owner_id', user.id)
+        .eq('visibility' as never, 'public')
+        .neq('owner_id' as never, user.id)
 
       const { data: specificShares } = await supabase
         .from('source_shares')
         .select('*, sources (id, title, created_at)')
-        .contains('shared_with_user_ids', [user.id])
+        .contains('shared_with_user_ids' as never, [user.id])
 
       const shares = [...(publicShares || []), ...(specificShares || [])]
       return NextResponse.json({ shares })

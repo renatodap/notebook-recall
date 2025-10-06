@@ -10,7 +10,6 @@ import { generateEmbedding } from '@/lib/embeddings/client';
 import { calculateHybridScore } from '@/lib/embeddings/utils';
 import { z } from 'zod';
 import type { SearchRequest, SearchResponse, SearchMode, SearchResult } from '@/types';
-import type { DatabaseRecord } from '@/types/api-types'
 import type { TypedSupabaseClient } from '@/types/supabase-helpers'
 
 export const dynamic = 'force-dynamic';
@@ -77,7 +76,7 @@ export async function POST(request: NextRequest) {
             match_count: limit,
             p_user_id: user.id,
             p_collection_id: collection_id || null,
-          }
+          } as never
         );
 
         if (semanticError) {
@@ -90,7 +89,7 @@ export async function POST(request: NextRequest) {
           }
         } else if (semanticData && semanticData.length > 0) {
           // Transform semantic results
-          results = semanticData.map((item: DatabaseRecord) => ({
+          results = semanticData.map((item: any) => ({
             source: {
               id: item.source_id,
               user_id: item.user_id,
@@ -204,7 +203,7 @@ async function getKeywordResults(
   }
 
   // Calculate keyword relevance scores
-  return (data || []).map((item: DatabaseRecord) => {
+  return (data || []).map((item: any) => {
     let score = 0;
     const lowerQuery = query.toLowerCase();
 

@@ -23,7 +23,7 @@ export default async function AreaPage({ params }: AreaPageProps) {
     .from('areas')
     .select('*')
     .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('user_id' as never, user.id)
     .single()
 
   if (areaError || !area) {
@@ -31,7 +31,7 @@ export default async function AreaPage({ params }: AreaPageProps) {
   }
 
   // Fetch sources in this area
-  const { data: areaSources, error: sourcesError } = await (supabase as any)
+  const { data: areaSources } = await (supabase as any)
     .from('area_sources')
     .select('source_id')
     .eq('area_id', id)
@@ -44,7 +44,7 @@ export default async function AreaPage({ params }: AreaPageProps) {
       .from('sources')
       .select('*')
       .in('id', sourceIds)
-      .eq('user_id', user.id)
+      .eq('user_id' as never, user.id)
 
     sources = sourcesData || []
 

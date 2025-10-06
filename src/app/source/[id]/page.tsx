@@ -22,8 +22,8 @@ export default async function SourceDetailPage({ params }: { params: Promise<{ i
       summary:summaries(*),
       tags:tags(*)
     `)
-    .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('id' as never, id)
+    .eq('user_id' as never, user.id)
     .single()
 
   if (!source) {
@@ -33,7 +33,7 @@ export default async function SourceDetailPage({ params }: { params: Promise<{ i
   const handleDelete = async () => {
     'use server'
     const supabase = await createServerClient()
-    await supabase.from('sources').delete().eq('id', id)
+    await supabase.from('sources').delete().eq('id' as never, id)
     redirect('/dashboard')
   }
 

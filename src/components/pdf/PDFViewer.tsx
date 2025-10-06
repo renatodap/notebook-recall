@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Document, Page, pdfjs } from 'react-pdf'
 import 'react-pdf/dist/Page/AnnotationLayer.css'
 import 'react-pdf/dist/Page/TextLayer.css'
@@ -43,12 +43,7 @@ export default function PDFViewer({ sourceId, pdfUrl }: PDFViewerProps) {
   const [showSidebar, setShowSidebar] = useState<boolean>(true)
   const [loading, setLoading] = useState<boolean>(true)
 
-  // Fetch existing annotations
-  useEffect(() => {
-    fetchAnnotations()
-  }, [sourceId])
-
-  const fetchAnnotations = async () => {
+  const fetchAnnotations = useCallback(async () => {
     try {
       const res = await fetch(`/api/annotations?source_id=${sourceId}`)
       if (res.ok) {
@@ -58,7 +53,12 @@ export default function PDFViewer({ sourceId, pdfUrl }: PDFViewerProps) {
     } catch (error) {
       console.error('Failed to fetch annotations:', error)
     }
-  }
+  }, [sourceId])
+
+  // Fetch existing annotations
+  useEffect(() => {
+    fetchAnnotations()
+  }, [fetchAnnotations])
 
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     setNumPages(numPages)

@@ -11,10 +11,8 @@
  * Feature 8: Adaptive Learning
  */
 
-import { ChatMessage } from '@/app/api/research-assistant/chat/route'
 import { semanticSearch } from '@/lib/embeddings/search'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
-import type { DatabaseRecord } from '@/types/api-types'
 
 // Feature 3: User Profile for Cross-Session Intelligence
 export interface UserProfile {
@@ -108,8 +106,6 @@ export async function getUserProfile(userId: string): Promise<UserProfile> {
  * Feature 4: Detect Query Type for Dynamic Persona Selection
  */
 export function detectQueryType(message: string): QueryType {
-  const lower = message.toLowerCase()
-
   // Analysis patterns
   if (/analyz|examine|investigate|explore|study/i.test(message)) {
     return QueryType.ANALYSIS
@@ -209,14 +205,14 @@ export async function generateProactiveInsights(
 
     // Find overlapping topics
     const sharedTopics = Object.entries(topicCounts)
-      .filter(([_, count]) => (count as number) >= 2)
-      .map(([topic, _]) => topic)
+      .filter(([_topic, count]) => (count as number) >= 2)
+      .map(([topic]) => topic)
 
     if (sharedTopics.length > 0) {
       insights.push({
         type: 'connection',
         message: `I noticed common themes across your sources: ${sharedTopics.join(', ')}. Would you like me to analyze how these sources relate?`,
-        source_ids: recentSources.map((s: DatabaseRecord) => s.id),
+        source_ids: recentSources.map((s: any) => s.id),
         confidence: 0.8
       })
     }
@@ -232,7 +228,7 @@ export async function generateProactiveInsights(
   }
 
   // Detect contradictions (simplified)
-  const summaryTexts = recentSources.map((s: DatabaseRecord) =>
+  const summaryTexts = recentSources.map((s: any) =>
     s.summaries?.[0]?.summary_text || ''
   )
   const hasConflict = summaryTexts.some((text: string) =>
@@ -268,7 +264,7 @@ export const chatTools: ChatTool[] = [
 
       if (!user) throw new Error('Unauthorized')
 
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('notes')
         .insert({
           user_id: user.id,
@@ -411,7 +407,7 @@ export async function getUserPreferencesFromFeedback(userId: string): Promise<{
 }> {
   const supabase = await createRouteHandlerClient()
 
-  const { data: feedback } = await supabase
+  const { data: _feedback } = await supabase
     .from('message_feedback')
     .select('*')
     .eq('user_id', userId)

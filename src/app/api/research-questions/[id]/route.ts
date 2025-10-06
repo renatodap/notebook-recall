@@ -27,7 +27,7 @@ export async function PATCH(
       .from('research_questions')
       .update(updates)
       .eq('id', id)
-      .eq('user_id', user.id)
+      .eq('user_id', user.id as never)
       .select()
       .single()
 
@@ -57,7 +57,7 @@ export async function DELETE(
       .from('research_questions')
       .delete()
       .eq('id', id)
-      .eq('user_id', user.id)
+      .eq('user_id', user.id as never)
 
     if (error) throw error
 

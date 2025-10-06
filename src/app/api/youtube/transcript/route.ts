@@ -49,12 +49,7 @@ export async function POST(request: NextRequest) {
 
       // Fetch transcript using youtube-transcript library or scraping
       // For MVP, we'll create a placeholder
-      const transcriptResponse = await fetch(
-        `https://www.youtube.com/watch?v=${videoId}`
-      )
-
       // In production, use a proper YouTube transcript fetcher
-      // For now, placeholder
       transcript = `[Transcript for: ${videoTitle}]\n\nThis is a YouTube video transcript placeholder. In production, this would contain the actual transcript fetched from YouTube captions.`
 
     } catch (err) {
@@ -79,27 +74,29 @@ export async function POST(request: NextRequest) {
           channel: channelTitle,
           source_type: 'youtube'
         }
-      })
+      } as never)
       .select()
       .single()
 
-    if (sourceError) {
+    if (sourceError || !source) {
       console.error('Source creation error:', sourceError)
       return NextResponse.json({ error: 'Failed to create source' }, { status: 500 })
     }
+
+    const createdSource = source as unknown as { id: string; [key: string]: unknown }
 
     // Auto-summarize
     try {
       await fetch(`${request.nextUrl.origin}/api/summarize`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ source_id: source.id })
+        body: JSON.stringify({ source_id: createdSource.id })
       })
     } catch (err) {
       console.error('Summarization error:', err)
     }
 
-    return NextResponse.json({ source }, { status: 201 })
+    return NextResponse.json({ source: createdSource }, { status: 201 })
 
   } catch (error) {
     console.error('YouTube transcript error:', error)

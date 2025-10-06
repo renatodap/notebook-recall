@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
-import type { DatabaseRecord } from '@/types/api-types'
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,8 +21,8 @@ export async function POST(request: NextRequest) {
     const { data: sources } = await supabase
       .from('sources')
       .select(`id, title, summaries (summary_text, key_topics)`)
-      .in('id', source_ids)
-      .eq('user_id', user.id)
+      .in('id', source_ids as any)
+      .eq('user_id', user.id as never)
 
     if (!sources || sources.length === 0) {
       return NextResponse.json({ error: 'Sources not found' }, { status: 404 })
@@ -92,7 +91,7 @@ Return JSON:
     }
 
     const fullContent = `# ${paper.title}\n\n**Abstract**\n\n${paper.abstract}\n\n` +
-      paper.sections.map((s: DatabaseRecord) => `## ${s.title}\n\n${s.content}`).join('\n\n')
+      paper.sections.map((s: any) => `## ${s.title}\n\n${s.content}`).join('\n\n')
 
     // Save to database
     const { data: output } = await supabase
@@ -104,13 +103,13 @@ Return JSON:
         content: fullContent,
         metadata: { paper_type, research_question, source_count: sources.length },
         status: 'draft',
-      })
+      } as any)
       .select()
       .single()
 
     // Link sources
-    const links = source_ids.map((sid: string) => ({ output_id: output.id, source_id: sid }))
-    await supabase.from('output_sources').insert(links)
+    const links = source_ids.map((sid: string) => ({ output_id: (output as any).id, source_id: sid }))
+    await supabase.from('output_sources').insert(links as any)
 
     return NextResponse.json({ output, paper }, { status: 201 })
   } catch (error) {

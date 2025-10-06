@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
 
     // Upload audio to Supabase Storage
     const fileName = `${user.id}/${Date.now()}-${audioFile.name}`
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    const { error: uploadError } = await supabase.storage
       .from('voice-notes')
       .upload(fileName, audioFile, {
         contentType: audioFile.type,
@@ -75,14 +75,16 @@ export async function POST(request: NextRequest) {
           file_size: audioFile.size,
           duration_seconds: duration
         }
-      })
+      } as never)
       .select()
       .single()
 
-    if (sourceError) {
+    if (sourceError || !source) {
       console.error('Source creation error:', sourceError)
       return NextResponse.json({ error: 'Failed to create source' }, { status: 500 })
     }
+
+    const createdSource = source as unknown as { id: string; [key: string]: unknown }
 
     // Auto-summarize the transcript if available
     if (transcript && transcript !== '[Voice note transcription will be available soon]') {
@@ -90,14 +92,14 @@ export async function POST(request: NextRequest) {
         await fetch(`${request.nextUrl.origin}/api/summarize`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ source_id: source.id })
+          body: JSON.stringify({ source_id: createdSource.id })
         })
       } catch (err) {
         console.error('Summarization error:', err)
       }
     }
 
-    return NextResponse.json({ source }, { status: 201 })
+    return NextResponse.json({ source: createdSource }, { status: 201 })
 
   } catch (error) {
     console.error('Voice upload error:', error)

@@ -23,7 +23,7 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
     .from('resources')
     .select('*')
     .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('user_id' as never, user.id)
     .single()
 
   if (resourceError || !resource) {
@@ -31,7 +31,7 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
   }
 
   // Fetch sources in this resource
-  const { data: resourceSources, error: sourcesError } = await (supabase as any)
+  const { data: resourceSources } = await (supabase as any)
     .from('resource_sources')
     .select('source_id')
     .eq('resource_id', id)
@@ -44,7 +44,7 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
       .from('sources')
       .select('*')
       .in('id', sourceIds)
-      .eq('user_id', user.id)
+      .eq('user_id' as never, user.id)
 
     sources = sourcesData || []
 

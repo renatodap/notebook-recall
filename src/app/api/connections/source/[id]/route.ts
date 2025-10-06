@@ -20,7 +20,7 @@ export async function GET(
       .from('sources')
       .select('id')
       .eq('id', sourceId)
-      .eq('user_id', user.id)
+      .eq('user_id', user.id as never)
       .single()
 
     if (!source) {

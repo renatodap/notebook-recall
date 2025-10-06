@@ -8,7 +8,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/lib/supabase/server';
 import { generateEmbedding } from '@/lib/embeddings/client';
 import { z } from 'zod';
-import type { DatabaseRecord } from '@/types/api-types'
 import type {
   EnhancedSearchRequest,
   EnhancedSearchResponse,
@@ -82,8 +81,8 @@ export async function POST(request: NextRequest) {
 
       if (chunkError) {
         console.error('Chunk search error:', chunkError);
-      } else if (chunkData) {
-        results = chunkData.map((item: DatabaseRecord) => ({
+      } else if (chunkData && Array.isArray(chunkData)) {
+        results = chunkData.map((item: any) => ({
           chunk: {
             id: item.chunk_id,
             source_id: item.source_id,
@@ -119,14 +118,14 @@ export async function POST(request: NextRequest) {
           match_count: limit,
           p_user_id: user.id,
           p_collection_id: collection_id || null,
-        }
+        } as never
       );
 
       if (summaryError) {
         console.error('Summary search error:', summaryError);
       } else if (summaryData) {
         // Convert summary results to chunk format for consistency
-        results = summaryData.map((item: DatabaseRecord) => ({
+        results = summaryData.map((item: any) => ({
           chunk: {
             id: item.summary_id,
             source_id: item.source_id,
@@ -134,9 +133,12 @@ export async function POST(request: NextRequest) {
             content: item.summary_text,
             embedding: null,
             metadata: {
-              type: 'summary',
+              type: 'paragraph',
               key_topics: item.key_topics,
               key_actions: item.key_actions,
+              startChar: 0,
+              endChar: 0,
+              tokenCount: 0,
             },
             created_at: item.summary_created_at,
           },

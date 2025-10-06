@@ -3,8 +3,6 @@
  * Combines multiple sources into cohesive literature reviews
  */
 
-import type { Source, SynthesisReport } from '@/types'
-
 export interface SynthesisInput {
   sources: Array<{
     id: string
@@ -180,7 +178,7 @@ Return a JSON analysis showing how ideas have developed over time.`
         report_type,
       },
     }
-  } catch (e) {
+  } catch (_e) {
     // If JSON parsing fails, use the raw text as full_report
     result = {
       title: 'Synthesis Report',
@@ -248,7 +246,7 @@ Return a JSON array of themes:
     const jsonMatch = content.match(/\[[\s\S]*\]/)
     const themes = JSON.parse(jsonMatch ? jsonMatch[0] : content)
     return themes
-  } catch (e) {
+  } catch (_e) {
     return []
   }
 }

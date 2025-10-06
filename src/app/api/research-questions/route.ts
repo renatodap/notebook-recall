@@ -19,7 +19,7 @@ export async function GET(_request: NextRequest) {
           source:sources (id, title)
         )
       `)
-      .eq('user_id', user.id)
+      .eq('user_id', user.id as never)
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -63,28 +63,30 @@ export async function POST(request: NextRequest) {
         category: category || 'general',
         priority: priority || 'medium',
         status: 'open',
-      })
+      } as never)
       .select()
       .single()
 
-    if (createError) {
+    if (createError || !question) {
       console.error('Create question error:', createError)
       return NextResponse.json({ error: 'Failed to create question' }, { status: 500 })
     }
 
+    const createdQuestion = question as unknown as { id: string; [key: string]: unknown }
+
     // Link sources if provided
     if (source_ids && source_ids.length > 0) {
       const links = source_ids.map((sid: string) => ({
-        question_id: question.id,
+        question_id: createdQuestion.id,
         source_id: sid,
       }))
 
       await supabase
         .from('question_sources')
-        .insert(links)
+        .insert(links as never)
     }
 
-    return NextResponse.json({ question }, { status: 201 })
+    return NextResponse.json({ question: createdQuestion }, { status: 201 })
   } catch (error) {
     console.error('POST question error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

@@ -17,11 +17,11 @@ export async function GET(request: NextRequest) {
     let query = supabase
       .from('published_outputs')
       .select('id, output_type, title, status, created_at, metadata')
-      .eq('user_id', user.id)
+      .eq('user_id', user.id as never)
       .order('created_at', { ascending: false })
 
     if (outputType) {
-      query = query.eq('output_type', outputType)
+      query = query.eq('output_type', outputType as never)
     }
 
     const { data: outputs, error } = await query

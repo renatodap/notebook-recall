@@ -23,7 +23,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
     .from('projects')
     .select('*')
     .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('user_id' as never, user.id)
     .single()
 
   if (projectError || !project) {
@@ -31,7 +31,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
   }
 
   // Fetch sources in this project
-  const { data: projectSources, error: sourcesError } = await (supabase as any)
+  const { data: projectSources } = await (supabase as any)
     .from('project_sources')
     .select('source_id')
     .eq('project_id', id)
@@ -44,7 +44,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
       .from('sources')
       .select('*')
       .in('id', sourceIds)
-      .eq('user_id', user.id)
+      .eq('user_id' as never, user.id)
 
     sources = sourcesData || []
 

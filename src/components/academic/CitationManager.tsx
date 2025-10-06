@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Button from '../ui/Button'
 import Input from '../ui/Input'
 import type { Citation, CitationFormat } from '@/types'
@@ -19,11 +19,7 @@ export default function CitationManager({ sourceId, onClose }: CitationManagerPr
   const [activeTab, setActiveTab] = useState<'fetch' | 'formats' | 'edit'>('fetch')
   const [copiedFormat, setCopiedFormat] = useState<CitationFormat | null>(null)
 
-  useEffect(() => {
-    fetchCitation()
-  }, [sourceId])
-
-  const fetchCitation = async () => {
+  const fetchCitation = useCallback(async () => {
     try {
       const response = await fetch(`/api/citations/source/${sourceId}`)
       if (response.ok) {
@@ -38,7 +34,11 @@ export default function CitationManager({ sourceId, onClose }: CitationManagerPr
     } finally {
       setLoading(false)
     }
-  }
+  }, [sourceId])
+
+  useEffect(() => {
+    fetchCitation()
+  }, [fetchCitation])
 
   const handleFetchMetadata = async () => {
     if (!doi && !url) {

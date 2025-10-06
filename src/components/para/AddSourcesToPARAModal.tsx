@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import type { Source, Summary, Tag } from '@/types';
 
 interface SourceWithDetails extends Source {
@@ -29,11 +29,7 @@ export default function AddSourcesToPARAModal({
   const [saving, setSaving] = useState(false);
   const [filter, setFilter] = useState<'all' | 'unassigned'>('unassigned');
 
-  useEffect(() => {
-    fetchSources();
-  }, [filter]);
-
-  const fetchSources = async () => {
+  const fetchSources = useCallback(async () => {
     setLoading(true);
     try {
       const endpoint = filter === 'unassigned'
@@ -51,7 +47,11 @@ export default function AddSourcesToPARAModal({
     } finally {
       setLoading(false);
     }
-  };
+  }, [filter]);
+
+  useEffect(() => {
+    fetchSources();
+  }, [fetchSources]);
 
   const handleSave = async () => {
     if (selectedSourceIds.length === 0) {

@@ -34,7 +34,7 @@ export async function GET(_request: NextRequest) {
         sources!inner(user_id)
       `
       )
-      .eq('sources.user_id', user.id);
+      .eq('sources.user_id', user.id as never);
 
     if (tagsError) {
       throw tagsError;
@@ -43,7 +43,7 @@ export async function GET(_request: NextRequest) {
     // Aggregate tags and count sources
     const tagMap = new Map<string, Set<string>>();
 
-    tagsData?.forEach((tag: unknown) => {
+    tagsData?.forEach((tag: any) => {
       const tagName = tag.tag_name.toLowerCase();
 
       if (!tagMap.has(tagName)) {

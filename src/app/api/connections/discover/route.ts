@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
 import { discoverSimilarSources } from '@/lib/connections/discovery'
 import type { DiscoverConnectionsRequest } from '@/types'
-import type { DatabaseRecord } from '@/types/api-types'
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,8 +23,8 @@ export async function POST(request: NextRequest) {
     const { data: source } = await supabase
       .from('sources')
       .select('id, title')
-      .eq('id', source_id)
-      .eq('user_id', user.id)
+      .eq('id', source_id as never)
+      .eq('user_id', user.id as never)
       .single()
 
     if (!source) {
@@ -46,7 +45,7 @@ export async function POST(request: NextRequest) {
           summary_text
         )
       `)
-      .eq('user_id', user.id)
+      .eq('user_id', user.id as never)
 
     if (sourcesError) {
       console.error('Fetch sources error:', sourcesError)
@@ -76,25 +75,25 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if connections already exist
-    const newConnectionIds = discoveries.map(d => d.source_b_id)
+    const newConnectionIds = discoveries.map((d: any) => d.source_b_id)
     const { data: existingConnections } = await supabase
       .from('source_connections')
       .select('source_b_id, connection_type')
-      .eq('source_a_id', source_id)
-      .in('source_b_id', newConnectionIds)
+      .eq('source_a_id', source_id as never)
+      .in('source_b_id', newConnectionIds as any)
 
     const existingSet = new Set(
-      existingConnections?.map((c: DatabaseRecord) => `${c.source_b_id}:${c.connection_type}`) || []
+      existingConnections?.map((c: any) => `${c.source_b_id}:${c.connection_type}`) || []
     )
 
     // Filter out existing connections
     const newDiscoveries = discoveries.filter(
-      (d) => !existingSet.has(`${d.source_b_id}:${d.connection_type}`)
+      (d: any) => !existingSet.has(`${d.source_b_id}:${d.connection_type}`)
     )
 
     // Save new connections to database
     if (newDiscoveries.length > 0) {
-      const connectionsToInsert = newDiscoveries.map((d) => ({
+      const connectionsToInsert = newDiscoveries.map((d: any) => ({
         source_a_id: source_id,
         source_b_id: d.source_b_id,
         connection_type: d.connection_type,
@@ -105,7 +104,7 @@ export async function POST(request: NextRequest) {
 
       const { error: insertError } = await supabase
         .from('source_connections')
-        .insert(connectionsToInsert)
+        .insert(connectionsToInsert as any)
 
       if (insertError) {
         console.error('Insert connections error:', insertError)
@@ -125,7 +124,7 @@ export async function POST(request: NextRequest) {
           created_at
         )
       `)
-      .eq('source_a_id', source_id)
+      .eq('source_a_id', source_id as never)
       .order('strength', { ascending: false })
       .limit(limit)
 

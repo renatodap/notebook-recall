@@ -24,10 +24,6 @@ function formatLastFirst(name: string): string {
   return `${last}, ${first}`
 }
 
-function formatAuthorsFirstLast(authors: string[]): string {
-  return authors.join(', ')
-}
-
 /**
  * Generate BibTeX citation
  */

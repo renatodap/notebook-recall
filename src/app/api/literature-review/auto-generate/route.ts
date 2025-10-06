@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
 import { generateReviewFromTemplate, ReviewType, REVIEW_TEMPLATES } from '@/lib/academic/review-templates'
-import type { DatabaseRecord } from '@/types/api-types'
 
 /**
  * Automated Literature Review
@@ -44,9 +43,9 @@ export async function POST(request: NextRequest) {
         match_threshold: min_relevance,
         match_count: max_sources,
         filter_user_id: user.id
-      })
+      }) as { data: any[] | null }
 
-    if (!matchedSources || matchedSources.length === 0) {
+    if (!matchedSources || (matchedSources as any[]).length === 0) {
       return NextResponse.json({
         error: 'No relevant sources found',
         suggestion: 'Try adding more sources on this topic first'
@@ -54,14 +53,21 @@ export async function POST(request: NextRequest) {
     }
 
     // Step 3: Get full source details with summaries
-    const sourceIds = matchedSources.map((s: DatabaseRecord) => s.id)
+    const sourceIds = matchedSources.map((s: any) => s.id)
 
     const { data: sources } = await supabase
       .from('sources')
       .select('id, title, summaries (summary_text)')
       .in('id', sourceIds)
 
-    const sourcesForReview = sources.map((s: DatabaseRecord) => ({
+    if (!sources || sources.length === 0) {
+      return NextResponse.json({
+        error: 'No sources found',
+        suggestion: 'Try adding more sources on this topic first'
+      }, { status: 404 })
+    }
+
+    const sourcesForReview = sources.map((s: any) => ({
       title: s.title,
       summary_text: s.summaries?.[0]?.summary_text || ''
     }))
@@ -99,35 +105,39 @@ export async function POST(request: NextRequest) {
           topic,
           source_count: sources.length,
           auto_generated: true,
-          avg_relevance: matchedSources.reduce((acc: number, s: unknown) => acc + (s.similarity || 0), 0) / matchedSources.length,
+          avg_relevance: matchedSources.reduce((acc: number, s: any) => acc + (s.similarity || 0), 0) / matchedSources.length,
           word_count: markdownContent.split(/\s+/).length,
-          sections: review.sections.map((s: DatabaseRecord) => s.title)
+          sections: review.sections.map((s: any) => s.title)
         },
         status: 'draft'
-      })
+      } as any)
       .select()
       .single()
 
     // Link sources
-    const links = sourceIds.map((sid: string) => ({
-      output_id: output.id,
-      source_id: sid
-    }))
-    await supabase.from('output_sources').insert(links)
+    if (output && 'id' in output) {
+      const links = sourceIds.map((sid: string) => ({
+        output_id: output.id,
+        source_id: sid
+      }))
+      await supabase.from('output_sources').insert(links as any)
 
-    return NextResponse.json({
-      output,
-      review,
-      metadata: {
-        sourcesFound: sources.length,
-        template: template.title,
-        topic,
-        relevanceScores: matchedSources.map((s: DatabaseRecord) => ({
-          source_id: s.id,
-          similarity: s.similarity
-        }))
-      }
-    }, { status: 201 })
+      return NextResponse.json({
+        output,
+        review,
+        metadata: {
+          sourcesFound: sources.length,
+          template: template.title,
+          topic,
+          relevanceScores: matchedSources.map((s: any) => ({
+            source_id: s.id,
+            similarity: s.similarity
+          }))
+        }
+      }, { status: 201 })
+    }
+
+    return NextResponse.json({ error: 'Failed to create output' }, { status: 500 })
   } catch (error) {
     console.error('Automated literature review error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

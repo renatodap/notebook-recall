@@ -21,8 +21,8 @@ export async function POST(request: NextRequest) {
     const { data: sources } = await supabase
       .from('sources')
       .select('id, title, summaries (summary_text)')
-      .in('id', source_ids || [])
-      .eq('user_id', user.id)
+      .in('id', (source_ids || []) as any)
+      .eq('user_id', user.id as never)
       .limit(10)
 
     if (!sources || sources.length === 0) {
@@ -97,7 +97,7 @@ Return JSON:
         source_ids,
         confidence: result.confidence,
         metadata: { key_points: result.key_points, limitations: result.limitations },
-      })
+      } as any)
 
     return NextResponse.json({ ...result, source_count: sources.length })
   } catch (error) {

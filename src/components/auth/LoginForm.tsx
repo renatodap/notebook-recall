@@ -40,7 +40,7 @@ export default function LoginForm() {
       } else {
         setError(result.error || 'Failed to sign in')
       }
-    } catch (err) {
+    } catch {
       setError('An unexpected error occurred')
     } finally {
       setLoading(false)

@@ -28,7 +28,7 @@ export async function GET(
       .from('workspace_members')
       .select('*')
       .eq('workspace_id', id)
-      .eq('user_id', user.id)
+      .eq('user_id', user.id as never)
       .single()
 
     if (!membership && workspace.owner_id !== user.id) {
@@ -71,7 +71,7 @@ export async function PATCH(
       .from('workspaces')
       .update(updates)
       .eq('id', id)
-      .eq('owner_id', user.id)
+      .eq('owner_id', user.id as never)
       .select()
       .single()
 
@@ -105,7 +105,7 @@ export async function DELETE(
       .from('workspaces')
       .delete()
       .eq('id', id)
-      .eq('owner_id', user.id)
+      .eq('owner_id', user.id as never)
 
     if (error) throw error
 

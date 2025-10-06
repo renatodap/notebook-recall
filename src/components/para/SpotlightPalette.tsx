@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDebounce } from '@/hooks/useDebounce';
 import type { DatabaseRecord } from '@/types/api-types'
@@ -39,76 +39,16 @@ export default function SpotlightPalette({ isOpen, onClose }: SpotlightPalettePr
     }
   }, [isOpen]);
 
-  // Search when query changes
-  useEffect(() => {
-    if (debouncedQuery) {
-      performSearch(debouncedQuery);
-    } else {
-      setResults(getDefaultActions());
+  const handleSelect = useCallback((result: SearchResult) => {
+    if (result.action) {
+      result.action();
+    } else if (result.url) {
+      router.push(result.url);
     }
-  }, [debouncedQuery]);
+    onClose();
+  }, [router, onClose]);
 
-  // Keyboard navigation
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-      } else if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        setSelectedIndex((prev) => (prev + 1) % results.length);
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        setSelectedIndex((prev) => (prev - 1 + results.length) % results.length);
-      } else if (e.key === 'Enter') {
-        e.preventDefault();
-        handleSelect(results[selectedIndex]);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, results, selectedIndex]);
-
-  const getDefaultActions = (): SearchResult[] => {
-    return [
-      {
-        id: 'add-source',
-        type: 'action',
-        title: 'Add New Source',
-        description: 'Quick entry for new content',
-        icon: '➕',
-        url: '/add',
-      },
-      {
-        id: 'search-all',
-        type: 'action',
-        title: 'Search All Knowledge',
-        description: 'Semantic search across everything',
-        icon: '🔍',
-        url: '/search',
-      },
-      {
-        id: 'view-graph',
-        type: 'action',
-        title: 'Knowledge Graph',
-        description: 'Visualize connections',
-        icon: '🕸️',
-        url: '/graph',
-      },
-      {
-        id: 'para-dashboard',
-        type: 'action',
-        title: 'PARA Dashboard',
-        description: 'View all projects, areas, and resources',
-        icon: '📊',
-        url: '/para',
-      },
-    ];
-  };
-
-  const performSearch = async (searchQuery: string) => {
+  const performSearch = useCallback(async (searchQuery: string) => {
     setLoading(true);
     try {
       // Search sources
@@ -150,6 +90,75 @@ export default function SpotlightPalette({ isOpen, onClose }: SpotlightPalettePr
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  // Search when query changes
+  useEffect(() => {
+    if (debouncedQuery) {
+      performSearch(debouncedQuery);
+    } else {
+      setResults(getDefaultActions());
+    }
+  }, [debouncedQuery, performSearch]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setSelectedIndex((prev) => (prev + 1) % results.length);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSelectedIndex((prev) => (prev - 1 + results.length) % results.length);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        handleSelect(results[selectedIndex]);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, results, selectedIndex, handleSelect, onClose]);
+
+  const getDefaultActions = (): SearchResult[] => {
+    return [
+      {
+        id: 'add-source',
+        type: 'action',
+        title: 'Add New Source',
+        description: 'Quick entry for new content',
+        icon: '➕',
+        url: '/add',
+      },
+      {
+        id: 'search-all',
+        type: 'action',
+        title: 'Search All Knowledge',
+        description: 'Semantic search across everything',
+        icon: '🔍',
+        url: '/search',
+      },
+      {
+        id: 'view-graph',
+        type: 'action',
+        title: 'Knowledge Graph',
+        description: 'Visualize connections',
+        icon: '🕸️',
+        url: '/graph',
+      },
+      {
+        id: 'para-dashboard',
+        type: 'action',
+        title: 'PARA Dashboard',
+        description: 'View all projects, areas, and resources',
+        icon: '📊',
+        url: '/para',
+      },
+    ];
   };
 
   const getContentIcon = (contentType: string): string => {
@@ -161,15 +170,6 @@ export default function SpotlightPalette({ isOpen, onClose }: SpotlightPalettePr
       image: '🖼️',
     };
     return icons[contentType] || '📄';
-  };
-
-  const handleSelect = (result: SearchResult) => {
-    if (result.action) {
-      result.action();
-    } else if (result.url) {
-      router.push(result.url);
-    }
-    onClose();
   };
 
   const getTypeColor = (type: string) => {

@@ -18,12 +18,12 @@ export default async function ProfilePage() {
   const { data: sources } = await supabase
     .from('sources')
     .select('id', { count: 'exact', head: true })
-    .eq('user_id', user.id)
+    .eq('user_id' as never, user.id)
 
   const { data: collections } = await supabase
     .from('collections')
     .select('id', { count: 'exact', head: true })
-    .eq('user_id', user.id)
+    .eq('user_id' as never, user.id)
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20 md:pb-0 md:pl-64">

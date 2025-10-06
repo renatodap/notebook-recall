@@ -76,7 +76,7 @@ Return an empty array [] if no contradictions found.`
     const jsonMatch = content.match(/\[[\s\S]*\]/)
     const contradictions = JSON.parse(jsonMatch ? jsonMatch[0] : content)
 
-    return contradictions.map((c: DatabaseRecord) => ({
+    return contradictions.map((c: any) => ({
       source_a_id: sourceA.id,
       source_b_id: sourceB.id,
       claim_a: c.claim_a,
@@ -86,7 +86,7 @@ Return an empty array [] if no contradictions found.`
       explanation: c.explanation,
       topic: c.topic,
     }))
-  } catch (e) {
+  } catch (_e) {
     return []
   }
 }

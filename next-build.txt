@@ -1,0 +1,27 @@
+
+> recall-notebook@0.1.0 build
+> next build
+
+   ▲ Next.js 15.5.4
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 11.5s
+   Linting and checking validity of types ...
+Failed to compile.
+
+./src/app/api/concepts/extract/route.ts:89:12
+Type error: No overload matches this call.
+  Overload 1 of 2, '(values: (Omit<Database, "__InternalSupabase">[("public" extends Exclude<keyof Database, "__InternalSupabase"> ? "public" : string & Exclude<keyof Database, "__InternalSupabase">) extends "public" ? "public" & ("public" extends Exclude<...> ? "public" : string & Exclude<...>) : "public"] extends GenericSchema ? Omit<...>[("public" extends Exclude<...> ? "public" : string & Exclude<...>) extends "public" ? "public" & ("public" extends Exclude<...> ? "public" : string & Exclude<...>) : "public"] : never)["Tables"]["concepts"] extends { ...; } ? (Omit<...>[("public" extends Exclude<...> ? "public" : string & Exclude<...>) extends "public" ? "public" & ("public" extends Exclude<...> ? "public" : string & Exclude<...>) : "public"] extends GenericSchema ? Omit<...>[("public" extends Exclude<...> ? "public" : string & Exclude<...>) extends "public" ? "public" & ("public" extends Exclude<...> ? "public" : string & Exclude<...>) : "public"] : never)["Tables"]["concepts"]["Insert"] : never, options?: { ...; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+    Argument of type '{ name: string; normalized_name: string; embedding: number[]; frequency: number; }' is not assignable to parameter of type '(Omit<Database, "__InternalSupabase">[("public" extends Exclude<keyof Database, "__InternalSupabase"> ? "public" : string & Exclude<keyof Database, "__InternalSupabase">) extends "public" ? "public" & ("public" extends Exclude<...> ? "public" : string & Exclude<...>) : "public"] extends GenericSchema ? Omit<...>[("p...'.
+  Overload 2 of 2, '(values: ((Omit<Database, "__InternalSupabase">[("public" extends Exclude<keyof Database, "__InternalSupabase"> ? "public" : string & Exclude<keyof Database, "__InternalSupabase">) extends "public" ? "public" & ("public" extends Exclude<...> ? "public" : string & Exclude<...>) : "public"] extends GenericSchema ? Omit<...>[("public" extends Exclude<...> ? "public" : string & Exclude<...>) extends "public" ? "public" & ("public" extends Exclude<...> ? "public" : string & Exclude<...>) : "public"] : never)["Tables"]["concepts"] extends { ...; } ? (Omit<...>[("public" extends Exclude<...> ? "public" : string & Exclude<...>) extends "public" ? "public" & ("public" extends Exclude<...> ? "public" : string & Exclude<...>) : "public"] extends GenericSchema ? Omit<...>[("public" extends Exclude<...> ? "public" : string & Exclude<...>) extends "public" ? "public" & ("public" extends Exclude<...> ? "public" : string & Exclude<...>) : "public"] : never)["Tables"]["concepts"]["Insert"] : never)[], options?: { ...; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+    Object literal may only specify known properties, and 'name' does not exist in type '((Omit<Database, "__InternalSupabase">[("public" extends Exclude<keyof Database, "__InternalSupabase"> ? "public" : string & Exclude<keyof Database, "__InternalSupabase">) extends "public" ? "public" & ("public" extends Exclude<...> ? "public" : string & Exclude<...>) : "public"] extends GenericSchema ? Omit<...>[("...'.
+
+[0m [90m 87 |[39m         [36mconst[39m { data[33m:[39m newConcept[33m,[39m error } [33m=[39m [36mawait[39m supabase
+ [90m 88 |[39m           [33m.[39m[36mfrom[39m([32m'concepts'[39m)
+[31m[1m>[22m[39m[90m 89 |[39m           [33m.[39minsert({
+ [90m    |[39m            [31m[1m^[22m[39m
+ [90m 90 |[39m             name[33m:[39m extracted[33m.[39mname[33m,[39m
+ [90m 91 |[39m             normalized_name[33m:[39m normalizedName[33m,[39m
+ [90m 92 |[39m             embedding[33m,[39m[0m
+Next.js build worker exited with code: 1 and signal: null

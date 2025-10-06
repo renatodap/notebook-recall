@@ -29,7 +29,7 @@ export async function createServerClient() {
       set(name: string, value: string, options: CookieOptions) {
         try {
           cookieStore.set({ name, value, ...options })
-        } catch (error) {
+        } catch (_error) {
           // Cookie setting in Server Components is read-only in some contexts
           // This is expected behavior
         }
@@ -37,7 +37,7 @@ export async function createServerClient() {
       remove(name: string, options: CookieOptions) {
         try {
           cookieStore.set({ name, value: '', ...options, maxAge: 0 })
-        } catch (error) {
+        } catch (_error) {
           // Cookie removal in Server Components is read-only in some contexts
           // This is expected behavior
         }

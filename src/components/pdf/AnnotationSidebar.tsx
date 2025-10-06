@@ -30,7 +30,6 @@ export default function AnnotationSidebar({
   onDeleteAnnotation,
   currentPage,
   totalPages,
-  onPageChange,
   onClose
 }: AnnotationSidebarProps) {
   const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set())

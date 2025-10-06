@@ -116,7 +116,7 @@ export async function processPdf(
 /**
  * Perform OCR on PDF using Claude's document understanding
  */
-async function performOCR(buffer: Buffer, language: string): Promise<{ text: string; confidence: number }> {
+async function performOCR(buffer: Buffer, _language: string): Promise<{ text: string; confidence: number }> {
   const anthropicKey = process.env.ANTHROPIC_API_KEY
 
   if (!anthropicKey) {

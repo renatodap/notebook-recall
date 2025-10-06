@@ -10,10 +10,8 @@ import type { DatabaseRecord } from '@/types/api-types'
 import type {
   BackfillConfig,
   BackfillResult,
-  BackfillProgress,
 } from './types';
 
-const DEFAULT_BATCH_SIZE = 10;
 const DEFAULT_MAX_RETRIES = 3;
 
 /**
@@ -52,7 +50,7 @@ export async function backfillEmbeddings(
         .select('id')
         .eq('user_id', userId);
 
-      const userSourceIds = new Set(userSources?.map((s: DatabaseRecord) => s.id) || []);
+      const userSourceIds = new Set(userSources?.map((s: any) => s.id) || []);
       const filteredSummaries = summaries?.filter((s: DatabaseRecord) => userSourceIds.has(s.source_id)) || [];
 
       return await processSummaries(filteredSummaries, supabase, maxRetries, dryRun, startTime);

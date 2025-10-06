@@ -15,7 +15,11 @@ interface ResearchQuestion {
   created_at: string
 }
 
-export default function ResearchQuestionsClient({ userId }: { userId: string }) {
+interface ResearchQuestionsClientProps {
+  userId?: string
+}
+
+export default function ResearchQuestionsClient({ userId }: ResearchQuestionsClientProps = {}) {
   const [questions, setQuestions] = useState<ResearchQuestion[]>([])
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)

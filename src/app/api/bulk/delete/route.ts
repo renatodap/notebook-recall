@@ -7,7 +7,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/lib/supabase/server';
 import { z } from 'zod';
-import type { DatabaseRecord } from '@/types/api-types'
 
 export const dynamic = 'force-dynamic';
 
@@ -42,17 +41,17 @@ export async function POST(request: NextRequest) {
     const { source_ids } = validation.data;
 
     // Verify all sources belong to the user
-    const { data: sources, error: fetchError } = await supabase
+    const { data: sources, error: fetchError } = await (supabase as any)
       .from('sources')
       .select('id')
       .in('id', source_ids)
-      .eq('user_id', user.id);
+      .eq('user_id', user.id as never);
 
     if (fetchError) {
       throw fetchError;
     }
 
-    const validSourceIds = sources?.map((s: DatabaseRecord) => s.id) || [];
+    const validSourceIds = sources?.map((s: any) => s.id) || [];
     const invalidCount = source_ids.length - validSourceIds.length;
 
     if (validSourceIds.length === 0) {
@@ -63,11 +62,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Delete sources (cascades to summaries and tags via foreign key constraints)
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await (supabase as any)
       .from('sources')
       .delete()
       .in('id', validSourceIds)
-      .eq('user_id', user.id);
+      .eq('user_id', user.id as never);
 
     if (deleteError) {
       throw deleteError;

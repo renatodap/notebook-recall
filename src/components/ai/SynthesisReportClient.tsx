@@ -27,7 +27,7 @@ export default function SynthesisReportClient({ report }: SynthesisReportClientP
       } else {
         alert('Failed to delete report')
       }
-    } catch (err) {
+    } catch {
       alert('Error deleting report')
     } finally {
       setIsDeleting(false)

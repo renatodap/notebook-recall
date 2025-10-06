@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/lib/supabase/server';
 import { backfillEmbeddings } from '@/lib/embeddings/backfill';
 import { z } from 'zod';
-import type { BackfillRequest, BackfillResponse } from '@/types';
+import type { BackfillRequest } from '@/types';
 
 export const dynamic = 'force-dynamic';
 

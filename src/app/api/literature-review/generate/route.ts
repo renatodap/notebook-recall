@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
 import { generateReviewFromTemplate, REVIEW_TEMPLATES, ReviewType } from '@/lib/academic/review-templates'
-import type { DatabaseRecord } from '@/types/api-types'
 
-export async function POST(_request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
     const supabase = await createRouteHandlerClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -28,13 +27,13 @@ export async function POST(_request: NextRequest) {
       .from('sources')
       .select('id, title, summaries (summary_text)')
       .in('id', source_ids)
-      .eq('user_id', user.id)
+      .eq('user_id', user.id as never)
 
     if (!sources || sources.length === 0) {
       return NextResponse.json({ error: 'Sources not found' }, { status: 404 })
     }
 
-    const sourcesForReview = sources.map((s: DatabaseRecord) => ({
+    const sourcesForReview = sources.map((s: any) => ({
       title: s.title,
       summary_text: s.summaries?.[0]?.summary_text || ''
     }))
@@ -71,19 +70,21 @@ export async function POST(_request: NextRequest) {
           template_type,
           source_count: sources.length,
           word_count: markdownContent.split(/\s+/).length,
-          sections: review.sections.map((s: DatabaseRecord) => s.title)
+          sections: review.sections.map((s: any) => s.title)
         },
         status: 'draft'
-      })
+      } as any)
       .select()
       .single()
 
     // Link sources
-    const links = source_ids.map((sid: string) => ({
-      output_id: output.id,
-      source_id: sid
-    }))
-    await supabase.from('output_sources').insert(links)
+    if (output && 'id' in output) {
+      const links = source_ids.map((sid: string) => ({
+        output_id: output.id,
+        source_id: sid
+      }))
+      await supabase.from('output_sources').insert(links as any)
+    }
 
     return NextResponse.json({ output, review, template }, { status: 201 })
   } catch (error) {
@@ -92,7 +93,7 @@ export async function POST(_request: NextRequest) {
   }
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Return available templates
     const templates = Object.entries(REVIEW_TEMPLATES).map(([key, template]) => ({

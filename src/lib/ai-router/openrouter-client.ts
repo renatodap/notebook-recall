@@ -3,7 +3,6 @@
  */
 
 import OpenAI from 'openai'
-import type { DatabaseRecord } from '@/types/api-types'
 
 let openRouterClient: OpenAI | null = null
 
@@ -97,8 +96,6 @@ export async function* openRouterChatCompletionStream(
  * Get available models from OpenRouter
  */
 export async function getOpenRouterModels() {
-  const client = getOpenRouterClient()
-
   const response = await fetch('https://openrouter.ai/api/v1/models', {
     headers: {
       'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`
@@ -159,7 +156,7 @@ export async function openRouterFunctionCall(
 
   return {
     response: message?.content || '',
-    toolCalls: toolCalls.map((tc: DatabaseRecord) => ({
+    toolCalls: toolCalls.map((tc: any) => ({
       name: tc.function.name,
       arguments: typeof tc.function.arguments === 'string'
         ? JSON.parse(tc.function.arguments)

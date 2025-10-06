@@ -1,5 +1,5 @@
 import { createServerClient } from '@/lib/supabase/server'
-import { Card, CardBody, CardHeader } from '@/components/ui/Card'
+import { Card, CardBody } from '@/components/ui/Card'
 import Link from 'next/link'
 import Button from '@/components/ui/Button'
 import FollowButton from '@/components/social/FollowButton'

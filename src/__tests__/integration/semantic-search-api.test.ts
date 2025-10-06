@@ -11,7 +11,6 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
 describe('Semantic Search API Integration Tests', () => {
   let authToken: string;
-  let userId: string;
   const testSourceIds: string[] = [];
 
   beforeAll(async () => {
@@ -27,7 +26,6 @@ describe('Semantic Search API Integration Tests', () => {
 
     const signupData = await signupResponse.json();
     authToken = signupData.session?.access_token;
-    userId = signupData.user?.id;
 
     // Create test sources with specific content for semantic search
     const sources: CreateSourceRequest[] = [

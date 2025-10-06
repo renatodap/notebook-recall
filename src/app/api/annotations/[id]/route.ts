@@ -18,7 +18,7 @@ export async function GET(
       .from('pdf_annotations')
       .select('*')
       .eq('id', id)
-      .eq('user_id', user.id)
+      .eq('user_id', user.id as never)
       .single()
 
     if (error) throw error
@@ -59,7 +59,7 @@ export async function PATCH(
       .from('pdf_annotations')
       .update(updateData)
       .eq('id', id)
-      .eq('user_id', user.id)
+      .eq('user_id', user.id as never)
       .select()
       .single()
 
@@ -93,7 +93,7 @@ export async function DELETE(
       .from('pdf_annotations')
       .delete()
       .eq('id', id)
-      .eq('user_id', user.id)
+      .eq('user_id', user.id as never)
 
     if (error) throw error
 

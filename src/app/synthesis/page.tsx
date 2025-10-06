@@ -18,7 +18,7 @@ export default async function SynthesisListPage() {
   const { data: reports } = await supabase
     .from('synthesis_reports')
     .select('*')
-    .eq('user_id', user.id)
+    .eq('user_id' as never, user.id)
     .order('created_at', { ascending: false })
 
   return (
@@ -56,7 +56,7 @@ export default async function SynthesisListPage() {
           </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {reports.map((report: DatabaseRecord) => (
+            {reports.map((report: any) => (
               <Link
                 key={report.id}
                 href={`/synthesis/${report.id}`}

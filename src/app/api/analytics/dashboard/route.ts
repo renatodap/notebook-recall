@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
     let sourceQuery = supabase
       .from('sources')
       .select('id, source_type, tags, created_at')
-      .eq('user_id', user.id)
+      .eq('user_id', user.id as never)
 
     if (startDate) {
       sourceQuery = sourceQuery.gte('created_at', startDate.toISOString())
@@ -62,17 +62,17 @@ export async function GET(request: NextRequest) {
     const { count: collectionsCount } = await supabase
       .from('collections')
       .select('id', { count: 'exact', head: true })
-      .eq('user_id', user.id)
+      .eq('user_id', user.id as never)
 
     const { count: synthesisCount } = await supabase
       .from('synthesis_reports')
       .select('id', { count: 'exact', head: true })
-      .eq('user_id', user.id)
+      .eq('user_id', user.id as never)
 
     const { count: publishedOutputsCount } = await supabase
       .from('published_outputs')
       .select('id', { count: 'exact', head: true })
-      .eq('user_id', user.id)
+      .eq('user_id', user.id as never)
 
     analytics.overview = {
       totalSources: totalSources || 0,
@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
     }
 
     // BREAKDOWN BY SOURCE TYPE
-    const sourceTypeBreakdown = (sources || []).reduce((acc: any, s: unknown) => {
+    const sourceTypeBreakdown = (sources || []).reduce((acc: any, s: any) => {
       const type = s.source_type || 'unknown'
       acc[type] = (acc[type] || 0) + 1
       return acc
@@ -91,21 +91,21 @@ export async function GET(request: NextRequest) {
     analytics.breakdown.bySourceType = sourceTypeBreakdown
 
     // TAG ANALYSIS
-    const allTags = (sources || []).flatMap((s: unknown) => s.tags || [])
+    const allTags = (sources || []).flatMap((s: any) => s.tags || [])
     const tagFrequency = allTags.reduce((acc: any, tag: string) => {
       acc[tag] = (acc[tag] || 0) + 1
       return acc
     }, {})
 
     const topTags = Object.entries(tagFrequency)
-      .sort((a: any, b: unknown) => b[1] - a[1])
+      .sort((a: any, b: any) => b[1] - a[1])
       .slice(0, 10)
       .map(([tag, count]) => ({ tag, count }))
 
     analytics.topItems.tags = topTags
 
     // ACTIVITY TRENDS (sources added over time)
-    const sourcesGrouped = (sources || []).reduce((acc: any, s: unknown) => {
+    const sourcesGrouped = (sources || []).reduce((acc: any, s: any) => {
       const date = new Date(s.created_at).toISOString().split('T')[0]
       acc[date] = (acc[date] || 0) + 1
       return acc
@@ -113,23 +113,23 @@ export async function GET(request: NextRequest) {
 
     analytics.trends.sourcesOverTime = Object.entries(sourcesGrouped)
       .map(([date, count]) => ({ date, count }))
-      .sort((a: any, b: unknown) => a.date.localeCompare(b.date))
+      .sort((a: any, b: any) => a.date.localeCompare(b.date))
 
     // AI FEATURE USAGE
     const { count: connectionsCount } = await supabase
       .from('source_connections')
       .select('id', { count: 'exact', head: true })
-      .eq('user_id', user.id)
+      .eq('user_id', user.id as never)
 
     const { count: conceptsCount } = await supabase
       .from('concepts')
       .select('id', { count: 'exact', head: true })
-      .eq('user_id', user.id)
+      .eq('user_id', user.id as never)
 
     const { count: contradictionsCount } = await supabase
       .from('contradictions')
       .select('id', { count: 'exact', head: true })
-      .eq('user_id', user.id)
+      .eq('user_id', user.id as never)
 
     analytics.breakdown.aiFeatureUsage = {
       connectionsDiscovered: connectionsCount || 0,
@@ -141,14 +141,14 @@ export async function GET(request: NextRequest) {
     const { data: outputs } = await supabase
       .from('published_outputs')
       .select('output_type, status, created_at')
-      .eq('user_id', user.id)
+      .eq('user_id', user.id as never)
 
-    const outputTypeBreakdown = (outputs || []).reduce((acc: any, o: unknown) => {
+    const outputTypeBreakdown = (outputs || []).reduce((acc: any, o: any) => {
       acc[o.output_type] = (acc[o.output_type] || 0) + 1
       return acc
     }, {})
 
-    const outputStatusBreakdown = (outputs || []).reduce((acc: any, o: unknown) => {
+    const outputStatusBreakdown = (outputs || []).reduce((acc: any, o: any) => {
       acc[o.status] = (acc[o.status] || 0) + 1
       return acc
     }, {})
@@ -163,17 +163,17 @@ export async function GET(request: NextRequest) {
     const { count: sharesCount } = await supabase
       .from('source_shares')
       .select('id', { count: 'exact', head: true })
-      .eq('owner_id', user.id)
+      .eq('owner_id', user.id as never)
 
     const { count: followingCount } = await supabase
       .from('user_follows')
       .select('id', { count: 'exact', head: true })
-      .eq('follower_id', user.id)
+      .eq('follower_id', user.id as never)
 
     const { count: followersCount } = await supabase
       .from('user_follows')
       .select('id', { count: 'exact', head: true })
-      .eq('following_id', user.id)
+      .eq('following_id', user.id as never)
 
     analytics.breakdown.collaboration = {
       sharesCreated: sharesCount || 0,

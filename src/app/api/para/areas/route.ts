@@ -20,7 +20,7 @@ export async function GET() {
         *,
         source_count:area_sources(count)
       `)
-      .eq('user_id', session.user.id)
+      .eq('user_id', session.user.id as never)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -55,8 +55,8 @@ export async function POST(request: NextRequest) {
         description: body.description || null,
         standard: body.standard || null,
         review_frequency: body.review_frequency || 'monthly',
-        icon: (body).icon || '🌳',
-      })
+        icon: (body as any).icon || '🌳',
+      } as any)
       .select()
       .single();
 

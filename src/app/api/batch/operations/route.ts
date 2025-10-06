@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
-import type { DatabaseRecord } from '@/types/api-types'
 
 /**
  * Feature 31: Advanced Batch Operations
@@ -44,20 +43,20 @@ export async function POST(request: NextRequest) {
 
         for (const id of target_ids) {
           try {
-            const { data: source } = await supabase
+            const { data: source } = await (supabase as any)
               .from('sources')
               .select('tags')
               .eq('id', id)
-              .eq('user_id', user.id)
+              .eq('user_id', user.id as never)
               .single()
 
             if (source) {
               const updatedTags = Array.from(new Set([...(source.tags || []), ...tags]))
-              await supabase
+              await (supabase as any)
                 .from('sources')
                 .update({ tags: updatedTags })
                 .eq('id', id)
-                .eq('user_id', user.id)
+                .eq('user_id', user.id as never)
 
               results.successful++
               results.results.push({ id, status: 'success', tags: updatedTags })
@@ -155,7 +154,7 @@ export async function POST(request: NextRequest) {
           .from('sources')
           .select('*')
           .in('id', target_ids)
-          .eq('user_id', user.id)
+          .eq('user_id', user.id as never)
 
         if (error) throw error
 
@@ -169,7 +168,7 @@ export async function POST(request: NextRequest) {
           const headers = ['id', 'title', 'url', 'source_type', 'created_at']
           const csv = [
             headers.join(','),
-            ...sources.map((s: DatabaseRecord) =>
+            ...sources.map((s: any) =>
               headers.map(h => JSON.stringify(s[h] || '')).join(',')
             )
           ].join('\n')
@@ -183,7 +182,7 @@ export async function POST(request: NextRequest) {
           .from('sources')
           .delete()
           .in('id', target_ids)
-          .eq('user_id', user.id)
+          .eq('user_id', user.id as never)
           .select()
 
         if (deleteError) throw deleteError
@@ -197,7 +196,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Log batch operation
-    await supabase
+    await (supabase as any)
       .from('batch_operations_log')
       .insert({
         user_id: user.id,

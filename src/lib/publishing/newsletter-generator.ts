@@ -125,7 +125,7 @@ Make it engaging and valuable for readers!`
     const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/) || content.match(/\{[\s\S]*\}/)
     const jsonText = jsonMatch ? jsonMatch[1] || jsonMatch[0] : content
     result = JSON.parse(jsonText)
-  } catch (e) {
+  } catch (_e) {
     result = {
       subject_line: `${newsletter_name} - Latest Research`,
       preview_text: `Curated insights from ${sources.length} sources`,
@@ -135,7 +135,7 @@ Make it engaging and valuable for readers!`
 
   // Combine sections into full content
   const fullContent = result.sections
-    .map((section: DatabaseRecord) => {
+    .map((section: any) => {
       if (format === 'html') {
         return `<h2>${section.title}</h2>\n${section.content}`
       } else {

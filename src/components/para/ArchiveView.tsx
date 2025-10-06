@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import SourceCard from '@/components/SourceCard';
-import type { Source } from '@/types';
 
 interface ArchiveViewProps {
   initialSources: unknown[];

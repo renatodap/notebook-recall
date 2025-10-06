@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     let query = supabase
       .from('user_profiles')
       .select('*')
-      .eq('is_public', true)
+      .eq('is_public', true as never)
       .order('created_at', { ascending: false })
       .limit(limit)
 

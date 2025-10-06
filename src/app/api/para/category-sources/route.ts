@@ -43,8 +43,8 @@ export async function GET(request: NextRequest) {
           tags:tags(*)
         `
         )
-        .eq('user_id', user.id)
-        .eq('archived', true)
+        .eq('user_id', user.id as never)
+        .eq('archived', true as never)
         .order('archived_at', { ascending: false });
 
       if (error) throw error;
@@ -63,19 +63,19 @@ export async function GET(request: NextRequest) {
           )
         `
         )
-        .eq('sources.user_id', user.id)
-        .eq('sources.archived', false);
+        .eq('sources.user_id', user.id as never)
+        .eq('sources.archived', false as never);
 
       if (error) throw error;
 
       // Extract sources from junction table result
       sources = (data || [])
-        .map((item: DatabaseRecord) => item.sources)
+        .map((item: any) => item.sources)
         .filter((source: DatabaseRecord) => source !== null);
 
       // Remove duplicates (a source can be in multiple projects)
       const uniqueSources = Array.from(
-        new Map(sources.map((s: DatabaseRecord) => [s.id, s])).values()
+        new Map(sources.map((s: any) => [s.id, s])).values()
       );
       sources = uniqueSources;
     } else if (category === 'areas') {
@@ -92,19 +92,19 @@ export async function GET(request: NextRequest) {
           )
         `
         )
-        .eq('sources.user_id', user.id)
-        .eq('sources.archived', false);
+        .eq('sources.user_id', user.id as never)
+        .eq('sources.archived', false as never);
 
       if (error) throw error;
 
       // Extract sources from junction table result
       sources = (data || [])
-        .map((item: DatabaseRecord) => item.sources)
+        .map((item: any) => item.sources)
         .filter((source: DatabaseRecord) => source !== null);
 
       // Remove duplicates
       const uniqueSources = Array.from(
-        new Map(sources.map((s: DatabaseRecord) => [s.id, s])).values()
+        new Map(sources.map((s: any) => [s.id, s])).values()
       );
       sources = uniqueSources;
     } else if (category === 'resources') {
@@ -121,25 +121,25 @@ export async function GET(request: NextRequest) {
           )
         `
         )
-        .eq('sources.user_id', user.id)
-        .eq('sources.archived', false);
+        .eq('sources.user_id', user.id as never)
+        .eq('sources.archived', false as never);
 
       if (error) throw error;
 
       // Extract sources from junction table result
       sources = (data || [])
-        .map((item: DatabaseRecord) => item.sources)
+        .map((item: any) => item.sources)
         .filter((source: DatabaseRecord) => source !== null);
 
       // Remove duplicates
       const uniqueSources = Array.from(
-        new Map(sources.map((s: DatabaseRecord) => [s.id, s])).values()
+        new Map(sources.map((s: any) => [s.id, s])).values()
       );
       sources = uniqueSources;
     }
 
     // Flatten summary arrays
-    const flattenedSources = sources.map((source: DatabaseRecord) => ({
+    const flattenedSources = sources.map((source: any) => ({
       ...source,
       summary: Array.isArray(source.summaries)
         ? source.summaries

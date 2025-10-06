@@ -30,8 +30,8 @@ export async function POST(request: NextRequest) {
           key_topics
         )
       `)
-      .eq('id', source_id)
-      .eq('user_id', user.id)
+      .eq('id', source_id as never)
+      .eq('user_id', user.id as never)
       .single()
 
     if (sourceError || !source) {
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Combine content for concept extraction
-    const summary = source.summaries?.[0]
+    const summary = (source as any).summaries?.[0]
     const textToAnalyze = [
       summary?.summary_text || '',
       ...(summary?.key_topics || []),
@@ -77,13 +77,12 @@ export async function POST(request: NextRequest) {
       let { data: existingConcept } = await supabase
         .from('concepts')
         .select('*')
-        .eq('normalized_name', normalizedName)
-        .single()
+        .eq('normalized_name', normalizedName as never)
+        .maybeSingle()
 
       if (!existingConcept) {
         // Create new concept with embedding
-        const openaiKey = process.env.OPENAI_API_KEY
-        const embedding = openaiKey ? await generateConceptEmbedding(extracted.name, openaiKey) : null
+        const embedding = await generateConceptEmbedding(extracted.name)
 
         const { data: newConcept, error } = await supabase
           .from('concepts')
@@ -92,7 +91,7 @@ export async function POST(request: NextRequest) {
             normalized_name: normalizedName,
             embedding,
             frequency: 1,
-          })
+          } as any)
           .select()
           .single()
 
@@ -103,13 +102,13 @@ export async function POST(request: NextRequest) {
         // Increment frequency
         await supabase
           .from('concepts')
-          .update({ frequency: existingConcept.frequency + 1 })
-          .eq('id', existingConcept.id)
+          .update({ frequency: (existingConcept as any).frequency + 1 } as any)
+          .eq('id', (existingConcept as any).id as never)
       }
 
       if (existingConcept) {
         conceptData.push({
-          ...existingConcept,
+          ...(existingConcept as any),
           relevance: extracted.relevance,
           context: extracted.context,
         })
@@ -118,20 +117,20 @@ export async function POST(request: NextRequest) {
         const { data: existingLink } = await supabase
           .from('source_concepts')
           .select('*')
-          .eq('source_id', source_id)
-          .eq('concept_id', existingConcept.id)
-          .single()
+          .eq('source_id', source_id as never)
+          .eq('concept_id', (existingConcept as any).id as never)
+          .maybeSingle()
 
         if (!existingLink) {
           await supabase
             .from('source_concepts')
             .insert({
               source_id,
-              concept_id: existingConcept.id,
+              concept_id: (existingConcept as any).id,
               relevance: extracted.relevance,
               mentions: 1,
               context: extracted.context,
-            })
+            } as any)
         }
       }
     }

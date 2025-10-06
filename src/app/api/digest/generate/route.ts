@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/server'
 import Anthropic from '@anthropic-ai/sdk'
-import type { DatabaseRecord } from '@/types/api-types'
 
 export async function POST(request: NextRequest) {
   try {
@@ -40,7 +39,7 @@ export async function POST(request: NextRequest) {
         created_at,
         summaries (summary_text, key_actions, key_topics)
       `)
-      .eq('user_id', user.id)
+      .eq('user_id', user.id as never)
       .gte('created_at', startDate.toISOString())
       .order('created_at', { ascending: false })
 
@@ -56,7 +55,7 @@ export async function POST(request: NextRequest) {
       apiKey: process.env.ANTHROPIC_API_KEY
     })
 
-    const sourcesText = sources.map((s: DatabaseRecord) => {
+    const sourcesText = sources.map((s: any) => {
       const summary = s.summaries?.[0]
       return `
 **${s.title}** (${s.content_type})
@@ -98,7 +97,7 @@ Format as HTML for an email.`
         period_end: now.toISOString(),
         content: digestContent,
         source_count: sources.length
-      })
+      } as any)
       .select()
       .single()
 

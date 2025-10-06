@@ -11,7 +11,6 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
 describe('Embeddings API Integration Tests', () => {
   let authToken: string;
-  let userId: string;
 
   beforeAll(async () => {
     // Create test user and get auth token
@@ -26,7 +25,6 @@ describe('Embeddings API Integration Tests', () => {
 
     const signupData = await signupResponse.json();
     authToken = signupData.session?.access_token;
-    userId = signupData.user?.id;
   });
 
   afterAll(async () => {

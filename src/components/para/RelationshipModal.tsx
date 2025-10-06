@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { DatabaseRecord } from '@/types/api-types'
 
 interface RelationshipModalProps {
@@ -37,11 +37,7 @@ export default function RelationshipModal({
   const [currentResources, setCurrentResources] = useState<string[]>([]);
   const [currentProjects, setCurrentProjects] = useState<string[]>([]);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const promises: Promise<Response>[] = [];
@@ -112,7 +108,11 @@ export default function RelationshipModal({
     } finally {
       setLoading(false);
     }
-  };
+  }, [itemType, itemId]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleSave = async () => {
     setSaving(true);

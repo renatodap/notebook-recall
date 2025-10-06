@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     const { data: sources, error } = await supabase
       .from('sources')
       .select('id, title, content_type, created_at')
-      .eq('user_id', user.id)
+      .eq('user_id', user.id as never)
       .order('created_at', { ascending: true })
 
     if (error) {
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     // Group sources by time period
     const timeline: Record<string, any[]> = {}
 
-    sources?.forEach((source: unknown) => {
+    sources?.forEach((source: any) => {
       const date = new Date(source.created_at)
       let key: string
 

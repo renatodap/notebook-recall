@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Button from './ui/Button'
 import { Card, CardBody } from './ui/Card'
 
@@ -15,11 +15,7 @@ export default function ShareButton({ sourceId }: ShareButtonProps) {
   const [publicUrl, setPublicUrl] = useState('')
   const [copied, setCopied] = useState(false)
 
-  useEffect(() => {
-    fetchShareStatus()
-  }, [sourceId])
-
-  const fetchShareStatus = async () => {
+  const fetchShareStatus = useCallback(async () => {
     try {
       const res = await fetch(`/api/sharing?type=owned`)
       if (res.ok) {
@@ -35,7 +31,11 @@ export default function ShareButton({ sourceId }: ShareButtonProps) {
     } catch (error) {
       console.error('Failed to fetch share status:', error)
     }
-  }
+  }, [sourceId])
+
+  useEffect(() => {
+    fetchShareStatus()
+  }, [fetchShareStatus])
 
   const toggleVisibility = async (newVisibility: 'private' | 'public') => {
     setLoading(true)

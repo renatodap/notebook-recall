@@ -1,0 +1,28 @@
+
+> recall-notebook@0.1.0 build
+> next build
+
+   ▲ Next.js 15.5.4
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 11.0s
+   Linting and checking validity of types ...
+
+./src/app/api/connections/discover/route.ts
+5:15  Warning: 'DatabaseRecord' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+Failed to compile.
+
+./src/app/api/connections/discover/route.ts:128:26
+Type error: Argument of type 'string' is not assignable to parameter of type '("source_a_id" extends keyof (Omit<Database, "__InternalSupabase">[("public" extends Exclude<keyof Database, "__InternalSupabase"> ? "public" : string & Exclude<...>) extends "public" ? "public" & ("public" extends Exclude<...> ? "public" : string & Exclude<...>) : "public"] extends GenericSchema ? Omit<...>[("publi...'.
+
+[0m [90m 126 |[39m [32m        )[39m
+ [90m 127 |[39m [32m      `[39m)
+[31m[1m>[22m[39m[90m 128 |[39m       [33m.[39meq([32m'source_a_id'[39m[33m,[39m source_id)
+ [90m     |[39m                          [31m[1m^[22m[39m
+ [90m 129 |[39m       [33m.[39morder([32m'strength'[39m[33m,[39m { ascending[33m:[39m [36mfalse[39m })
+ [90m 130 |[39m       [33m.[39mlimit(limit)
+ [90m 131 |[39m[0m
+Next.js build worker exited with code: 1 and signal: null

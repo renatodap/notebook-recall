@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardBody, CardHeader } from '../ui/Card'
 import Button from '../ui/Button'
 import Link from 'next/link'
@@ -24,11 +24,7 @@ export default function ConnectionsPanel({ sourceId }: ConnectionsPanelProps) {
   const [loading, setLoading] = useState(true)
   const [discovering, setDiscovering] = useState(false)
 
-  useEffect(() => {
-    fetchConnections()
-  }, [sourceId])
-
-  const fetchConnections = async () => {
+  const fetchConnections = useCallback(async () => {
     try {
       const response = await fetch(`/api/connections/source/${sourceId}`)
       if (response.ok) {
@@ -40,7 +36,11 @@ export default function ConnectionsPanel({ sourceId }: ConnectionsPanelProps) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [sourceId])
+
+  useEffect(() => {
+    fetchConnections()
+  }, [fetchConnections])
 
   const handleDiscoverConnections = async () => {
     setDiscovering(true)

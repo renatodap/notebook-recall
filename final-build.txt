@@ -1,0 +1,23 @@
+
+> recall-notebook@0.1.0 build
+> next build
+
+   ▲ Next.js 15.5.4
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 23.1s
+   Linting and checking validity of types ...
+Failed to compile.
+
+./src/app/api/research-assistant/chat/route.ts:373:19
+Type error: Argument of type 'string' is not assignable to parameter of type '("id" extends keyof (Omit<Database, "__InternalSupabase">[("public" extends Exclude<keyof Database, "__InternalSupabase"> ? "public" : string & Exclude<...>) extends "public" ? "public" & ("public" extends Exclude<...> ? "public" : string & Exclude<...>) : "public"] extends GenericSchema ? Omit<...>[("public" extend...'.
+
+[0m [90m 371 |[39m         [33m.[39m[36mfrom[39m([32m'chat_sessions'[39m)
+ [90m 372 |[39m         [33m.[39mselect([32m'*'[39m)
+[31m[1m>[22m[39m[90m 373 |[39m         [33m.[39meq([32m'id'[39m[33m,[39m sessionId)
+ [90m     |[39m                   [31m[1m^[22m[39m
+ [90m 374 |[39m         [33m.[39meq([32m'user_id'[39m[33m,[39m user[33m.[39mid [36mas[39m never)
+ [90m 375 |[39m         [33m.[39msingle()
+ [90m 376 |[39m[0m
+Next.js build worker exited with code: 1 and signal: null

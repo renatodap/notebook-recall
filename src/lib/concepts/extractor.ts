@@ -93,8 +93,7 @@ export function normalizeConcept(name: string): string {
  * Generate embedding for a concept
  */
 export async function generateConceptEmbedding(
-  conceptName: string,
-  openaiKey: string
+  conceptName: string
 ): Promise<number[]> {
   try {
     const result = await generateEmbedding({

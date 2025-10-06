@@ -165,9 +165,9 @@ Write the content in markdown format with proper headings, lists, and formatting
     })
 
     result = JSON.parse(jsonText)
-  } catch (e) {
+  } catch (_e) {
     // If JSON parsing fails, create structured output from raw text
-    console.error('Blog post JSON parsing error:', e)
+    console.error('Blog post JSON parsing error:', _e)
     result = {
       title: 'Generated Blog Post',
       subtitle: null,
@@ -243,7 +243,7 @@ Return a JSON object:
   try {
     const jsonMatch = content.match(/\{[\s\S]*\}/)
     return JSON.parse(jsonMatch ? jsonMatch[0] : content)
-  } catch (e) {
+  } catch (_e) {
     return {
       twitter: `New blog post: ${blogPost.title}`,
       linkedin: `I just published a new article: ${blogPost.title}`,

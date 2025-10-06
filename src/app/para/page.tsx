@@ -20,10 +20,10 @@ export default async function PARAPage() {
       *,
       sources:project_sources(count)
     `)
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
+    .eq('user_id' as never, user.id)
+    .order('created_at' as never, { ascending: false })
 
-  const projectsWithCount = projects?.map((p: DatabaseRecord) => ({
+  const projectsWithCount = (projects as any[])?.map((p: any) => ({
     ...p,
     source_count: p.sources?.[0]?.count || 0,
     sources: undefined,
@@ -36,10 +36,10 @@ export default async function PARAPage() {
       *,
       sources:area_sources(count)
     `)
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
+    .eq('user_id' as never, user.id)
+    .order('created_at' as never, { ascending: false })
 
-  const areasWithCount = areas?.map((a: DatabaseRecord) => ({
+  const areasWithCount = (areas as any[])?.map((a: any) => ({
     ...a,
     source_count: a.sources?.[0]?.count || 0,
     sources: undefined,
@@ -52,10 +52,10 @@ export default async function PARAPage() {
       *,
       sources:resource_sources(count)
     `)
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
+    .eq('user_id' as never, user.id)
+    .order('created_at' as never, { ascending: false })
 
-  const resourcesWithCount = resources?.map((r: DatabaseRecord) => ({
+  const resourcesWithCount = (resources as any[])?.map((r: any) => ({
     ...r,
     source_count: r.sources?.[0]?.count || 0,
     sources: undefined,
@@ -67,12 +67,12 @@ export default async function PARAPage() {
     .single()
 
   const stats = {
-    total_sources: Number(statsData?.total_sources) || 0,
-    archived_sources: Number(statsData?.archived_sources) || 0,
-    unassigned_sources: Number(statsData?.unassigned_sources) || 0,
-    project_count: Number(statsData?.project_count) || 0,
-    area_count: Number(statsData?.area_count) || 0,
-    resource_count: Number(statsData?.resource_count) || 0,
+    total_sources: Number((statsData as any)?.total_sources) || 0,
+    archived_sources: Number((statsData as any)?.archived_sources) || 0,
+    unassigned_sources: Number((statsData as any)?.unassigned_sources) || 0,
+    project_count: Number((statsData as any)?.project_count) || 0,
+    area_count: Number((statsData as any)?.area_count) || 0,
+    resource_count: Number((statsData as any)?.resource_count) || 0,
   }
 
   return (

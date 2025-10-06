@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
 import { detectAllContradictions, groupContradictionsByTopic, getContradictionStats } from '@/lib/contradictions/detector'
-import type { DatabaseRecord } from '@/types/api-types'
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,14 +29,14 @@ export async function POST(request: NextRequest) {
         )
       `)
       .in('id', source_ids)
-      .eq('user_id', user.id)
+      .eq('user_id', user.id as never)
 
     if (sourcesError || !sources || sources.length < 2) {
       return NextResponse.json({ error: 'Sources not found or access denied' }, { status: 404 })
     }
 
     // Prepare sources for analysis
-    const sourcesForAnalysis = sources.map((s: DatabaseRecord) => ({
+    const sourcesForAnalysis = sources.map((s: any) => ({
       id: s.id,
       title: s.title,
       summary: s.summaries?.[0]?.summary_text || '',
@@ -72,7 +71,7 @@ export async function POST(request: NextRequest) {
 
       await supabase
         .from('contradictions')
-        .insert(contradictionsToInsert)
+        .insert(contradictionsToInsert as any)
     }
 
     // Group and analyze

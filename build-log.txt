@@ -1,0 +1,32 @@
+
+> recall-notebook@0.1.0 build
+> next build
+
+   ▲ Next.js 15.5.4
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 11.1s
+   Linting and checking validity of types ...
+
+./src/app/api/collections/route.ts
+4:15  Warning: 'DatabaseRecord' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+Failed to compile.
+
+./src/app/api/collections/route.ts:70:8
+Type error: No overload matches this call.
+  Overload 1 of 2, '(values: (Omit<Database, "__InternalSupabase">[("public" extends Exclude<keyof Database, "__InternalSupabase"> ? "public" : string & Exclude<keyof Database, "__InternalSupabase">) extends "public" ? "public" & ("public" extends Exclude<...> ? "public" : string & Exclude<...>) : "public"] extends GenericSchema ? Omit<...>[("public" extends Exclude<...> ? "public" : string & Exclude<...>) extends "public" ? "public" & ("public" extends Exclude<...> ? "public" : string & Exclude<...>) : "public"] : never)["Tables"]["collections"] extends { ...; } ? (Omit<...>[("public" extends Exclude<...> ? "public" : string & Exclude<...>) extends "public" ? "public" & ("public" extends Exclude<...> ? "public" : string & Exclude<...>) : "public"] extends GenericSchema ? Omit<...>[("public" extends Exclude<...> ? "public" : string & Exclude<...>) extends "public" ? "public" & ("public" extends Exclude<...> ? "public" : string & Exclude<...>) : "public"] : never)["Tables"]["collections"]["Insert"] : never, options?: { ...; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+    Argument of type '{ user_id: string; name: string; description: string | null; is_public: boolean; collection_type: CollectionType; }' is not assignable to parameter of type '(Omit<Database, "__InternalSupabase">[("public" extends Exclude<keyof Database, "__InternalSupabase"> ? "public" : string & Exclude<keyof Database, "__InternalSupabase">) extends "public" ? "public" & ("public" extends Exclude<...> ? "public" : string & Exclude<...>) : "public"] extends GenericSchema ? Omit<...>[("p...'.
+  Overload 2 of 2, '(values: ((Omit<Database, "__InternalSupabase">[("public" extends Exclude<keyof Database, "__InternalSupabase"> ? "public" : string & Exclude<keyof Database, "__InternalSupabase">) extends "public" ? "public" & ("public" extends Exclude<...> ? "public" : string & Exclude<...>) : "public"] extends GenericSchema ? Omit<...>[("public" extends Exclude<...> ? "public" : string & Exclude<...>) extends "public" ? "public" & ("public" extends Exclude<...> ? "public" : string & Exclude<...>) : "public"] : never)["Tables"]["collections"] extends { ...; } ? (Omit<...>[("public" extends Exclude<...> ? "public" : string & Exclude<...>) extends "public" ? "public" & ("public" extends Exclude<...> ? "public" : string & Exclude<...>) : "public"] extends GenericSchema ? Omit<...>[("public" extends Exclude<...> ? "public" : string & Exclude<...>) extends "public" ? "public" & ("public" extends Exclude<...> ? "public" : string & Exclude<...>) : "public"] : never)["Tables"]["collections"]["Insert"] : never)[], options?: { ...; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+    Object literal may only specify known properties, and 'user_id' does not exist in type '((Omit<Database, "__InternalSupabase">[("public" extends Exclude<keyof Database, "__InternalSupabase"> ? "public" : string & Exclude<keyof Database, "__InternalSupabase">) extends "public" ? "public" & ("public" extends Exclude<...> ? "public" : string & Exclude<...>) : "public"] extends GenericSchema ? Omit<...>[("...'.
+
+[0m [90m 68 |[39m     [36mconst[39m { data[33m:[39m collection[33m,[39m error[33m:[39m createError } [33m=[39m [36mawait[39m supabase
+ [90m 69 |[39m       [33m.[39m[36mfrom[39m([32m'collections'[39m)
+[31m[1m>[22m[39m[90m 70 |[39m       [33m.[39minsert({
+ [90m    |[39m        [31m[1m^[22m[39m
+ [90m 71 |[39m         user_id[33m:[39m user[33m.[39mid[33m,[39m
+ [90m 72 |[39m         name[33m:[39m name[33m.[39mtrim()[33m,[39m
+ [90m 73 |[39m         description[33m:[39m description[33m?[39m[33m.[39mtrim() [33m||[39m [36mnull[39m[33m,[39m[0m
+Next.js build worker exited with code: 1 and signal: null

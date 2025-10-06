@@ -22,12 +22,12 @@ export async function GET() {
     if (error) throw error;
 
     const stats: PARAStats = {
-      total_sources: Number(data.total_sources) || 0,
-      archived_sources: Number(data.archived_sources) || 0,
-      unassigned_sources: Number(data.unassigned_sources) || 0,
-      project_count: Number(data.project_count) || 0,
-      area_count: Number(data.area_count) || 0,
-      resource_count: Number(data.resource_count) || 0,
+      total_sources: Number((data as any).total_sources) || 0,
+      archived_sources: Number((data as any).archived_sources) || 0,
+      unassigned_sources: Number((data as any).unassigned_sources) || 0,
+      project_count: Number((data as any).project_count) || 0,
+      area_count: Number((data as any).area_count) || 0,
+      resource_count: Number((data as any).resource_count) || 0,
     };
 
     return NextResponse.json({ stats });

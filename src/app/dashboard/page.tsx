@@ -21,7 +21,7 @@ export default async function DashboardPage() {
       summary:summaries(*),
       tags:tags(*)
     `)
-    .eq('user_id', user.id)
+    .eq('user_id' as never, user.id)
     .order('created_at', { ascending: false })
 
   return (
@@ -38,7 +38,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Sources View */}
-        <SourcesView initialSources={sources || []} />
+        <SourcesView initialSources={sources as any || []} />
       </div>
     </div>
   )

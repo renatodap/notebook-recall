@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import SourceCard from '@/components/SourceCard';
@@ -66,14 +66,7 @@ export default function PARADetailClient({
     setFilteredSources(filtered);
   }, [sources, searchQuery, sortBy]);
 
-  // Generate AI summary
-  useEffect(() => {
-    if (sources.length > 0) {
-      generateAISummary();
-    }
-  }, [sources.length]);
-
-  const generateAISummary = async () => {
+  const generateAISummary = useCallback(async () => {
     setLoadingSummary(true);
     try {
       // Get all source IDs
@@ -98,7 +91,14 @@ export default function PARADetailClient({
     } finally {
       setLoadingSummary(false);
     }
-  };
+  }, [sources, type, item.name]);
+
+  // Generate AI summary
+  useEffect(() => {
+    if (sources.length > 0) {
+      generateAISummary();
+    }
+  }, [sources.length, generateAISummary]);
 
   const handleSave = async () => {
     if (!name.trim()) return;

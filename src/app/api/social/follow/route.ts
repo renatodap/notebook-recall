@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
       .insert({
         follower_id: user.id,
         following_id: user_id_to_follow
-      })
+      } as never)
       .select()
       .single()
 
@@ -69,8 +69,8 @@ export async function DELETE(request: NextRequest) {
     const { error } = await supabase
       .from('user_follows')
       .delete()
-      .eq('follower_id', user.id)
-      .eq('following_id', userId)
+      .eq('follower_id' as never, user.id)
+      .eq('following_id' as never, userId)
 
     if (error) throw error
 
@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
       const { data: following, error } = await supabase
         .from('user_follows')
         .select('following_id, created_at')
-        .eq('follower_id', user.id)
+        .eq('follower_id', user.id as never)
 
       if (error) throw error
       return NextResponse.json({ following })
@@ -107,7 +107,7 @@ export async function GET(request: NextRequest) {
       const { data: followers, error } = await supabase
         .from('user_follows')
         .select('follower_id, created_at')
-        .eq('following_id', user.id)
+        .eq('following_id', user.id as never)
 
       if (error) throw error
       return NextResponse.json({ followers })

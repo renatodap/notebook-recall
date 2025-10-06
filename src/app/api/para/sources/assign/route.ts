@@ -21,10 +21,10 @@ export async function POST(request: NextRequest) {
     const { data: source, error: sourceError } = await supabase
       .from('sources')
       .select('user_id')
-      .eq('id', source_id)
+      .eq('id', source_id as never)
       .single();
 
-    if (sourceError || !source || source.user_id !== session.user.id) {
+    if (sourceError || !source || (source as any).user_id !== session.user.id) {
       return NextResponse.json({ error: 'Source not found or unauthorized' }, { status: 404 });
     }
 
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
 
       const { error: projectError } = await supabase
         .from('project_sources')
-        .upsert(projectAssignments, { onConflict: 'project_id,source_id' });
+        .upsert(projectAssignments as any, { onConflict: 'project_id,source_id' });
 
       if (projectError) throw projectError;
     }
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
 
       const { error: areaError } = await supabase
         .from('area_sources')
-        .upsert(areaAssignments, { onConflict: 'area_id,source_id' });
+        .upsert(areaAssignments as any, { onConflict: 'area_id,source_id' });
 
       if (areaError) throw areaError;
     }
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
 
       const { error: resourceError } = await supabase
         .from('resource_sources')
-        .upsert(resourceAssignments, { onConflict: 'resource_id,source_id' });
+        .upsert(resourceAssignments as any, { onConflict: 'resource_id,source_id' });
 
       if (resourceError) throw resourceError;
     }

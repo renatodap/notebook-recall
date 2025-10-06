@@ -22,22 +22,22 @@ export async function POST(request: NextRequest) {
     const { data: source } = await supabase
       .from('sources')
       .select('id, title, original_content, summaries (summary_text)')
-      .eq('id', source_id)
-      .eq('user_id', user.id)
+      .eq('id', source_id as never)
+      .eq('user_id', user.id as never)
       .single()
 
     if (!source) {
       return NextResponse.json({ error: 'Source not found' }, { status: 404 })
     }
 
-    const text = source.original_content || source.summaries?.[0]?.summary_text || ''
+    const text = (source as any).original_content || (source as any).summaries?.[0]?.summary_text || ''
 
     const anthropicKey = process.env.ANTHROPIC_API_KEY
     if (!anthropicKey) {
       return NextResponse.json({ error: 'AI service not configured' }, { status: 500 })
     }
 
-    const methodology = await extractMethodology(text, source.title, anthropicKey)
+    const methodology = await extractMethodology(text, (source as any).title, anthropicKey)
 
     // Save to database
     await supabase
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
         limitations: methodology.limitations,
         validity_considerations: methodology.validity_considerations,
         extracted_text: methodology.extracted_text,
-      })
+      } as any)
 
     return NextResponse.json({ methodology }, { status: 201 })
   } catch (error) {

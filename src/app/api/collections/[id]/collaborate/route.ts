@@ -31,7 +31,7 @@ export async function POST(
       .from('collections')
       .select('id')
       .eq('id', id)
-      .eq('user_id', user.id)
+      .eq('user_id', user.id as never)
       .single()
 
     if (!collection) {

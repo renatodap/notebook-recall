@@ -152,7 +152,7 @@ export default function ChatPage() {
             {sessions.length === 0 ? (
               <p className="text-sm text-gray-500">No sessions yet</p>
             ) : (
-              sessions.map((session: DatabaseRecord) => (
+              sessions.map((session: any) => (
                 <button
                   key={session.id}
                   onClick={() => loadSession(session.id)}
@@ -160,7 +160,7 @@ export default function ChatPage() {
                     currentSession === session.id ? 'bg-blue-50 border border-blue-200' : ''
                   }`}
                 >
-                  <div className="font-medium truncate">{session.title}</div>
+                  <div className="font-medium truncate">{String(session.title || 'Untitled')}</div>
                   <div className="text-xs text-gray-500 mt-1">
                     {new Date(session.updated_at).toLocaleDateString()}
                   </div>

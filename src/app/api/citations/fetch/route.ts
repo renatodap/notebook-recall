@@ -42,8 +42,8 @@ export async function POST(request: NextRequest) {
       const { data: source } = await supabase
         .from('sources')
         .select('id')
-        .eq('id', source_id)
-        .eq('user_id', user.id)
+        .eq('id', source_id as never)
+        .eq('user_id', user.id as never)
         .single()
 
       if (!source) {
@@ -57,8 +57,8 @@ export async function POST(request: NextRequest) {
       const { data: existingCitation } = await supabase
         .from('citations')
         .select('id')
-        .eq('source_id', source_id)
-        .single()
+        .eq('source_id', source_id as never)
+        .maybeSingle()
 
       const citationData = {
         source_id,
@@ -75,8 +75,8 @@ export async function POST(request: NextRequest) {
         // Update existing
         const { data: citation, error } = await supabase
           .from('citations')
-          .update(citationData)
-          .eq('id', existingCitation.id)
+          .update(citationData as any)
+          .eq('id', (existingCitation as any).id as never)
           .select()
           .single()
 
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
         // Create new
         const { data: citation, error } = await supabase
           .from('citations')
-          .insert(citationData)
+          .insert(citationData as any)
           .select()
           .single()
 

@@ -67,7 +67,7 @@ If methodology is not clearly stated, return best inference from available infor
   try {
     const jsonMatch = content.match(/\{[\s\S]*\}/)
     return JSON.parse(jsonMatch ? jsonMatch[0] : content)
-  } catch (e) {
+  } catch (_e) {
     return {
       research_design: 'Unknown',
       data_collection_methods: [],

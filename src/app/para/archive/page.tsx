@@ -20,9 +20,9 @@ export default async function ArchivePage() {
       *,
       summaries (*)
     `)
-    .eq('user_id', user.id)
-    .eq('archived', true)
-    .order('archived_at', { ascending: false });
+    .eq('user_id' as never, user.id)
+    .eq('archived' as never, true)
+    .order('archived_at' as never, { ascending: false });
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20 md:pb-0 md:pl-64">

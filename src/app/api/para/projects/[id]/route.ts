@@ -49,8 +49,8 @@ export async function GET(
           )
         )
       `)
-      .eq('id', id)
-      .eq('user_id', session.user.id)
+      .eq('id', id as never)
+      .eq('user_id', session.user.id as never)
       .single();
 
     if (error) throw error;
@@ -93,8 +93,8 @@ export async function PATCH(
     const { data: project, error } = await (supabase as any)
       .from('projects')
       .update(updateData)
-      .eq('id', id)
-      .eq('user_id', session.user.id)
+      .eq('id', id as never)
+      .eq('user_id', session.user.id as never)
       .select()
       .single();
 
@@ -127,8 +127,8 @@ export async function DELETE(
     const { error } = await (supabase as any)
       .from('projects')
       .delete()
-      .eq('id', id)
-      .eq('user_id', session.user.id);
+      .eq('id', id as never)
+      .eq('user_id', session.user.id as never);
 
     if (error) throw error;
 

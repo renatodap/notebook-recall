@@ -26,8 +26,6 @@ export default function KnowledgeGraph({ sources, connections, onNodeClick }: Kn
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [hoveredNode, setHoveredNode] = useState<string | null>(null)
   const [draggingNode, setDraggingNode] = useState<string | null>(null)
-  const [zoom, setZoom] = useState(1)
-  const [offset, setOffset] = useState({ x: 0, y: 0 })
 
   // Physics simulation state
   const nodesState = useRef<Map<string, { x: number; y: number; vx: number; vy: number }>>(new Map())
@@ -207,7 +205,7 @@ export default function KnowledgeGraph({ sources, connections, onNodeClick }: Kn
     setHoveredNode(hovered)
   }
 
-  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const handleMouseDown = () => {
     if (hoveredNode) {
       setDraggingNode(hoveredNode)
     }

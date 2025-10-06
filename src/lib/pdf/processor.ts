@@ -116,7 +116,7 @@ async function extractTextFromPDF(buffer: Buffer | ArrayBuffer): Promise<PDFProc
       pages: 0,
       processingMethod: 'text'
     }
-  } catch (error) {
+  } catch (_error) {
     return {
       text: '',
       pages: 0,

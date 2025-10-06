@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { Source, Summary, Tag } from '@/types';
 
 interface KnowledgeGraphPanelProps {
@@ -32,7 +32,7 @@ export default function KnowledgeGraphPanel({
   const [edges, setEdges] = useState<GraphEdge[]>([]);
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
 
-  const getCategoryColor = () => {
+  const getCategoryColor = useCallback(() => {
     switch (category) {
       case 'projects':
         return '#6366f1'; // indigo
@@ -45,7 +45,7 @@ export default function KnowledgeGraphPanel({
       default:
         return '#3b82f6'; // blue
     }
-  };
+  }, [category]);
 
   // Build graph data from sources
   useEffect(() => {
@@ -119,7 +119,7 @@ export default function KnowledgeGraphPanel({
 
     setNodes(graphNodes);
     setEdges(graphEdges);
-  }, [sources, category]);
+  }, [sources, category, getCategoryColor]);
 
   // Draw graph on canvas
   useEffect(() => {

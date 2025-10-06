@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
 import { generateSynthesisReport } from '@/lib/synthesis/generator'
 import type { GenerateSynthesisRequest } from '@/types'
-import type { DatabaseRecord } from '@/types/api-types'
 
 export async function POST(request: NextRequest) {
   try {
@@ -31,8 +30,8 @@ export async function POST(request: NextRequest) {
           key_topics
         )
       `)
-      .in('id', source_ids)
-      .eq('user_id', user.id)
+      .in('id' as never, source_ids)
+      .eq('user_id' as never, user.id)
 
     if (sourcesError || !sources || sources.length === 0) {
       return NextResponse.json({ error: 'Sources not found or access denied' }, { status: 404 })
@@ -43,7 +42,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Prepare sources for synthesis
-    const synthesisInput = sources.map((s: DatabaseRecord) => ({
+    const synthesisInput = sources.map((s: any) => ({
       id: s.id,
       title: s.title,
       summary: s.summaries?.[0]?.summary_text,
@@ -82,26 +81,28 @@ export async function POST(request: NextRequest) {
         full_report: synthesis.full_report,
         source_count: sources.length,
         metadata: synthesis.metadata,
-      })
+      } as never)
       .select()
       .single()
 
-    if (reportError) {
+    if (reportError || !report) {
       console.error('Save synthesis report error:', reportError)
       return NextResponse.json({ error: 'Failed to save synthesis report' }, { status: 500 })
     }
 
+    const savedReport = report as unknown as { id: string; [key: string]: unknown }
+
     // Link sources to report
     const links = source_ids.map(sid => ({
-      synthesis_id: report.id,
+      synthesis_id: savedReport.id,
       source_id: sid,
     }))
 
     await supabase
       .from('synthesis_sources')
-      .insert(links)
+      .insert(links as never)
 
-    return NextResponse.json({ report }, { status: 201 })
+    return NextResponse.json({ report: savedReport }, { status: 201 })
   } catch (error) {
     console.error('Synthesis generation error:', error)
     return NextResponse.json(

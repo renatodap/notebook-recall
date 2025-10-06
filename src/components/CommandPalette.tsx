@@ -243,7 +243,7 @@ export default function CommandPalette() {
                   <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase" role="presentation">
                     {category}
                   </div>
-                  {items.map((cmd, index) => {
+                  {items.map((cmd) => {
                     const globalIndex = filteredCommands.indexOf(cmd)
                     const isSelected = globalIndex === selectedIndex
 

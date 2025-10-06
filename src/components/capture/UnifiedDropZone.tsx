@@ -40,9 +40,9 @@ export default function UnifiedDropZone({ onCapture }: UnifiedDropZoneProps) {
     } else if (text) {
       await processText(text)
     }
-  }, [])
+  }, [processFiles, processText])
 
-  const processFiles = async (files: File[]) => {
+  const processFiles = useCallback(async (files: File[]) => {
     setIsProcessing(true)
     setError('')
 
@@ -144,9 +144,9 @@ export default function UnifiedDropZone({ onCapture }: UnifiedDropZoneProps) {
     } finally {
       setIsProcessing(false)
     }
-  }
+  }, [onCapture, router])
 
-  const processText = async (text: string) => {
+  const processText = useCallback(async (text: string) => {
     setIsProcessing(true)
     setError('')
 
@@ -240,7 +240,7 @@ export default function UnifiedDropZone({ onCapture }: UnifiedDropZoneProps) {
     } finally {
       setIsProcessing(false)
     }
-  }
+  }, [onCapture, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

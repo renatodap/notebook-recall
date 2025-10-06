@@ -9,7 +9,6 @@ import { createRouteHandlerClient } from '@/lib/supabase/server';
 import { backfillChunks } from '@/lib/chunking/embeddings';
 import { z } from 'zod';
 import type { ChunkBackfillRequest, ChunkBackfillResponse } from '@/types/chunks';
-import type { DatabaseRecord } from '@/types/api-types'
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes for backfill operations
@@ -54,19 +53,19 @@ export async function POST(request: NextRequest) {
       const { data: sources } = await supabase
         .from('sources')
         .select('id, original_content, content_type')
-        .eq('user_id', user.id)
+        .eq('user_id', user.id as never)
         .not('content_type', 'eq', 'image');
 
       let needsChunking = 0;
 
       if (sources && Array.isArray(sources)) {
         for (const source of sources) {
-          const { count } = await supabase
+          const { count } = await (supabase as any)
             .from('content_chunks')
             .select('*', { count: 'exact', head: true })
-            .eq('source_id', (source).id);
+            .eq('source_id', (source as any).id);
 
-          if (count === 0 && (source).original_content?.length > 1000) {
+          if (count === 0 && (source as any).original_content?.length > 1000) {
             needsChunking++;
           }
         }
@@ -129,16 +128,16 @@ export async function GET() {
     const { count: totalSources } = await supabase
       .from('sources')
       .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id);
+      .eq('user_id', user.id as never);
 
     // Count sources with chunks
-    const { data: sourcesWithChunks } = await supabase
+    const { data: sourcesWithChunks } = await (supabase as any)
       .from('content_chunks')
       .select('source_id')
       .neq('source_id', '00000000-0000-0000-0000-000000000000');
 
     const uniqueSourcesWithChunks = new Set(
-      sourcesWithChunks?.map((c: DatabaseRecord) => c.source_id) || []
+      sourcesWithChunks?.map((c: any) => c.source_id) || []
     ).size;
 
     // Count total chunks

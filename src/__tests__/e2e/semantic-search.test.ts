@@ -4,7 +4,7 @@
  * Complete user flow tests for semantic search functionality
  */
 
-import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
+import { describe, it, expect, afterAll } from '@jest/globals';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
@@ -154,9 +154,6 @@ describe('Semantic Search E2E Tests', () => {
 
   describe('Session Persistence', () => {
     it('search persists across sessions', async () => {
-      // Simulate logout by clearing token
-      const oldToken = authToken;
-
       // Simulate new session - login again
       const loginResponse = await fetch(`${API_BASE_URL}/api/auth/signin`, {
         method: 'POST',

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
-import type { DatabaseRecord } from '@/types/api-types'
 
 export interface ChatMessage {
   role: 'user' | 'assistant'
@@ -64,7 +63,7 @@ export async function POST(request: NextRequest) {
         .from('chat_sessions')
         .select('*')
         .eq('id', session_id)
-        .eq('user_id', user.id)
+        .eq('user_id', user.id as never)
         .single()
 
       session = data
@@ -101,7 +100,7 @@ export async function POST(request: NextRequest) {
           summaries (summary_text, key_topics, key_actions)
         `)
         .in('id', sourceIds)
-        .eq('user_id', user.id)
+        .eq('user_id', user.id as never)
         .limit(10)
 
       if (sources && sources.length > 0) {
@@ -115,7 +114,7 @@ Summary: ${summary?.summary_text || 'No summary available'}
 ${summary?.key_topics ? `Key Topics: ${summary.key_topics.join(', ')}` : ''}`
           }).join('\n\n---\n\n')
 
-        sourcesUsed = sources.map((s: DatabaseRecord) => s.id)
+        sourcesUsed = sources.map((s: any) => s.id)
       }
     }
 
@@ -156,18 +155,6 @@ ${sourceContext || '\n\nNote: No sources are currently available.'}${insightsTex
 
     // Feature 7: Multi-Step Reasoning
     const reasoning = await performMultiStepReasoning(message, await getSourcesData(supabase, sourceIds || [], user.id))
-
-    // Build messages array for Claude
-    const messages = [
-      ...conversationHistory.map(m => ({
-        role: m.role,
-        content: m.content
-      })),
-      {
-        role: 'user',
-        content: message
-      }
-    ]
 
     // 🚀 INTELLIGENT MODEL ROUTING - Auto-select optimal model
     const { unifiedChatCompletion, unifiedFunctionCall } = await import('@/lib/ai-router/unified-client')
@@ -247,11 +234,11 @@ ${sourceContext || '\n\nNote: No sources are currently available.'}${insightsTex
 
     // Execute tool calls if any (Feature 6)
     for (const toolCall of toolCalls) {
-      const tool = chatTools.find(t => t.name === toolCall.name)
+      const tool = chatTools.find(t => t.name === (toolCall as any).name)
       if (tool) {
         try {
           const startTime = Date.now()
-          const result = await tool.handler(toolCall.input)
+          const result = await tool.handler((toolCall as any).input)
           const executionTime = Date.now() - startTime
 
           // Log function call
@@ -260,25 +247,25 @@ ${sourceContext || '\n\nNote: No sources are currently available.'}${insightsTex
             .insert({
               user_id: user.id,
               session_id: session_id,
-              function_name: toolCall.name,
-              arguments: toolCall.input,
+              function_name: (toolCall as any).name,
+              arguments: (toolCall as any).input,
               result,
               success: true,
               execution_time_ms: executionTime
-            })
+            } as any)
 
-          assistantMessage += `\n\n✓ Executed: ${toolCall.name}`
-        } catch {
+          assistantMessage += `\n\n✓ Executed: ${(toolCall as any).name}`
+        } catch (error) {
           await supabase
             .from('function_calls')
             .insert({
               user_id: user.id,
               session_id: session_id,
-              function_name: toolCall.name,
-              arguments: toolCall.input,
+              function_name: (toolCall as any).name,
+              arguments: (toolCall as any).input,
               success: false,
               error_message: error instanceof Error ? error.message : 'Unknown error'
-            })
+            } as any)
         }
       }
     }
@@ -312,9 +299,9 @@ ${sourceContext || '\n\nNote: No sources are currently available.'}${insightsTex
         .update({
           messages: updatedMessages,
           updated_at: new Date().toISOString()
-        })
+        } as never)
         .eq('id', session_id)
-        .eq('user_id', user.id)
+        .eq('user_id', user.id as never)
         .select()
         .single()
 
@@ -328,7 +315,7 @@ ${sourceContext || '\n\nNote: No sources are currently available.'}${insightsTex
           user_id: user.id,
           title: sessionTitle,
           messages: updatedMessages
-        })
+        } as never)
         .select()
         .single()
 
@@ -341,8 +328,8 @@ ${sourceContext || '\n\nNote: No sources are currently available.'}${insightsTex
       .update({
         interaction_count: userProfile.interaction_count + 1,
         last_active: new Date().toISOString()
-      })
-      .eq('user_id', user.id)
+      } as never)
+      .eq('user_id', user.id as never)
 
     return NextResponse.json({
       session_id: session.id,
@@ -358,7 +345,7 @@ ${sourceContext || '\n\nNote: No sources are currently available.'}${insightsTex
       estimated_cost: estimatedCost,
       cost_savings_vs_claude: ((3.0 - (estimatedCost * 1_000_000)) / 3.0 * 100).toFixed(1) + '%'
     })
-  } catch {
+  } catch (error) {
     console.error('Research assistant chat error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
@@ -383,8 +370,8 @@ export async function GET(request: NextRequest) {
       const { data: session, error } = await supabase
         .from('chat_sessions')
         .select('*')
-        .eq('id', sessionId)
-        .eq('user_id', user.id)
+        .eq('id' as never, sessionId)
+        .eq('user_id' as never, user.id as never)
         .single()
 
       if (error || !session) {
@@ -396,7 +383,7 @@ export async function GET(request: NextRequest) {
       const { data: sessions, error } = await supabase
         .from('chat_sessions')
         .select('id, title, created_at, updated_at')
-        .eq('user_id', user.id)
+        .eq('user_id', user.id as never)
         .order('updated_at', { ascending: false })
         .limit(50)
 
@@ -404,7 +391,7 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json({ sessions })
     }
-  } catch {
+  } catch (error) {
     console.error('Get chat sessions error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

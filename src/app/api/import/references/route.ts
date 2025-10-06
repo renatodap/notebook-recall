@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
               content_type: 'text',
               original_content: content,
               url: sourceData.url || null,
-            })
+            } as any)
             .select()
             .single()
 
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
           let summaryData
           try {
             summaryData = await summarizeContent(content, 'text' as ContentType)
-          } catch (summaryError) {
+          } catch {
             // If summary generation fails, create a basic summary
             summaryData = {
               summary: content.slice(0, 500),
@@ -104,32 +104,32 @@ export async function POST(request: NextRequest) {
           const { error: summaryError } = await supabase
             .from('summaries')
             .insert({
-              source_id: source.id,
+              source_id: (source as any).id,
               summary_text: summaryData.summary,
               key_actions: summaryData.actions,
               key_topics: summaryData.topics,
               word_count: wordCount,
               embedding: embeddingResult.embedding,
-            })
+            } as any)
 
           if (summaryError) {
             errors.push(`Failed to create summary for "${sourceData.title}": ${summaryError.message}`)
             // Delete the orphaned source
-            await supabase.from('sources').delete().eq('id', source.id)
+            await supabase.from('sources').delete().eq('id', (source as any).id as never)
             continue
           }
 
           // Create tags if provided
           if (sourceData.tags && sourceData.tags.length > 0) {
             const tagsData = sourceData.tags.map((tag: string) => ({
-              source_id: source.id,
+              source_id: (source as any).id,
               tag_name: tag.toLowerCase(),
             }))
 
-            await supabase.from('tags').insert(tagsData)
+            await supabase.from('tags').insert(tagsData as any)
           }
 
-          createdSources.push(source)
+          createdSources.push(source as any)
         } catch (error) {
           const errorMsg = error instanceof Error ? error.message : 'Unknown error'
           errors.push(`Failed to process reference: ${errorMsg}`)

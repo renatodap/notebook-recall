@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardBody } from '../ui/Card'
 import Input from '../ui/Input'
 import Link from 'next/link'
@@ -20,11 +20,7 @@ export default function DiscoverClient({ currentUserId }: { currentUserId: strin
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    fetchProfiles()
-  }, [search])
-
-  const fetchProfiles = async () => {
+  const fetchProfiles = useCallback(async () => {
     try {
       const res = await fetch(`/api/profiles?search=${search}&limit=50`)
       if (res.ok) {
@@ -36,7 +32,11 @@ export default function DiscoverClient({ currentUserId }: { currentUserId: strin
     } finally {
       setLoading(false)
     }
-  }
+  }, [search])
+
+  useEffect(() => {
+    fetchProfiles()
+  }, [fetchProfiles])
 
   return (
     <div>

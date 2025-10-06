@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
 import { generateBlogPost } from '@/lib/publishing/blog-generator'
-import type { DatabaseRecord } from '@/types/api-types'
 
 export async function POST(request: NextRequest) {
   try {
@@ -38,15 +37,15 @@ export async function POST(request: NextRequest) {
           key_topics
         )
       `)
-      .in('id', source_ids)
-      .eq('user_id', user.id)
+      .in('id', source_ids as any)
+      .eq('user_id', user.id as never)
 
     if (sourcesError || !sources || sources.length === 0) {
       return NextResponse.json({ error: 'Sources not found or access denied' }, { status: 404 })
     }
 
     // Prepare sources for blog generation
-    const blogInput = sources.map((s: DatabaseRecord) => ({
+    const blogInput = sources.map((s: any) => ({
       id: s.id,
       title: s.title,
       summary: s.summaries?.[0]?.summary_text,
@@ -91,7 +90,7 @@ export async function POST(request: NextRequest) {
           length,
         },
         status: 'draft',
-      })
+      } as any)
       .select()
       .single()
 
@@ -102,13 +101,13 @@ export async function POST(request: NextRequest) {
 
     // Link sources to output
     const links = source_ids.map((sid: string) => ({
-      output_id: output.id,
+      output_id: (output as any).id,
       source_id: sid,
     }))
 
     await supabase
       .from('output_sources')
-      .insert(links)
+      .insert(links as any)
 
     return NextResponse.json({ output, blog_post: blogPost }, { status: 201 })
   } catch (error) {

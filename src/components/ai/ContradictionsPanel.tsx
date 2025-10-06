@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 
 interface Contradiction {
@@ -26,11 +26,7 @@ export default function ContradictionsPanel({ sourceId }: ContradictionsPanelPro
   const [isLoading, setIsLoading] = useState(true)
   const [showAll, setShowAll] = useState(false)
 
-  useEffect(() => {
-    fetchContradictions()
-  }, [sourceId])
-
-  const fetchContradictions = async () => {
+  const fetchContradictions = useCallback(async () => {
     try {
       const response = await fetch(`/api/contradictions/source/${sourceId}`)
       const data = await response.json()
@@ -40,7 +36,11 @@ export default function ContradictionsPanel({ sourceId }: ContradictionsPanelPro
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [sourceId])
+
+  useEffect(() => {
+    fetchContradictions()
+  }, [fetchContradictions])
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {

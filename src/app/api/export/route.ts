@@ -8,7 +8,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/lib/supabase/server';
 import { exportToMarkdown } from '@/lib/export/markdown';
 import { exportToJSON } from '@/lib/export/json';
-import type { DatabaseRecord } from '@/types/api-types'
 
 export const dynamic = 'force-dynamic';
 
@@ -46,13 +45,13 @@ export async function GET(request: NextRequest) {
         summary:summaries(*)
       `
       )
-      .eq('user_id', user.id)
+      .eq('user_id', user.id as never)
       .order('created_at', { ascending: false });
 
     // Filter by specific source IDs if provided
     if (sourcesParam) {
       const sourceIds = sourcesParam.split(',').map((id) => id.trim());
-      query = query.in('id', sourceIds);
+      query = query.in('id', sourceIds as any);
     }
 
     const { data, error } = await query;
@@ -69,7 +68,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Transform data
-    const sourcesWithSummaries = data.map((item: DatabaseRecord) => ({
+    const sourcesWithSummaries = data.map((item: any) => ({
       source: {
         id: item.id,
         user_id: item.user_id,

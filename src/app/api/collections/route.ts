@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
 import type { CreateCollectionRequest } from '@/types'
-import type { DatabaseRecord } from '@/types/api-types'
 
 // GET: List all collections for current user
 export async function GET() {
@@ -19,7 +18,7 @@ export async function GET() {
         *,
         sources:collection_sources(count)
       `)
-      .eq('user_id', user.id)
+      .eq('user_id', user.id as never)
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -28,7 +27,7 @@ export async function GET() {
     }
 
     // Transform to include source count
-    const collectionsWithCount = collections?.map((c: DatabaseRecord) => ({
+    const collectionsWithCount = collections?.map((c: any) => ({
       ...c,
       source_count: c.sources?.[0]?.count || 0,
       sources: undefined,
@@ -73,11 +72,11 @@ export async function POST(request: NextRequest) {
         description: description?.trim() || null,
         is_public: is_public || false,
         collection_type: collection_type || 'project',
-      })
+      } as any)
       .select()
       .single()
 
-    if (createError) {
+    if (createError || !collection) {
       console.error('Create collection error:', createError)
       return NextResponse.json({ error: 'Failed to create collection' }, { status: 500 })
     }
@@ -85,14 +84,14 @@ export async function POST(request: NextRequest) {
     // Add sources if provided
     if (source_ids && source_ids.length > 0) {
       const sourceLinks = source_ids.map(sid => ({
-        collection_id: collection.id,
+        collection_id: (collection as any).id,
         source_id: sid,
         added_by: user.id,
       }))
 
       const { error: linkError } = await supabase
         .from('collection_sources')
-        .insert(sourceLinks)
+        .insert(sourceLinks as any)
 
       if (linkError) {
         console.error('Link sources error:', linkError)

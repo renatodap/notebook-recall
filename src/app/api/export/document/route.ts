@@ -22,29 +22,29 @@ export async function POST(request: NextRequest) {
       .from('sources')
       .select('*, summaries (*)')
       .eq('id', source_id)
-      .eq('user_id', user.id)
+      .eq('user_id', user.id as never)
       .single()
 
     if (!source) {
       return NextResponse.json({ error: 'Source not found' }, { status: 404 })
     }
 
-    const summary = source.summaries?.[0]
+    const summary = (source as any).summaries?.[0]
 
     if (format === 'latex') {
-      const latex = generateLaTeX(source, summary)
-      return NextResponse.json({ content: latex, filename: `${source.title.replace(/[^a-z0-9]/gi, '_')}.tex` })
+      const latex = generateLaTeX(source as any, summary)
+      return NextResponse.json({ content: latex, filename: `${(source as any).title.replace(/[^a-z0-9]/gi, '_')}.tex` })
     } else if (format === 'docx') {
-      const docContent = await generateDOCX(source, summary)
+      const docContent = await generateDOCX(source as any, summary)
       return new NextResponse(Buffer.from(docContent), {
         headers: {
           'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-          'Content-Disposition': `attachment; filename="${source.title.replace(/[^a-z0-9]/gi, '_')}.docx"`
+          'Content-Disposition': `attachment; filename="${(source as any).title.replace(/[^a-z0-9]/gi, '_')}.docx"`
         }
       })
     } else {
-      const markdown = generateMarkdown(source, summary)
-      return NextResponse.json({ content: markdown, filename: `${source.title.replace(/[^a-z0-9]/gi, '_')}.md` })
+      const markdown = generateMarkdown(source as any, summary)
+      return NextResponse.json({ content: markdown, filename: `${(source as any).title.replace(/[^a-z0-9]/gi, '_')}.md` })
     }
   } catch (error) {
     console.error('Export error:', error)
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function generateLaTeX(source: any, summary: unknown): string {
+function generateLaTeX(source: any, summary: any): string {
   return `\\documentclass{article}
 \\usepackage[utf8]{inputenc}
 \\usepackage{hyperref}
@@ -96,7 +96,7 @@ ${source.url ? `
 \\end{document}`
 }
 
-async function generateDOCX(source: any, summary: unknown): Promise<Buffer> {
+async function generateDOCX(source: any, summary: any): Promise<Buffer> {
   const { Packer } = await import('docx')
 
   const children: unknown[] = [
@@ -157,13 +157,13 @@ async function generateDOCX(source: any, summary: unknown): Promise<Buffer> {
   }
 
   const doc = new Document({
-    sections: [{ children }]
+    sections: [{ children: children as any }]
   })
 
   return await Packer.toBuffer(doc)
 }
 
-function generateMarkdown(source: any, summary: unknown): string {
+function generateMarkdown(source: any, summary: any): string {
   let markdown = `# ${source.title}\n\n`
   markdown += `*Created: ${new Date(source.created_at).toLocaleDateString()}*\n\n`
 

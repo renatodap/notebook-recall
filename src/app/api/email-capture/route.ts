@@ -13,8 +13,8 @@ export async function POST(request: NextRequest) {
     const { data: userPref } = await supabase
       .from('user_preferences')
       .select('user_id')
-      .eq('capture_email', user_email)
-      .single()
+      .eq('capture_email', user_email as never)
+      .maybeSingle()
 
     if (!userPref) {
       return NextResponse.json({ error: 'Invalid capture email' }, { status: 404 })
@@ -24,14 +24,14 @@ export async function POST(request: NextRequest) {
     const { data: capture, error: captureError } = await supabase
       .from('email_captures')
       .insert({
-        user_id: userPref.user_id,
+        user_id: (userPref as any).user_id,
         email_from: from,
         email_subject: subject,
         email_body: emailBody,
         metadata: {
           received_at: new Date().toISOString()
         }
-      })
+      } as any)
       .select()
       .single()
 
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     const { data: source } = await supabase
       .from('sources')
       .insert({
-        user_id: userPref.user_id,
+        user_id: (userPref as any).user_id,
         title,
         content_type: 'email',
         original_content: emailBody,
@@ -55,28 +55,28 @@ export async function POST(request: NextRequest) {
           subject,
           captured_via: 'email'
         }
-      })
+      } as any)
       .select()
       .single()
 
     // Update capture with source_id
     await supabase
       .from('email_captures')
-      .update({ source_id: source.id, processed: true })
-      .eq('id', capture.id)
+      .update({ source_id: (source as any).id, processed: true } as any)
+      .eq('id', (capture as any).id as never)
 
     // Auto-summarize
     try {
       await fetch(`${request.nextUrl.origin}/api/summarize`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ source_id: source.id })
+        body: JSON.stringify({ source_id: (source as any).id })
       })
     } catch (err) {
       console.error('Summarization error:', err)
     }
 
-    return NextResponse.json({ success: true, source_id: source.id }, { status: 201 })
+    return NextResponse.json({ success: true, source_id: (source as any)?.id }, { status: 201 })
 
   } catch (error) {
     console.error('Email capture error:', error)
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
 }
 
 // GET endpoint to retrieve user's capture email
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const supabase = await createServerClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -97,10 +97,10 @@ export async function GET(request: NextRequest) {
     const { data: pref } = await supabase
       .from('user_preferences')
       .select('capture_email')
-      .eq('user_id', user.id)
-      .single()
+      .eq('user_id', user.id as never)
+      .maybeSingle()
 
-    return NextResponse.json({ capture_email: pref?.capture_email || null })
+    return NextResponse.json({ capture_email: (pref as any)?.capture_email || null })
 
   } catch (error) {
     console.error('Get capture email error:', error)

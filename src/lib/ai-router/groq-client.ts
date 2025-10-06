@@ -3,8 +3,6 @@
  */
 
 import Groq from 'groq-sdk'
-import { ModelConfig } from './index'
-import type { DatabaseRecord } from '@/types/api-types'
 
 let groqClient: Groq | null = null
 
@@ -178,7 +176,7 @@ export async function groqFunctionCall(
 
   return {
     response: message?.content || '',
-    toolCalls: toolCalls.map((tc: DatabaseRecord) => ({
+    toolCalls: toolCalls.map((tc: any) => ({
       name: tc.function.name,
       arguments: JSON.parse(tc.function.arguments)
     }))

@@ -169,8 +169,7 @@ export function calculateCosineSimilarity(
  * Wait for async operations (e.g., embedding generation)
  */
 export async function waitForEmbedding(
-  timeout: number = 5000,
-  interval: number = 500
+  timeout: number = 5000
 ): Promise<void> {
   return new Promise((resolve) => {
     setTimeout(resolve, Math.min(timeout, 2000));

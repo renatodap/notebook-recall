@@ -58,7 +58,7 @@ export default function SearchPage() {
               searchQuery = parsed.keywords.join(' ')
             }
           }
-        } catch (err) {
+        } catch {
           console.log('Conversational parsing failed, using raw query')
         }
       }
@@ -78,14 +78,14 @@ export default function SearchPage() {
       // Apply additional filters from parsed query
       if (parsedInfo) {
         if (parsedInfo.timeRange) {
-          finalResults = finalResults.filter((r: DatabaseRecord) => {
+          finalResults = finalResults.filter((r: any) => {
             const created = new Date(r.source?.created_at || r.created_at)
             return created >= parsedInfo.timeRange!.start && created <= parsedInfo.timeRange!.end
           })
         }
 
         if (parsedInfo.contentType) {
-          finalResults = finalResults.filter((r: DatabaseRecord) =>
+          finalResults = finalResults.filter((r: any) =>
             (r.source?.content_type || r.content_type) === parsedInfo.contentType
           )
         }
@@ -233,8 +233,8 @@ export default function SearchPage() {
                   Found {results.length} {results.length === 1 ? 'result' : 'results'}
                 </p>
                 <div className="grid gap-4">
-                  {results.map((result: DatabaseRecord) => (
-                    <SourceCard key={result.id} source={result} />
+                  {results.map((result: any) => (
+                    <SourceCard key={result.id} source={result as any} />
                   ))}
                 </div>
               </div>

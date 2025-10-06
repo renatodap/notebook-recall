@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
   } catch (error: unknown) {
     console.error('Parse query error:', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to parse query' },
+      { error: error instanceof Error ? error.message : 'Failed to parse query' },
       { status: 500 }
     )
   }

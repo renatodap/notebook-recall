@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
       }
 
       // Fetch summaries and tags for each source
-      const sourceIds = data.map((s: DatabaseRecord) => s.id)
+      const sourceIds = Array.isArray(data) ? data.map((s: any) => s.id) : []
       const { data: summaries } = await supabase
         .from('summaries')
         .select('*')
@@ -77,18 +77,18 @@ export async function GET(request: NextRequest) {
         .in('source_id', sourceIds)
 
       // Combine data
-      const enrichedData = data.map((source: DatabaseRecord) => ({
+      const enrichedData = Array.isArray(data) ? data.map((source: any) => ({
         ...source,
-        summary: summaries?.filter((s: DatabaseRecord) => s.source_id === source.id) || [],
-        tags: tags?.filter((t: DatabaseRecord) => t.source_id === source.id) || [],
-      }))
+        summary: summaries?.filter((s: any) => s.source_id === source.id) || [],
+        tags: tags?.filter((t: any) => t.source_id === source.id) || [],
+      })) : []
 
       return NextResponse.json({
         data: enrichedData,
-        total: data.length,
+        total: Array.isArray(data) ? data.length : 0,
         page,
         limit,
-        hasMore: data.length === limit,
+        hasMore: Array.isArray(data) && data.length === limit,
         filters: {
           tags: filterTags,
           tagLogic,
@@ -112,7 +112,7 @@ export async function GET(request: NextRequest) {
       }
 
       // Fetch summaries and tags for each source
-      const sourceIds = data.map((s: DatabaseRecord) => s.id)
+      const sourceIds = Array.isArray(data) ? data.map((s: any) => s.id) : []
       const { data: summaries } = await supabase
         .from('summaries')
         .select('*')
@@ -124,18 +124,18 @@ export async function GET(request: NextRequest) {
         .in('source_id', sourceIds)
 
       // Combine data
-      const enrichedData = data.map((source: DatabaseRecord) => ({
+      const enrichedData = Array.isArray(data) ? data.map((source: any) => ({
         ...source,
-        summary: summaries?.filter((s: DatabaseRecord) => s.source_id === source.id) || [],
-        tags: tags?.filter((t: DatabaseRecord) => t.source_id === source.id) || [],
-      }))
+        summary: summaries?.filter((s: any) => s.source_id === source.id) || [],
+        tags: tags?.filter((t: any) => t.source_id === source.id) || [],
+      })) : []
 
       return NextResponse.json({
         data: enrichedData,
-        total: data.length,
+        total: Array.isArray(data) ? data.length : 0,
         page,
         limit,
-        hasMore: data.length === limit,
+        hasMore: Array.isArray(data) && data.length === limit,
         filters: {
           collection_id: collectionId,
         },
@@ -153,11 +153,11 @@ export async function GET(request: NextRequest) {
       `,
         { count: 'exact' }
       )
-      .eq('user_id', user.id)
+      .eq('user_id', user.id as never)
 
     // Apply content type filter
     if (contentType) {
-      query = query.eq('content_type', contentType)
+      query = query.eq('content_type' as never, contentType)
     }
 
     // Apply sorting
@@ -254,13 +254,15 @@ export async function POST(request: NextRequest) {
         content_type,
         original_content,
         url,
-      })
+      } as never)
       .select()
       .single()
 
-    if (sourceError) {
+    if (sourceError || !source) {
       throw sourceError
     }
+
+    const createdSource = source as unknown as { id: string; [key: string]: unknown }
 
     // Generate embedding for summary (MANDATORY)
     const textToEmbed = [summary_text, ...key_topics].join(' ');
@@ -275,13 +277,13 @@ export async function POST(request: NextRequest) {
     const { data: summary, error: summaryError } = await supabase
       .from('summaries')
       .insert({
-        source_id: (source).id,
+        source_id: createdSource.id,
         summary_text,
         key_actions,
         key_topics,
         word_count,
         embedding,
-      })
+      } as never)
       .select()
       .single()
 
@@ -292,13 +294,13 @@ export async function POST(request: NextRequest) {
     // Create tags
     if (key_topics.length > 0) {
       const tagsData = key_topics.map((topic) => ({
-        source_id: (source).id,
+        source_id: createdSource.id,
         tag_name: topic.toLowerCase(),
       }))
 
       const { error: tagsError } = await supabase
         .from('tags')
-        .insert(tagsData)
+        .insert(tagsData as never)
 
       if (tagsError) {
         console.error('Tags creation error:', tagsError)

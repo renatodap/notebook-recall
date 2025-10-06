@@ -8,7 +8,6 @@ import CitationManager from './academic/CitationManager'
 import ConnectionsPanel from './ai/ConnectionsPanel'
 import ContradictionsPanel from './ai/ContradictionsPanel'
 import ShareButton from './ShareButton'
-import ExportDocumentButton from './ExportDocumentButton'
 import PARAAssignmentModal from './para/PARAAssignmentModal'
 import type { Source, Summary, Tag } from '@/types'
 

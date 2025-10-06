@@ -16,11 +16,11 @@ export async function GET(request: NextRequest) {
     let query = supabase
       .from('pdf_annotations')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', user.id as never)
       .order('created_at', { ascending: false })
 
     if (sourceId) {
-      query = query.eq('source_id', sourceId)
+      query = query.eq('source_id', sourceId as never)
     }
 
     const { data: annotations, error } = await query
@@ -55,14 +55,14 @@ export async function POST(request: NextRequest) {
       .from('sources')
       .select('id')
       .eq('id', source_id)
-      .eq('user_id', user.id)
+      .eq('user_id', user.id as never)
       .single()
 
     if (!source) {
       return NextResponse.json({ error: 'Source not found' }, { status: 404 })
     }
 
-    const { data: annotation, error } = await supabase
+    const { data: annotation, error } = await (supabase as any)
       .from('pdf_annotations')
       .insert({
         user_id: user.id,

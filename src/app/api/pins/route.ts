@@ -49,11 +49,11 @@ export async function GET(request: NextRequest) {
         )
       `
       )
-      .eq('user_id', user.id)
+      .eq('user_id', user.id as never)
       .order('pinned_at', { ascending: false });
 
     if (category) {
-      query = query.eq('category', category);
+      query = query.eq('category', category as never);
     }
 
     const { data, error } = await query;
@@ -99,8 +99,8 @@ export async function POST(request: NextRequest) {
     const { data: source, error: sourceError } = await supabase
       .from('sources')
       .select('id')
-      .eq('id', source_id)
-      .eq('user_id', user.id)
+      .eq('id', source_id as never)
+      .eq('user_id', user.id as never)
       .single();
 
     if (sourceError || !source) {
@@ -111,8 +111,8 @@ export async function POST(request: NextRequest) {
     const { data: existingPins, error: countError } = await supabase
       .from('pinned_items')
       .select('id')
-      .eq('user_id', user.id)
-      .eq('category', category);
+      .eq('user_id', user.id as never)
+      .eq('category', category as never);
 
     if (countError) throw countError;
 
@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
         user_id: user.id,
         source_id,
         category,
-      })
+      } as any)
       .select()
       .single();
 
@@ -181,9 +181,9 @@ export async function DELETE(request: NextRequest) {
     const { error } = await supabase
       .from('pinned_items')
       .delete()
-      .eq('user_id', user.id)
-      .eq('source_id', source_id)
-      .eq('category', category);
+      .eq('user_id', user.id as never)
+      .eq('source_id', source_id as never)
+      .eq('category', category as never);
 
     if (error) throw error;
 

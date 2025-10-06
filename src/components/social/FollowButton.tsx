@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Button from '../ui/Button'
 
 interface FollowButtonProps {
@@ -13,13 +13,7 @@ export default function FollowButton({ userId, currentUserId, initialFollowing =
   const [following, setFollowing] = useState(initialFollowing)
   const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
-    if (currentUserId && currentUserId !== userId) {
-      checkFollowStatus()
-    }
-  }, [userId, currentUserId])
-
-  const checkFollowStatus = async () => {
+  const checkFollowStatus = useCallback(async () => {
     try {
       const res = await fetch('/api/social/follow?type=following')
       if (res.ok) {
@@ -30,7 +24,13 @@ export default function FollowButton({ userId, currentUserId, initialFollowing =
     } catch (error) {
       console.error('Failed to check follow status:', error)
     }
-  }
+  }, [userId])
+
+  useEffect(() => {
+    if (currentUserId && currentUserId !== userId) {
+      checkFollowStatus()
+    }
+  }, [userId, currentUserId, checkFollowStatus])
 
   const toggleFollow = async () => {
     setLoading(true)

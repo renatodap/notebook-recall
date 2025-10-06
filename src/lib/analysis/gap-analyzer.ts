@@ -137,7 +137,7 @@ Be specific and actionable.`
     }
 
     return analysis
-  } catch (e) {
+  } catch (_e) {
     throw new Error('Failed to parse gap analysis results')
   }
 }

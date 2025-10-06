@@ -17,7 +17,7 @@ export default async function PublishingPage() {
   const { data: outputs } = await supabase
     .from('published_outputs')
     .select('*')
-    .eq('user_id', user.id)
+    .eq('user_id' as never, user.id)
     .order('created_at', { ascending: false })
 
   return (
@@ -39,11 +39,11 @@ export default async function PublishingPage() {
         </div>
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="font-semibold mb-2">Drafts</h3>
-          <p className="text-3xl">{outputs?.filter((o: DatabaseRecord) => o.status === 'draft').length || 0}</p>
+          <p className="text-3xl">{outputs?.filter((o: any) => o.status === 'draft').length || 0}</p>
         </div>
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="font-semibold mb-2">Published</h3>
-          <p className="text-3xl">{outputs?.filter((o: DatabaseRecord) => o.status === 'published').length || 0}</p>
+          <p className="text-3xl">{outputs?.filter((o: any) => o.status === 'published').length || 0}</p>
         </div>
       </div>
 
@@ -51,7 +51,7 @@ export default async function PublishingPage() {
         <h2 className="text-xl font-semibold mb-4">Your Outputs</h2>
         {outputs && outputs.length > 0 ? (
           <div className="space-y-4">
-            {outputs.map((output: DatabaseRecord) => (
+            {outputs.map((output: any) => (
               <div key={output.id} className="border-b pb-4">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">

@@ -1,0 +1,23 @@
+
+> recall-notebook@0.1.0 build
+> next build
+
+   ▲ Next.js 15.5.4
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 11.1s
+   Linting and checking validity of types ...
+Failed to compile.
+
+./src/app/api/concepts/extract/route.ts:105:19
+Type error: Argument of type '{ frequency: any; }' is not assignable to parameter of type '(Omit<Database, "__InternalSupabase">[("public" extends Exclude<keyof Database, "__InternalSupabase"> ? "public" : string & Exclude<keyof Database, "__InternalSupabase">) extends "public" ? "public" & ("public" extends Exclude<...> ? "public" : string & Exclude<...>) : "public"] extends GenericSchema ? Omit<...>[("p...'.
+
+[0m [90m 103 |[39m         [36mawait[39m supabase
+ [90m 104 |[39m           [33m.[39m[36mfrom[39m([32m'concepts'[39m)
+[31m[1m>[22m[39m[90m 105 |[39m           [33m.[39mupdate({ frequency[33m:[39m existingConcept[33m.[39mfrequency [33m+[39m [35m1[39m })
+ [90m     |[39m                   [31m[1m^[22m[39m
+ [90m 106 |[39m           [33m.[39meq([32m'id'[39m[33m,[39m existingConcept[33m.[39mid)
+ [90m 107 |[39m       }
+ [90m 108 |[39m[0m
+Next.js build worker exited with code: 1 and signal: null

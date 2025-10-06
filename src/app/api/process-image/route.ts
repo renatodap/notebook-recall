@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(result)
   } catch (error: unknown) {
     return NextResponse.json(
-      { error: error.message || 'Failed to process image' },
+      { error: (error as any).message || 'Failed to process image' },
       { status: 500 }
     )
   }

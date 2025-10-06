@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
           user_id: user.id,
           target_type,
           target_id
-        })
+        } as never)
         .select()
         .single()
 
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
           target_type,
           target_id,
           comment_text
-        })
+        } as never)
         .select()
         .single()
 
@@ -100,8 +100,8 @@ export async function GET(request: NextRequest) {
       const { data } = await supabase
         .from('likes')
         .select('*')
-        .eq('target_type', targetType)
-        .eq('target_id', targetId)
+        .eq('target_type' as never, targetType)
+        .eq('target_id' as never, targetId)
 
       likes = data || []
     }
@@ -110,8 +110,8 @@ export async function GET(request: NextRequest) {
       const { data } = await supabase
         .from('comments')
         .select('*')
-        .eq('target_type', targetType)
-        .eq('target_id', targetId)
+        .eq('target_type' as never, targetType)
+        .eq('target_id' as never, targetId)
         .order('created_at', { ascending: true })
 
       comments = data || []
@@ -148,9 +148,9 @@ export async function DELETE(request: NextRequest) {
       const { error } = await supabase
         .from('likes')
         .delete()
-        .eq('user_id', user.id)
-        .eq('target_type', targetType)
-        .eq('target_id', targetId)
+        .eq('user_id' as never, user.id)
+        .eq('target_type' as never, targetType)
+        .eq('target_id' as never, targetId)
 
       if (error) throw error
       return NextResponse.json({ success: true })
@@ -158,8 +158,8 @@ export async function DELETE(request: NextRequest) {
       const { error } = await supabase
         .from('comments')
         .delete()
-        .eq('id', commentId)
-        .eq('user_id', user.id)
+        .eq('id' as never, commentId)
+        .eq('user_id' as never, user.id)
 
       if (error) throw error
       return NextResponse.json({ success: true })

@@ -32,8 +32,8 @@ export async function POST(request: NextRequest) {
     const { data: sources } = await supabase
       .from('sources')
       .select('id, title, summaries (summary_text, key_topics)')
-      .in('id', source_ids)
-      .eq('user_id', user.id)
+      .in('id', source_ids as any)
+      .eq('user_id', user.id as never)
 
     if (!sources || sources.length === 0) {
       return NextResponse.json({ error: 'Sources not found' }, { status: 404 })
@@ -132,11 +132,11 @@ Return JSON:
       `---\n\n` +
       `## Front Matter\n${outline.frontMatter?.map((fm: string) => `- ${fm}`).join('\n') || ''}\n\n` +
       `## Main Content\n\n` +
-      (outline.parts?.map((part: DatabaseRecord) =>
+      (outline.parts?.map((part: any) =>
         `### Part ${part.number}: ${part.title}\n${part.description}\n\n` +
         outline.chapters
           .filter((ch: DatabaseRecord) => part.chapters?.includes(ch.number))
-          .map((ch: DatabaseRecord) =>
+          .map((ch: any) =>
             `#### Chapter ${ch.number}: ${ch.title}\n\n` +
             `${ch.synopsis}\n\n` +
             `**Key Concepts**: ${ch.keyConcepts?.join(', ') || 'TBD'}\n\n` +
@@ -163,15 +163,15 @@ Return JSON:
           source_count: sources.length
         },
         status: 'draft'
-      })
+      } as any)
       .select()
       .single()
 
     const links = source_ids.map((sid: string) => ({
-      output_id: output.id,
+      output_id: (output as any).id,
       source_id: sid
     }))
-    await supabase.from('output_sources').insert(links)
+    await supabase.from('output_sources').insert(links as any)
 
     return NextResponse.json({ output, outline }, { status: 201 })
   } catch (error) {

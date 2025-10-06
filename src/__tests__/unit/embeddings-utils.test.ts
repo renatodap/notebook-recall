@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect } from '@jest/globals';
-import type { Embedding, HybridSearchWeights } from '@/lib/embeddings/types';
+import type { HybridSearchWeights } from '@/lib/embeddings/types';
 
 describe('Embedding Utils', () => {
   describe('Vector Operations', () => {

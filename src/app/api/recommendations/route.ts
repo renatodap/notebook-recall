@@ -27,15 +27,15 @@ export async function GET(request: NextRequest) {
         id,
         summaries (embedding)
       `)
-      .eq('id', sourceId)
-      .eq('user_id', user.id)
+      .eq('id', sourceId as never)
+      .eq('user_id', user.id as never)
       .single()
 
-    if (!source || !source.summaries?.[0]?.embedding) {
+    if (!source || !(source as any).summaries?.[0]?.embedding) {
       return NextResponse.json({ error: 'Source not found or no embedding' }, { status: 404 })
     }
 
-    const embedding = source.summaries[0].embedding
+    const embedding = (source as any).summaries[0].embedding
 
     // Find similar sources using vector similarity
     const { data: similar, error } = await supabase.rpc('match_sources', {
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Filter out the source itself
-    const recommendations = (similar || []).filter((s: DatabaseRecord) => s.id !== sourceId).slice(0, limit)
+    const recommendations = ((similar as any) || []).filter((s: DatabaseRecord) => s.id !== sourceId).slice(0, limit)
 
     return NextResponse.json({
       recommendations,

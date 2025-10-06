@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
         was_helpful: was_helpful ?? true,
         feedback_text,
         timestamp: new Date().toISOString()
-      })
+      } as any)
       .select()
       .single()
 
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to record feedback' }, { status: 500 })
     }
 
-    return NextResponse.json({ success: true, feedback_id: data.id })
+    return NextResponse.json({ success: true, feedback_id: (data as any)?.id })
   } catch (error) {
     console.error('Feedback API error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

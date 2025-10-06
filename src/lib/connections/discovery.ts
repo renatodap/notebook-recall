@@ -1,5 +1,5 @@
 // Auto-discover connections between sources
-import type { SourceConnection, ConnectionType } from '@/types'
+import type { ConnectionType } from '@/types'
 import { cosineSimilarity } from '@/lib/embeddings/utils'
 
 interface Source {

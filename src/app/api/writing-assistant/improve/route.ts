@@ -118,7 +118,7 @@ Return JSON:
     try {
       const jsonMatch = content.match(/\{[\s\S]*\}/)
       analysis = JSON.parse(jsonMatch ? jsonMatch[0] : content)
-    } catch (e) {
+    } catch {
       // Fallback if parsing fails
       analysis = {
         suggestions: [],
@@ -149,7 +149,7 @@ Return JSON:
           strengths: analysis.strengths,
           weaknesses: analysis.weaknesses
         }
-      })
+      } as never)
 
     return NextResponse.json({ analysis })
   } catch (error) {

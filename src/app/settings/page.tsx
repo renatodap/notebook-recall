@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Button from '@/components/ui/Button'
 import MobileNav from '@/components/MobileNav'
@@ -9,7 +8,6 @@ import MobileNav from '@/components/MobileNav'
 type DigestPeriod = 'day' | 'week' | 'month'
 
 export default function SettingsPage() {
-  const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [digestPeriod, setDigestPeriod] = useState<DigestPeriod>('week')
   const [message, setMessage] = useState('')
@@ -34,7 +32,7 @@ export default function SettingsPage() {
       const data = await response.json()
       setMessage(`✓ Digest generated successfully! ${data.sourceCount} sources summarized.`)
     } catch (error: unknown) {
-      setMessage(`Error: ${error.message}`)
+      setMessage(`Error: ${(error as Error).message}`)
     } finally {
       setLoading(false)
     }
@@ -53,7 +51,7 @@ export default function SettingsPage() {
       const data = await response.json()
       setCaptureEmail(data.capture_email)
     } catch (error: unknown) {
-      setMessage(`Error: ${error.message}`)
+      setMessage(`Error: ${(error as Error).message}`)
     } finally {
       setLoadingEmail(false)
     }

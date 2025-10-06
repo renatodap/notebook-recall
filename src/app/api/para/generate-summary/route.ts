@@ -35,8 +35,8 @@ export async function POST(request: NextRequest) {
           key_actions
         )
       `)
-      .in('id', source_ids)
-      .eq('user_id', session.user.id);
+      .in('id', source_ids as any)
+      .eq('user_id', session.user.id as never);
 
     if (!sources || sources.length === 0) {
       return NextResponse.json({ summary: 'No sources available to summarize.' });

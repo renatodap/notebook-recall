@@ -23,7 +23,7 @@ export async function GET(_request: NextRequest) {
         created_at,
         metadata
       `)
-      .eq('user_id', user.id)
+      .eq('user_id', user.id as never)
       .order('created_at', { ascending: false })
 
     if (error) {

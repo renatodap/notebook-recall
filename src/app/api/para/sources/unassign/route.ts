@@ -21,10 +21,10 @@ export async function POST(request: NextRequest) {
     const { data: source, error: sourceError } = await supabase
       .from('sources')
       .select('user_id')
-      .eq('id', source_id)
+      .eq('id', source_id as never)
       .single();
 
-    if (sourceError || !source || source.user_id !== session.user.id) {
+    if (sourceError || !source || (source as any).user_id !== session.user.id) {
       return NextResponse.json({ error: 'Source not found or unauthorized' }, { status: 404 });
     }
 
@@ -33,8 +33,8 @@ export async function POST(request: NextRequest) {
       const { error } = await supabase
         .from('project_sources')
         .delete()
-        .eq('project_id', project_id)
-        .eq('source_id', source_id);
+        .eq('project_id', project_id as never)
+        .eq('source_id', source_id as never);
 
       if (error) throw error;
     }
@@ -44,8 +44,8 @@ export async function POST(request: NextRequest) {
       const { error } = await supabase
         .from('area_sources')
         .delete()
-        .eq('area_id', area_id)
-        .eq('source_id', source_id);
+        .eq('area_id', area_id as never)
+        .eq('source_id', source_id as never);
 
       if (error) throw error;
     }
@@ -55,8 +55,8 @@ export async function POST(request: NextRequest) {
       const { error } = await supabase
         .from('resource_sources')
         .delete()
-        .eq('resource_id', resource_id)
-        .eq('source_id', source_id);
+        .eq('resource_id', resource_id as never)
+        .eq('source_id', source_id as never);
 
       if (error) throw error;
     }

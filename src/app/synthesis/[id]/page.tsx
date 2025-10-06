@@ -1,6 +1,5 @@
 import { redirect } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase/server'
-import Link from 'next/link'
 import SynthesisReportClient from '@/components/ai/SynthesisReportClient'
 
 export default async function SynthesisReportPage({

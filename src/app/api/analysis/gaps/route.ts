@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
 import { analyzeResearchGaps } from '@/lib/analysis/gap-analyzer'
-import type { DatabaseRecord } from '@/types/api-types'
 
 export async function POST(request: NextRequest) {
   try {
@@ -81,7 +80,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       analysis,
-      saved_id: savedAnalysis?.id,
+      saved_id: savedAnalysis && 'id' in savedAnalysis ? savedAnalysis.id : null,
     }, { status: 201 })
   } catch (error) {
     console.error('Gap analysis error:', error)

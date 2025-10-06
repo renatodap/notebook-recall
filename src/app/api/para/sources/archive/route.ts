@@ -19,9 +19,9 @@ export async function POST(request: NextRequest) {
 
     const { data: source, error } = await supabase
       .from('sources')
-      .update({ archived })
-      .eq('id', source_id)
-      .eq('user_id', session.user.id)
+      .update({ archived } as any)
+      .eq('id', source_id as never)
+      .eq('user_id', session.user.id as never)
       .select()
       .single();
 
@@ -53,8 +53,8 @@ export async function GET() {
         *,
         summaries (*)
       `)
-      .eq('user_id', session.user.id)
-      .eq('archived', true)
+      .eq('user_id', session.user.id as never)
+      .eq('archived', true as never)
       .order('archived_at', { ascending: false });
 
     if (error) throw error;

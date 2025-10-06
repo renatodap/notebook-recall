@@ -32,7 +32,7 @@ export async function GET(
       `
       )
       .eq('id', id)
-      .eq('user_id', user.id)
+      .eq('user_id', user.id as never)
       .single()
 
     if (error) {
@@ -77,7 +77,7 @@ export async function DELETE(
       .from('sources')
       .delete()
       .eq('id', id)
-      .eq('user_id', user.id)
+      .eq('user_id', user.id as never)
 
     if (error) {
       throw error

@@ -1,0 +1,23 @@
+
+> recall-notebook@0.1.0 build
+> next build
+
+   ▲ Next.js 15.5.4
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 13.8s
+   Linting and checking validity of types ...
+Failed to compile.
+
+./src/app/api/concepts/extract/route.ts:86:86
+Type error: Expected 1 arguments, but got 2.
+
+[0m [90m 84 |[39m         [90m// Create new concept with embedding[39m
+ [90m 85 |[39m         [36mconst[39m openaiKey [33m=[39m process[33m.[39menv[33m.[39m[33mOPENAI_API_KEY[39m
+[31m[1m>[22m[39m[90m 86 |[39m         [36mconst[39m embedding [33m=[39m openaiKey [33m?[39m [36mawait[39m generateConceptEmbedding(extracted[33m.[39mname[33m,[39m openaiKey) [33m:[39m [36mnull[39m
+ [90m    |[39m                                                                                      [31m[1m^[22m[39m
+ [90m 87 |[39m
+ [90m 88 |[39m         [36mconst[39m { data[33m:[39m newConcept[33m,[39m error } [33m=[39m [36mawait[39m supabase
+ [90m 89 |[39m           [33m.[39m[36mfrom[39m([32m'concepts'[39m)[0m
+Next.js build worker exited with code: 1 and signal: null

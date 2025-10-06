@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
-import type { DatabaseRecord } from '@/types/api-types'
 
 /**
  * Feature 29: Team Workspaces
@@ -30,21 +29,23 @@ export async function POST(request: NextRequest) {
         name,
         description: description || '',
         owner_id: user.id
-      })
+      } as never)
       .select()
       .single()
 
-    if (workspaceError) throw workspaceError
+    if (workspaceError || !workspace) throw workspaceError
+
+    const createdWorkspace = workspace as unknown as { id: string; [key: string]: unknown }
 
     // Add owner as admin member
     const members = [
       {
-        workspace_id: workspace.id,
+        workspace_id: createdWorkspace.id,
         user_id: user.id,
         role: 'admin'
       },
       ...member_ids.map((uid: string) => ({
-        workspace_id: workspace.id,
+        workspace_id: createdWorkspace.id,
         user_id: uid,
         role: 'member'
       }))
@@ -52,11 +53,11 @@ export async function POST(request: NextRequest) {
 
     const { error: membersError } = await supabase
       .from('workspace_members')
-      .insert(members)
+      .insert(members as never)
 
     if (membersError) throw membersError
 
-    return NextResponse.json({ workspace }, { status: 201 })
+    return NextResponse.json({ workspace: createdWorkspace }, { status: 201 })
   } catch (error) {
     console.error('Create workspace error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -76,11 +77,11 @@ export async function GET(_request: NextRequest) {
     const { data: memberships, error } = await supabase
       .from('workspace_members')
       .select('workspace_id, role, workspaces (*)')
-      .eq('user_id', user.id)
+      .eq('user_id', user.id as never)
 
     if (error) throw error
 
-    const workspaces = memberships?.map((m: DatabaseRecord) => ({
+    const workspaces = memberships?.map((m: any) => ({
       ...m.workspaces,
       my_role: m.role
     })) || []

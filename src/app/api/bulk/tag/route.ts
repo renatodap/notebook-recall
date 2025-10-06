@@ -7,7 +7,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/lib/supabase/server';
 import { z } from 'zod';
-import type { DatabaseRecord } from '@/types/api-types'
 
 export const dynamic = 'force-dynamic';
 
@@ -46,17 +45,17 @@ export async function POST(request: NextRequest) {
     const normalizedTags = tags.map((tag) => tag.toLowerCase().trim());
 
     // Verify all sources belong to the user
-    const { data: sources, error: fetchError } = await supabase
+    const { data: sources, error: fetchError } = await (supabase as any)
       .from('sources')
       .select('id')
       .in('id', source_ids)
-      .eq('user_id', user.id);
+      .eq('user_id', user.id as never);
 
     if (fetchError) {
       throw fetchError;
     }
 
-    const validSourceIds = sources?.map((s: DatabaseRecord) => s.id) || [];
+    const validSourceIds = sources?.map((s: any) => s.id) || [];
 
     if (validSourceIds.length === 0) {
       return NextResponse.json(
@@ -77,7 +76,7 @@ export async function POST(request: NextRequest) {
 
     // Build set of existing tag combinations
     const existingSet = new Set(
-      existingTags?.map((t: DatabaseRecord) => `${t.source_id}:${t.tag_name.toLowerCase()}`) || []
+      existingTags?.map((t: any) => `${t.source_id}:${t.tag_name.toLowerCase()}`) || []
     );
 
     // Create new tag entries (avoid duplicates)
@@ -104,7 +103,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Insert new tags
-    const { error: insertError } = await supabase
+    const { error: insertError } = await (supabase as any)
       .from('tags')
       .insert(newTags);
 
