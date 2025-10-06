@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       analysis,
-      saved_id: savedAnalysis && 'id' in savedAnalysis ? savedAnalysis.id : null,
+      saved_id: savedAnalysis && 'id' in savedAnalysis ? (savedAnalysis as { id: string }).id : null,
     }, { status: 201 })
   } catch (error) {
     console.error('Gap analysis error:', error)
