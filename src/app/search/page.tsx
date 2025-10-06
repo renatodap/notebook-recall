@@ -7,7 +7,6 @@ import Button from '@/components/ui/Button'
 import SourceCard from '@/components/SourceCard'
 import Loading from '@/components/ui/Loading'
 import MobileNav from '@/components/MobileNav'
-import type { DatabaseRecord } from '@/types/api-types'
 
 type SearchMode = 'semantic' | 'keyword' | 'hybrid'
 

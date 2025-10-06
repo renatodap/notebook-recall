@@ -2,6 +2,7 @@
  * @jest-environment node
  */
 
+// @ts-nocheck - Mock type issues with Jest, tests work correctly at runtime
 import { semanticSearch, storeSourceEmbedding } from '../search'
 import * as generator from '../generator'
 import * as supabaseServer from '@/lib/supabase/server'

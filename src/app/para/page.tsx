@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase/server'
 import PARADashboardRedesign from '@/components/para/PARADashboardRedesign'
-import type { DatabaseRecord } from '@/types/api-types'
 
 export const dynamic = 'force-dynamic'
 

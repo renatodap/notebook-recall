@@ -2,7 +2,6 @@ import { redirect } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import MobileNav from '@/components/MobileNav'
-import type { DatabaseRecord } from '@/types/api-types'
 
 export const dynamic = 'force-dynamic'
 

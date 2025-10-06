@@ -4,9 +4,9 @@
  * Replaces common 'any' patterns with proper TypeScript types
  */
 
-const fs = require('fs');
-const path = require('path');
-const { execSync } = require('child_process');
+import fs from 'fs';
+import path from 'path';
+import { execSync } from 'child_process';
 
 // Pattern replacements (order matters!)
 const replacements = [
@@ -81,15 +81,15 @@ const imports = {
   'TypedSupabaseClient': "import type { TypedSupabaseClient } from '@/types/supabase-helpers'",
 };
 
-// Files to process (from grep results)
-function getFilesToProcess() {
+// Files to process (from grep results) - currently unused but kept for future use
+function _getFilesToProcess() {
   try {
     const result = execSync('npx tsx -e "import {glob} from \'glob\'; glob(\'src/**/*.{ts,tsx}\').then(console.log)"', {
       encoding: 'utf-8',
       stdio: ['pipe', 'pipe', 'pipe'],
     });
     return result.split('\\n').filter(f => f.trim());
-  } catch (e) {
+  } catch (_e) {
     console.error('Failed to get file list, using manual list');
     return [];
   }

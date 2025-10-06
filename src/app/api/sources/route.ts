@@ -4,7 +4,6 @@ import { generateEmbedding } from '@/lib/embeddings/client'
 import { backfillEmbeddings } from '@/lib/embeddings/backfill'
 import { generateTitle } from '@/lib/claude/client'
 import { z } from 'zod'
-import type { DatabaseRecord } from '@/types/api-types'
 
 const CreateSourceSchema = z.object({
   title: z.string().optional(),

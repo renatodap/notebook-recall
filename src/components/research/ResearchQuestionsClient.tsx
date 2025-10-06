@@ -19,7 +19,7 @@ interface ResearchQuestionsClientProps {
   userId?: string
 }
 
-export default function ResearchQuestionsClient({ userId }: ResearchQuestionsClientProps = {}) {
+export default function ResearchQuestionsClient({ userId: _userId }: ResearchQuestionsClientProps = {}) {
   const [questions, setQuestions] = useState<ResearchQuestion[]>([])
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)

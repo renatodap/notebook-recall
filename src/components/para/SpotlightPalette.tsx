@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDebounce } from '@/hooks/useDebounce';
-import type { DatabaseRecord } from '@/types/api-types'
 
 interface SpotlightPaletteProps {
   isOpen: boolean;

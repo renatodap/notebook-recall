@@ -97,10 +97,10 @@ export interface BackfillResult {
   total?: number
   processed: number
   successes?: number
-  failed?: number
+  failed: number
   failures: Array<{ summary_id?: string; sourceId?: string; error: string }>
-  skipped?: number
-  duration_ms?: number
+  skipped: number
+  duration_ms: number
 }
 
 export interface BackfillProgress {
@@ -133,6 +133,6 @@ export interface HybridScore {
   semanticScore: number | null
   keywordScore: number | null
   combinedScore?: number
-  finalScore?: number
-  weights?: HybridSearchWeights
+  finalScore: number
+  weights: HybridSearchWeights
 }

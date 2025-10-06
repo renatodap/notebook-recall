@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import MobileNav from '@/components/MobileNav'
-import type { DatabaseRecord } from '@/types/api-types'
 
 interface Message {
   role: 'user' | 'assistant'
