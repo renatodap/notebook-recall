@@ -182,23 +182,34 @@ export default function AddPage() {
     const labels: Record<DetectedType, string> = {
       text: 'Text', url: 'URL', pdf: 'PDF', image: 'Image', unknown: ''
     }
+    const descriptions: Record<DetectedType, string> = {
+      text: 'Will extract and summarize text',
+      url: 'Will fetch and analyze webpage',
+      pdf: 'Will extract text from PDF',
+      image: 'Will extract text via OCR',
+      unknown: ''
+    }
     return (
-      <div className="absolute top-3 right-3 bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm">
-        {icons[detectedType]} {labels[detectedType]}
+      <div className="absolute top-3 right-3 bg-primary-50 text-primary-700 px-4 py-2 rounded-lg text-sm font-medium shadow-sm border border-primary-200 flex items-center gap-2">
+        <span className="text-lg">{icons[detectedType]}</span>
+        <div className="text-left">
+          <div className="font-semibold">Detected: {labels[detectedType]}</div>
+          <div className="text-xs text-primary-600">{descriptions[detectedType]}</div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20 md:pb-0 md:pl-64">
+    <div className="min-h-screen bg-neutral-50 pb-20 md:pb-0 md:pl-64">
       <MobileNav />
 
-      <div className="max-w-2xl mx-auto px-4 py-6 md:py-12">
+      <div className="max-w-2xl mx-auto px-6 py-8 md:py-12">
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Add Content</h1>
-          <p className="text-gray-600">
-            Paste text, drop a file, or enter a URL. We&apos;ll handle the rest.
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-neutral-900 tracking-tight mb-2">Add Content</h1>
+          <p className="text-neutral-600">
+            Paste text, drop a file, or enter a URL. AI will summarize it instantly.
           </p>
         </div>
 

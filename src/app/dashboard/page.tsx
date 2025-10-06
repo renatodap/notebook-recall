@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase/server'
 import MobileNav from '@/components/MobileNav'
 import SourcesView from '@/components/SourcesView'
+import QuickWinsTracker from '@/components/QuickWinsTracker'
 import Link from 'next/link'
 import { Sparkles, TrendingUp, FileText } from 'lucide-react'
 
@@ -130,6 +131,13 @@ export default async function DashboardPage() {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Quick Wins Tracker */}
+        {totalSources < 20 && (
+          <div className="mb-8">
+            <QuickWinsTracker variant="full" />
           </div>
         )}
 

@@ -825,3 +825,69 @@ export interface ResourceWithSources extends Resource {
   source_count: number;
   sources?: SourceWithSummary[];
 }
+
+// ============================================================================
+// PHASE 2: ONBOARDING & QUICK WINS - Types
+// ============================================================================
+
+export interface QuickWin {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  order: number;
+}
+
+export interface UserQuickWin {
+  id: string;
+  user_id: string;
+  win_id: string;
+  completed: boolean;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DemoSource {
+  title: string;
+  content_type: ContentType;
+  original_content: string;
+  summary: {
+    summary_text: string;
+    key_actions: string[];
+    key_topics: string[];
+    word_count: number;
+  };
+}
+
+// Onboarding API types
+export interface SeedDemoRequest {
+  // No body required - uses authenticated user
+}
+
+export interface SeedDemoResponse {
+  success: boolean;
+  message: string;
+  sources: {
+    id: string;
+    title: string;
+  }[];
+  count: number;
+  skipped?: boolean;
+}
+
+export interface QuickWinsGetResponse {
+  wins: UserQuickWin[];
+}
+
+export interface QuickWinsPostRequest {
+  winId: string;
+}
+
+export interface QuickWinsPostResponse {
+  success: boolean;
+  win: UserQuickWin;
+}
+
+// Onboarding flow types
+export type OnboardingStep = 'welcome' | 'seeding' | 'search' | 'success';

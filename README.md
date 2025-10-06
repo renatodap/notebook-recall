@@ -9,6 +9,9 @@ An AI-powered knowledge management system that ingests content from multiple sou
 - **Semantic Search**: Find anything with natural language queries across all your saved content
 - **Organized Library**: View, organize, and manage all your sources in one place
 - **Secure & Private**: Row-level security ensures your data is protected and isolated
+- **3-Minute Onboarding**: Interactive onboarding flow with demo data for instant time-to-value
+- **Quick Wins Tracking**: Gamified milestone system to guide new users through key features
+- **Smart Content Detection**: Automatic detection of content type (text, URL, PDF) with contextual feedback
 
 ## Tech Stack
 
@@ -82,6 +85,7 @@ recall-notebook/
 
 ## API Routes
 
+### Core Features
 - `POST /api/summarize` - Generate AI summary for content
 - `POST /api/sources` - Create new source with summary
 - `GET /api/sources` - List all sources (paginated)
@@ -90,6 +94,18 @@ recall-notebook/
 - `POST /api/search` - Search sources
 - `POST /api/fetch-url` - Fetch content from URL
 - `POST /api/process-pdf` - Process PDF file
+
+### Onboarding & Quick Wins (Phase 2)
+- `POST /api/onboarding/seed-demo` - Seed demo data for new users (rate limited: 3/hour)
+- `GET /api/quick-wins` - Get user's quick wins progress
+- `POST /api/quick-wins` - Mark a quick win as completed (rate limited: 10/minute)
+
+All Phase 2 endpoints include:
+- ✅ Zod input validation
+- ✅ Rate limiting
+- ✅ Proper error handling
+- ✅ Type-safe responses
+- ✅ Row-level security
 
 ## Testing
 

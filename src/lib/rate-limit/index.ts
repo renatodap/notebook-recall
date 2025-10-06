@@ -119,6 +119,17 @@ export const RATE_LIMITS = {
     windowMs: 60 * 1000, // 1 minute
     maxRequests: 10, // 10 requests per minute
   },
+
+  // Phase 2: Onboarding endpoints
+  ONBOARDING_SEED: {
+    windowMs: 60 * 60 * 1000, // 1 hour
+    maxRequests: 3, // Only 3 demo seeds per hour (prevent abuse)
+  },
+
+  QUICK_WINS: {
+    windowMs: 60 * 1000, // 1 minute
+    maxRequests: 10, // 10 quick win updates per minute
+  },
 } as const
 
 /**

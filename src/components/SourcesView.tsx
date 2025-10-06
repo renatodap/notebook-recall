@@ -198,32 +198,69 @@ export default function SourcesView({ initialSources }: SourcesViewProps) {
           ))}
         </div>
       ) : sources.length === 0 ? (
-        <div className="text-center py-16 px-4">
-          <div className="text-6xl mb-4">📚</div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">No sources yet</h3>
-          <p className="text-gray-600 mb-6">
-            Start building your knowledge library
+        <div className="bg-white rounded-lg border border-neutral-200 p-12 text-center">
+          <div className="flex justify-center mb-6">
+            <div className="p-4 bg-neutral-100 rounded-full text-6xl">📚</div>
+          </div>
+          <h3 className="text-2xl font-bold text-neutral-900 mb-3">Your knowledge base is empty</h3>
+          <p className="text-neutral-600 max-w-md mx-auto mb-8">
+            Add your first source to get started. Try pasting a URL, uploading a PDF, or writing a note.
           </p>
-          <a
-            href="/add"
-            className="inline-block bg-indigo-600 text-white font-semibold px-6 py-3 rounded-xl hover:bg-indigo-700 transition-colors"
-          >
-            Add Your First Source
-          </a>
+          <div className="flex gap-4 justify-center">
+            <a
+              href="/add"
+              className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-semibold"
+            >
+              Add Your First Source
+            </a>
+            <a
+              href="/onboarding"
+              className="px-6 py-3 bg-white text-neutral-700 border border-neutral-300 rounded-lg hover:bg-neutral-50 transition-colors font-medium"
+            >
+              See How It Works
+            </a>
+          </div>
         </div>
       ) : (
-        <div className="text-center py-16 px-4">
-          <div className="text-6xl mb-4">🔍</div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">No results found</h3>
-          <p className="text-gray-600 mb-6">
-            Try adjusting your search or filters
+        <div className="bg-white rounded-lg border border-neutral-200 p-12 text-center">
+          <div className="flex justify-center mb-6">
+            <div className="p-4 bg-neutral-100 rounded-full text-6xl">🔍</div>
+          </div>
+          <h3 className="text-2xl font-bold text-neutral-900 mb-3">No results found</h3>
+          <p className="text-neutral-600 max-w-md mx-auto mb-8">
+            Try a different search term, or add more sources to your knowledge base.
           </p>
-          <button
-            onClick={() => setSearchQuery('')}
-            className="text-indigo-600 font-medium hover:text-indigo-700"
-          >
-            Clear Search
-          </button>
+          <div className="flex gap-4 justify-center mb-6">
+            <button
+              onClick={() => setSearchQuery('')}
+              className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-semibold"
+            >
+              Clear Search
+            </button>
+            <a
+              href="/add"
+              className="px-6 py-3 bg-white text-neutral-700 border border-neutral-300 rounded-lg hover:bg-neutral-50 transition-colors font-medium"
+            >
+              Add More Sources
+            </a>
+          </div>
+          <div className="bg-neutral-50 rounded-lg p-4 max-w-md mx-auto">
+            <p className="text-sm font-semibold text-neutral-700 mb-3">💡 Suggestions:</p>
+            <ul className="text-sm text-neutral-600 space-y-2 text-left">
+              <li className="flex items-start gap-2">
+                <span className="text-neutral-400 mt-0.5">•</span>
+                <span>Use simpler keywords</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-neutral-400 mt-0.5">•</span>
+                <span>Try synonyms or related terms</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-neutral-400 mt-0.5">•</span>
+                <span>Check for typos</span>
+              </li>
+            </ul>
+          </div>
         </div>
       )}
     </div>
