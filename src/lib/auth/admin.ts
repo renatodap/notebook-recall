@@ -9,11 +9,6 @@ import { createRouteHandlerClient } from '@/lib/supabase/server';
 // List of admin email addresses (in production, store this in database)
 const ADMIN_EMAILS = process.env.ADMIN_EMAILS?.split(',').map(email => email.trim()) || [];
 
-// Alternative: Check for admin role in database
-interface UserRole {
-  role: 'admin' | 'user';
-}
-
 /**
  * Check if a user is an admin based on email
  */
@@ -45,6 +40,7 @@ export async function isCurrentUserAdmin(): Promise<boolean> {
 /**
  * Check if user has admin role in database
  * (Alternative approach using database roles)
+ * Note: Requires user_roles table to exist
  */
 export async function hasAdminRole(userId: string): Promise<boolean> {
   try {
@@ -61,7 +57,7 @@ export async function hasAdminRole(userId: string): Promise<boolean> {
       return false;
     }
 
-    return data.role === 'admin';
+    return (data as { role: string }).role === 'admin';
   } catch (error) {
     console.error('Role check failed:', error);
     return false;

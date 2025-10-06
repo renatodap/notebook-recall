@@ -31,6 +31,8 @@ const eslintConfig = [
           "caughtErrorsIgnorePattern": "^_"
         }
       ],
+      "@typescript-eslint/ban-ts-comment": "off",
+      "@typescript-eslint/no-require-imports": "off",
     },
   },
 ];
