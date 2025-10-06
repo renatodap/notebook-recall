@@ -3,7 +3,7 @@ import { createRouteHandlerClient } from '@/lib/supabase/server'
 import { getAllDemoSources } from '@/lib/onboarding/demo-data'
 import { generateEmbedding } from '@/lib/embeddings/client'
 import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limit'
-import type { SeedDemoResponse, Source, Summary } from '@/types'
+import type { SeedDemoResponse, Source } from '@/types'
 
 /**
  * Seed Demo Data API

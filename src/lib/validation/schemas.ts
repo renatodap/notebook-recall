@@ -169,7 +169,7 @@ export async function validateRequest<T>(
     }
 
     return { success: true, data: result.data }
-  } catch (error) {
+  } catch (_error) {
     return { success: false, error: 'Invalid JSON in request body' }
   }
 }
@@ -191,7 +191,7 @@ export function validateQueryParams<T>(
     }
 
     return { success: true, data: result.data }
-  } catch (error) {
+  } catch (_error) {
     return { success: false, error: 'Invalid query parameters' }
   }
 }

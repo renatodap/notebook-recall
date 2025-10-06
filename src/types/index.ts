@@ -861,9 +861,8 @@ export interface DemoSource {
 }
 
 // Onboarding API types
-export interface SeedDemoRequest {
-  // No body required - uses authenticated user
-}
+// SeedDemoRequest has no body - uses authenticated user
+export type SeedDemoRequest = Record<string, never>
 
 export interface SeedDemoResponse {
   success: boolean;
