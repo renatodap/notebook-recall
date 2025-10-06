@@ -1,7 +1,6 @@
 import { createServerClient as createClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { Database } from '@/types/database'
-import type { CookieOptions } from '@/types/supabase-helpers'
 
 /**
  * Creates a Supabase client for use in Server Components

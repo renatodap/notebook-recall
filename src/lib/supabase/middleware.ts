@@ -1,7 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
 import { Database } from '@/types/database'
-import type { CookieOptions } from '@/types/supabase-helpers'
 
 /**
  * Creates a Supabase client for use in Next.js middleware
@@ -20,7 +19,7 @@ export function createMiddlewareClient(request: NextRequest) {
   }
 
   // Create a response object to pass cookies through
-  let response = NextResponse.next({
+  const response = NextResponse.next({
     request: {
       headers: request.headers,
     },
