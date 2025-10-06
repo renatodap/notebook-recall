@@ -1,5 +1,6 @@
 'use client';
 
+import { type ErrorInfo } from 'react';
 import { ErrorBoundary as ReactErrorBoundary } from 'react-error-boundary';
 import { useRouter } from 'next/navigation';
 
@@ -80,7 +81,7 @@ interface ErrorBoundaryProps {
 }
 
 export function ErrorBoundary({ children }: ErrorBoundaryProps) {
-  const handleError = (error: Error, info: { componentStack: string }) => {
+  const handleError = (error: Error, info: ErrorInfo) => {
     // Log to error reporting service (Sentry, etc.)
     console.error('Error caught by boundary:', error, info);
 

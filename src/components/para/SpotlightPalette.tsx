@@ -62,7 +62,7 @@ export default function SpotlightPalette({ isOpen, onClose }: SpotlightPalettePr
 
       if (sourcesResponse.ok) {
         const sourcesData = await sourcesResponse.json();
-        searchResults = sourcesData.results?.map((result: DatabaseRecord) => ({
+        searchResults = sourcesData.results?.map((result: any) => ({
           id: result.id || result.source?.id,
           type: 'source',
           title: result.title || result.source?.title || 'Untitled',

@@ -50,7 +50,7 @@ export default function PARADetailClient({
 
     // Search filter
     if (searchQuery.trim()) {
-      filtered = filtered.filter((s) =>
+      filtered = filtered.filter((s: any) =>
         s.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         s.summary?.[0]?.summary_text?.toLowerCase().includes(searchQuery.toLowerCase())
       );
@@ -58,9 +58,9 @@ export default function PARADetailClient({
 
     // Sort
     if (sortBy === 'recent') {
-      filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      filtered.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     } else if (sortBy === 'alphabetical') {
-      filtered.sort((a, b) => a.title.localeCompare(b.title));
+      filtered.sort((a: any, b: any) => a.title.localeCompare(b.title));
     }
 
     setFilteredSources(filtered);
@@ -70,7 +70,7 @@ export default function PARADetailClient({
     setLoadingSummary(true);
     try {
       // Get all source IDs
-      const sourceIds = sources.map(s => s.id);
+      const sourceIds = sources.map((s: any) => s.id);
 
       const response = await fetch('/api/para/generate-summary', {
         method: 'POST',
@@ -156,7 +156,7 @@ export default function PARADetailClient({
 
       if (!response.ok) throw new Error('Failed to remove source');
 
-      setSources(sources.filter((s) => s.id !== sourceId));
+      setSources(sources.filter((s: any) => s.id !== sourceId));
       router.refresh();
     } catch (error) {
       console.error('Error removing source:', error);
@@ -352,8 +352,8 @@ export default function PARADetailClient({
                           href={`/para/projects/${project.id}`}
                           className="inline-flex items-center gap-2 px-3 py-2 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors"
                         >
-                          <span className="text-lg">{project.icon || '🎯'}</span>
-                          <span className="text-sm font-medium text-indigo-900">{project.name}</span>
+                          <span className="text-lg">{(project.icon as string) || '🎯'}</span>
+                          <span className="text-sm font-medium text-indigo-900">{project.name as string}</span>
                         </Link>
                       ))}
                     </div>
@@ -372,8 +372,8 @@ export default function PARADetailClient({
                           href={`/para/areas/${area.id}`}
                           className="inline-flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors"
                         >
-                          <span className="text-lg">{area.icon || '🌳'}</span>
-                          <span className="text-sm font-medium text-green-900">{area.name}</span>
+                          <span className="text-lg">{(area.icon as string) || '🌳'}</span>
+                          <span className="text-sm font-medium text-green-900">{area.name as string}</span>
                         </Link>
                       ))}
                     </div>
@@ -392,8 +392,8 @@ export default function PARADetailClient({
                           href={`/para/resources/${resource.id}`}
                           className="inline-flex items-center gap-2 px-3 py-2 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors"
                         >
-                          <span className="text-lg">{resource.icon || '💎'}</span>
-                          <span className="text-sm font-medium text-purple-900">{resource.name}</span>
+                          <span className="text-lg">{(resource.icon as string) || '💎'}</span>
+                          <span className="text-sm font-medium text-purple-900">{resource.name as string}</span>
                         </Link>
                       ))}
                     </div>
@@ -424,7 +424,7 @@ export default function PARADetailClient({
             {/* Sort */}
             <select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
+              onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
             >
               <option value="recent">Most Recent</option>
@@ -485,7 +485,7 @@ export default function PARADetailClient({
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4">
-            {filteredSources.map((source) => (
+            {filteredSources.map((source: any) => (
               <div key={source.id} className="relative">
                 <SourceCard source={source} />
                 <button

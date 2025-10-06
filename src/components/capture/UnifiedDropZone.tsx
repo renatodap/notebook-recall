@@ -28,20 +28,6 @@ export default function UnifiedDropZone({ onCapture }: UnifiedDropZoneProps) {
     setIsDragging(false)
   }, [])
 
-  const handleDrop = useCallback(async (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(false)
-
-    const files = Array.from(e.dataTransfer.files)
-    const text = e.dataTransfer.getData('text')
-
-    if (files.length > 0) {
-      await processFiles(files)
-    } else if (text) {
-      await processText(text)
-    }
-  }, [processFiles, processText])
-
   const processFiles = useCallback(async (files: File[]) => {
     setIsProcessing(true)
     setError('')
@@ -140,7 +126,7 @@ export default function UnifiedDropZone({ onCapture }: UnifiedDropZoneProps) {
       setInput('')
       router.refresh()
     } catch (err: unknown) {
-      setError(err.message || 'Failed to process files')
+      setError((err as Error).message || 'Failed to process files')
     } finally {
       setIsProcessing(false)
     }
@@ -236,11 +222,25 @@ export default function UnifiedDropZone({ onCapture }: UnifiedDropZoneProps) {
       setMode('idle')
       router.refresh()
     } catch (err: unknown) {
-      setError(err.message || 'Failed to process content')
+      setError((err as Error).message || 'Failed to process content')
     } finally {
       setIsProcessing(false)
     }
   }, [onCapture, router])
+
+  const handleDrop = useCallback(async (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(false)
+
+    const files = Array.from(e.dataTransfer.files)
+    const text = e.dataTransfer.getData('text')
+
+    if (files.length > 0) {
+      await processFiles(files)
+    } else if (text) {
+      await processText(text)
+    }
+  }, [processFiles, processText])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

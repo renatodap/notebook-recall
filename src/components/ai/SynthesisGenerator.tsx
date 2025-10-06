@@ -47,7 +47,7 @@ export default function SynthesisGenerator({ sourceIds, onClose }: SynthesisGene
       router.push(`/synthesis/${data.report.id}`)
       onClose()
     } catch (err: unknown) {
-      setError(err.message)
+      setError((err as Error).message)
     } finally {
       setIsGenerating(false)
     }
@@ -119,7 +119,7 @@ export default function SynthesisGenerator({ sourceIds, onClose }: SynthesisGene
             </label>
             <select
               value={reportType}
-              onChange={(e) => setReportType(e.target.value)}
+              onChange={(e) => setReportType(e.target.value as typeof reportType)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <optgroup label="General Synthesis">

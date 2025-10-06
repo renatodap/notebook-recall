@@ -27,7 +27,7 @@ export default function ArchiveView({ initialSources }: ArchiveViewProps) {
       }
 
       // Remove from local state
-      setSources(sources.filter((s) => s.id !== sourceId));
+      setSources(sources.filter((s: any) => s.id !== sourceId));
       router.refresh();
     } catch (error) {
       console.error('Error unarchiving source:', error);
@@ -70,7 +70,7 @@ export default function ArchiveView({ initialSources }: ArchiveViewProps) {
       </div>
 
       <div className="grid grid-cols-1 gap-4">
-        {sources.map((source) => {
+        {sources.map((source: any) => {
           const summary = Array.isArray(source.summaries) ? source.summaries : [source.summaries];
           const tags = source.tags || [];
 

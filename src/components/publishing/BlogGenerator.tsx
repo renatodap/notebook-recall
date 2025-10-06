@@ -53,7 +53,7 @@ export default function BlogGenerator({ sourceIds, onClose }: BlogGeneratorProps
       router.push(`/publishing/${data.output.id}`)
       onClose()
     } catch (err: unknown) {
-      setError(err.message)
+      setError((err as Error).message)
     } finally {
       setIsGenerating(false)
     }
@@ -124,7 +124,7 @@ export default function BlogGenerator({ sourceIds, onClose }: BlogGeneratorProps
               </label>
               <select
                 value={targetAudience}
-                onChange={(e) => setTargetAudience(e.target.value)}
+                onChange={(e) => setTargetAudience(e.target.value as typeof targetAudience)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="general">General Public</option>
@@ -141,7 +141,7 @@ export default function BlogGenerator({ sourceIds, onClose }: BlogGeneratorProps
               </label>
               <select
                 value={tone}
-                onChange={(e) => setTone(e.target.value)}
+                onChange={(e) => setTone(e.target.value as typeof tone)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="professional">Professional</option>
