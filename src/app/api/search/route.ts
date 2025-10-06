@@ -87,9 +87,9 @@ export async function POST(request: NextRequest) {
             console.log('Falling back to keyword search due to semantic error');
             return await performKeywordSearch(supabase, user.id, query, limit, collection_id);
           }
-        } else if (semanticData && semanticData.length > 0) {
+        } else if (semanticData && (semanticData as any[]).length > 0) {
           // Transform semantic results
-          results = semanticData.map((item: any) => ({
+          results = (semanticData as any[]).map((item: any) => ({
             source: {
               id: item.source_id,
               user_id: item.user_id,

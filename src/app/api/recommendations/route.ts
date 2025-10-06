@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
       match_threshold: 0.7,
       match_count: limit + 1, // +1 to exclude self
       p_user_id: user.id,
-    })
+    } as never)
 
     if (error) {
       console.error('Recommendation error:', error)

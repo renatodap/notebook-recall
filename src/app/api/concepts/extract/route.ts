@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
             normalized_name: normalizedName,
             embedding,
             frequency: 1,
-          } as any)
+          } as never)
           .select()
           .single()
 
@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
         // Increment frequency
         await supabase
           .from('concepts')
-          .update({ frequency: (existingConcept as any).frequency + 1 } as any)
+          .update({ frequency: (existingConcept as any).frequency + 1 } as never)
           .eq('id', (existingConcept as any).id as never)
       }
 
@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
               relevance: extracted.relevance,
               mentions: 1,
               context: extracted.context,
-            } as any)
+            } as never)
         }
       }
     }

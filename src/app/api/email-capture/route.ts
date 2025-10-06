@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
         metadata: {
           received_at: new Date().toISOString()
         }
-      } as any)
+      } as never)
       .select()
       .single()
 
@@ -55,14 +55,14 @@ export async function POST(request: NextRequest) {
           subject,
           captured_via: 'email'
         }
-      } as any)
+      } as never)
       .select()
       .single()
 
     // Update capture with source_id
     await supabase
       .from('email_captures')
-      .update({ source_id: (source as any).id, processed: true } as any)
+      .update({ source_id: (source as any).id, processed: true } as never)
       .eq('id', (capture as any).id as never)
 
     // Auto-summarize

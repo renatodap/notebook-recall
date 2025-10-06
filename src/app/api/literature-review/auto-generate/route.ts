@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
         match_threshold: min_relevance,
         match_count: max_sources,
         filter_user_id: user.id
-      }) as { data: any[] | null }
+      } as never) as { data: any[] | null }
 
     if (!matchedSources || (matchedSources as any[]).length === 0) {
       return NextResponse.json({
@@ -110,17 +110,17 @@ export async function POST(request: NextRequest) {
           sections: review.sections.map((s: any) => s.title)
         },
         status: 'draft'
-      } as any)
+      } as never)
       .select()
       .single()
 
     // Link sources
     if (output && 'id' in output) {
       const links = sourceIds.map((sid: string) => ({
-        output_id: output.id,
+        output_id: (output as { id: string }).id,
         source_id: sid
       }))
-      await supabase.from('output_sources').insert(links as any)
+      await supabase.from('output_sources').insert(links as never)
 
       return NextResponse.json({
         output,

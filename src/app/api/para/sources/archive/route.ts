@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
 
     const { data: source, error } = await supabase
       .from('sources')
-      .update({ archived } as any)
+      .update({ archived } as never)
       .eq('id', source_id as never)
       .eq('user_id', session.user.id as never)
       .select()

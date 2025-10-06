@@ -76,13 +76,13 @@ export async function POST(request: NextRequest) {
           match_count: mode === 'hybrid' ? limit * 2 : limit,
           p_user_id: user.id,
           p_collection_id: collection_id || null,
-        }
+        } as never
       );
 
       if (chunkError) {
         console.error('Chunk search error:', chunkError);
       } else if (chunkData && Array.isArray(chunkData)) {
-        results = chunkData.map((item: any) => ({
+        results = (chunkData as any[]).map((item: any) => ({
           chunk: {
             id: item.chunk_id,
             source_id: item.source_id,
@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
         console.error('Summary search error:', summaryError);
       } else if (summaryData) {
         // Convert summary results to chunk format for consistency
-        results = summaryData.map((item: any) => ({
+        results = (summaryData as any[]).map((item: any) => ({
           chunk: {
             id: item.summary_id,
             source_id: item.source_id,

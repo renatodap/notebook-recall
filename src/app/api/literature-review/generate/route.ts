@@ -73,17 +73,17 @@ export async function POST(request: NextRequest) {
           sections: review.sections.map((s: any) => s.title)
         },
         status: 'draft'
-      } as any)
+      } as never)
       .select()
       .single()
 
     // Link sources
     if (output && 'id' in output) {
       const links = source_ids.map((sid: string) => ({
-        output_id: output.id,
+        output_id: (output as { id: string }).id,
         source_id: sid
       }))
-      await supabase.from('output_sources').insert(links as any)
+      await supabase.from('output_sources').insert(links as never)
     }
 
     return NextResponse.json({ output, review, template }, { status: 201 })

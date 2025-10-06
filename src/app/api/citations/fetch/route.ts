@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
         // Update existing
         const { data: citation, error } = await supabase
           .from('citations')
-          .update(citationData as any)
+          .update(citationData as never)
           .eq('id', (existingCitation as any).id as never)
           .select()
           .single()
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
         // Create new
         const { data: citation, error } = await supabase
           .from('citations')
-          .insert(citationData as any)
+          .insert(citationData as never)
           .select()
           .single()
 
