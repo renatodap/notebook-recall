@@ -273,8 +273,8 @@ export async function embedChunk(chunkId: string): Promise<void> {
   // Update chunk
   const { error: updateError } = await supabase
     .from('content_chunks')
-    .update({ embedding: embeddingResult.embedding })
-    .eq('id', chunkId);
+    .update({ embedding: embeddingResult.embedding } as never)
+    .eq('id' as never, chunkId);
 
   if (updateError) {
     throw new Error(`Failed to update chunk embedding: ${updateError.message}`);
