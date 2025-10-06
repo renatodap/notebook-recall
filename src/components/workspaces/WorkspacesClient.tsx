@@ -15,7 +15,11 @@ interface Workspace {
   created_at: string
 }
 
-export default function WorkspacesClient() {
+interface WorkspacesClientProps {
+  userId?: string
+}
+
+export default function WorkspacesClient({ userId }: WorkspacesClientProps = {}) {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([])
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
