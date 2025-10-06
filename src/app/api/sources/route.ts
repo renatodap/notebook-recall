@@ -58,14 +58,14 @@ export async function GET(request: NextRequest) {
         p_collection_id: collectionId || null,
         p_limit: limit,
         p_offset: (page - 1) * limit,
-      })
+      } as never)
 
       if (error) {
         throw error
       }
 
       // Fetch summaries and tags for each source
-      const sourceIds = Array.isArray(data) ? data.map((s: any) => s.id) : []
+      const sourceIds = Array.isArray(data) ? (data as any[]).map((s: any) => s.id) : []
       const { data: summaries } = await supabase
         .from('summaries')
         .select('*')
@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
         .in('source_id', sourceIds)
 
       // Combine data
-      const enrichedData = Array.isArray(data) ? data.map((source: any) => ({
+      const enrichedData = Array.isArray(data) ? (data as any[]).map((source: any) => ({
         ...source,
         summary: summaries?.filter((s: any) => s.source_id === source.id) || [],
         tags: tags?.filter((t: any) => t.source_id === source.id) || [],
@@ -85,10 +85,10 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json({
         data: enrichedData,
-        total: Array.isArray(data) ? data.length : 0,
+        total: Array.isArray(data) ? (data as any[]).length : 0,
         page,
         limit,
-        hasMore: Array.isArray(data) && data.length === limit,
+        hasMore: Array.isArray(data) && (data as any[]).length === limit,
         filters: {
           tags: filterTags,
           tagLogic,
@@ -105,14 +105,14 @@ export async function GET(request: NextRequest) {
         p_collection_id: collectionId,
         p_limit: limit,
         p_offset: (page - 1) * limit,
-      })
+      } as never)
 
       if (error) {
         throw error
       }
 
       // Fetch summaries and tags for each source
-      const sourceIds = Array.isArray(data) ? data.map((s: any) => s.id) : []
+      const sourceIds = Array.isArray(data) ? (data as any[]).map((s: any) => s.id) : []
       const { data: summaries } = await supabase
         .from('summaries')
         .select('*')
@@ -124,7 +124,7 @@ export async function GET(request: NextRequest) {
         .in('source_id', sourceIds)
 
       // Combine data
-      const enrichedData = Array.isArray(data) ? data.map((source: any) => ({
+      const enrichedData = Array.isArray(data) ? (data as any[]).map((source: any) => ({
         ...source,
         summary: summaries?.filter((s: any) => s.source_id === source.id) || [],
         tags: tags?.filter((t: any) => t.source_id === source.id) || [],
@@ -132,10 +132,10 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json({
         data: enrichedData,
-        total: Array.isArray(data) ? data.length : 0,
+        total: Array.isArray(data) ? (data as any[]).length : 0,
         page,
         limit,
-        hasMore: Array.isArray(data) && data.length === limit,
+        hasMore: Array.isArray(data) && (data as any[]).length === limit,
         filters: {
           collection_id: collectionId,
         },

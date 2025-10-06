@@ -38,18 +38,18 @@ export async function semanticSearch(
         match_threshold: 1 - threshold, // Convert similarity to distance
         match_count: limit,
         user_id_filter: userId
-      })
+      } as never)
 
     if (error) {
       console.error('Semantic search error:', error)
       throw error
     }
 
-    if (!data || !Array.isArray(data) || data.length === 0) {
+    if (!data || !Array.isArray(data) || (data as any[]).length === 0) {
       return []
     }
 
-    const results: SemanticSearchResult[] = data.map((row: any) => ({
+    const results: SemanticSearchResult[] = (data as any[]).map((row: any) => ({
       source_id: row.source_id,
       chunk_id: row.chunk_id,
       similarity: 1 - row.distance, // Convert distance back to similarity

@@ -63,7 +63,7 @@ export default async function PARAPage() {
 
   // Fetch PARA stats
   const { data: statsData } = await supabase
-    .rpc('get_para_stats', { p_user_id: user.id })
+    .rpc('get_para_stats', { p_user_id: user.id } as never)
     .single()
 
   const stats = {
