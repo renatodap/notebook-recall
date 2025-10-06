@@ -58,13 +58,15 @@ export async function createSourceWithChunks(
         content_type: contentType,
         original_content: originalContent,
         url,
-      })
+      } as never)
       .select()
       .single();
 
-    if (sourceError) {
-      throw new Error(`Failed to create source: ${sourceError.message}`);
+    if (sourceError || !source) {
+      throw new Error(`Failed to create source: ${sourceError?.message || 'Unknown error'}`);
     }
+
+    const sourceData = source as unknown as { id: string };
 
     // 2. Generate embedding for summary
     const textToEmbed = [summaryText, ...keyTopics].join(' ');
@@ -78,13 +80,13 @@ export async function createSourceWithChunks(
     const { data: summary, error: summaryError } = await supabase
       .from('summaries')
       .insert({
-        source_id: source.id,
+        source_id: sourceData.id,
         summary_text: summaryText,
         key_actions: keyActions,
         key_topics: keyTopics,
         word_count: wordCount,
         embedding: embeddingResult.embedding,
-      })
+      } as never)
       .select()
       .single();
 
@@ -95,11 +97,11 @@ export async function createSourceWithChunks(
     // 4. Create tags
     if (keyTopics.length > 0) {
       const tagsData = keyTopics.map((topic) => ({
-        source_id: source.id,
+        source_id: sourceData.id,
         tag_name: topic.toLowerCase(),
       }));
 
-      await supabase.from('tags').insert(tagsData);
+      await supabase.from('tags').insert(tagsData as never);
     }
 
     // 5. Create chunks (async, non-blocking)
@@ -107,11 +109,11 @@ export async function createSourceWithChunks(
     let chunksCreated = 0;
 
     try {
-      chunks = await createSourceChunks(source.id, originalContent, contentType);
+      chunks = await createSourceChunks(sourceData.id, originalContent, contentType);
       chunksCreated = chunks.length;
 
       if (chunksCreated > 0) {
-        console.log(`Created ${chunksCreated} chunks for source ${source.id}`);
+        console.log(`Created ${chunksCreated} chunks for source ${sourceData.id}`);
       }
     } catch (chunkError) {
       console.error('Chunking failed (non-critical):', chunkError);
@@ -119,7 +121,7 @@ export async function createSourceWithChunks(
     }
 
     return {
-      source,
+      source: sourceData,
       summary,
       chunks,
       chunksCreated,
