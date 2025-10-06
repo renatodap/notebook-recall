@@ -33,7 +33,7 @@ export const quickWinsPostSchema = z.object({
 export const createSourceSchema = z.object({
   title: z.string().min(1, 'Title is required').max(500, 'Title too long'),
   content_type: z.enum(['text', 'url', 'pdf', 'note', 'image'], {
-    errorMap: () => ({ message: 'Invalid content type' }),
+    message: 'Invalid content type',
   }),
   original_content: z.string().min(1, 'Content is required'),
   url: z.string().url('Invalid URL').optional().or(z.literal('')),
