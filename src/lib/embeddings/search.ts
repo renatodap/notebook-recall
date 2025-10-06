@@ -45,7 +45,7 @@ export async function semanticSearch(
       throw error
     }
 
-    if (!data || data.length === 0) {
+    if (!data || !Array.isArray(data) || data.length === 0) {
       return []
     }
 
@@ -89,7 +89,7 @@ export async function storeSourceEmbedding(
         chunk_id: chunkId,
         embedding,
         content_preview: contentPreview
-      }, {
+      } as never, {
         onConflict: 'source_id,chunk_id'
       })
       .select('id')
@@ -100,7 +100,7 @@ export async function storeSourceEmbedding(
       return null
     }
 
-    return data?.id || null
+    return (data as { id: string } | null)?.id || null
   } catch (error) {
     console.error('Store embedding error:', error)
     return null

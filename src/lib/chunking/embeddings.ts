@@ -271,10 +271,13 @@ export async function embedChunk(chunkId: string): Promise<void> {
   });
 
   // Update chunk
+  const updatePayload: { embedding: number[] } = {
+    embedding: embeddingResult.embedding
+  };
   const { error: updateError } = await supabase
     .from('content_chunks')
-    .update({ embedding: embeddingResult.embedding } as never)
-    .eq('id' as never, chunkId);
+    .update(updatePayload as never)
+    .eq('id', chunkId);
 
   if (updateError) {
     throw new Error(`Failed to update chunk embedding: ${updateError.message}`);
@@ -304,7 +307,7 @@ export async function backfillChunkEmbeddings(
   }
 
   // Embed each chunk
-  for (const chunk of chunks) {
+  for (const chunk of chunks as Array<{ id: string }>) {
     try {
       await embedChunk(chunk.id);
       processed++;

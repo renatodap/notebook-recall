@@ -77,7 +77,7 @@ export async function getUserProfile(userId: string): Promise<UserProfile> {
   const { data, error } = await supabase
     .from('user_profiles')
     .select('*')
-    .eq('user_id', userId)
+    .eq('user_id' as never, userId)
     .single()
 
   if (error || !data) {
@@ -94,12 +94,12 @@ export async function getUserProfile(userId: string): Promise<UserProfile> {
 
     await supabase
       .from('user_profiles')
-      .insert(defaultProfile)
+      .insert(defaultProfile as never)
 
     return defaultProfile as UserProfile
   }
 
-  return data as UserProfile
+  return data as unknown as UserProfile
 }
 
 /**
@@ -194,7 +194,7 @@ export async function generateProactiveInsights(
 
   // Detect potential connections between sources
   if (recentSources.length >= 2) {
-    const topics = recentSources.flatMap((s: unknown) =>
+    const topics = (recentSources as Array<{ summaries?: Array<{ key_topics?: string[] }> }>).flatMap((s) =>
       s.summaries?.[0]?.key_topics || []
     )
 
@@ -264,18 +264,20 @@ export const chatTools: ChatTool[] = [
 
       if (!user) throw new Error('Unauthorized')
 
+      const typedArgs = args as { title: string; content: string; tags?: string[] };
+
       const { data } = await supabase
         .from('notes')
         .insert({
           user_id: user.id,
-          title: args.title,
-          content: args.content,
-          tags: args.tags || []
-        })
+          title: typedArgs.title,
+          content: typedArgs.content,
+          tags: typedArgs.tags || []
+        } as never)
         .select()
         .single()
 
-      return { success: true, note_id: data?.id }
+      return { success: true, note_id: (data as { id: string } | null)?.id }
     }
   },
   {
@@ -291,10 +293,12 @@ export const chatTools: ChatTool[] = [
 
       if (!user) throw new Error('Unauthorized')
 
+      const typedArgs = args as { query: string; limit?: number };
+
       const results = await semanticSearch(
         user.id,
-        args.query,
-        { limit: args.limit || 5 }
+        typedArgs.query,
+        { limit: typedArgs.limit || 5 }
       )
 
       return { sources: results }
@@ -309,18 +313,21 @@ export const chatTools: ChatTool[] = [
     },
     handler: async (args: unknown) => {
       const supabase = await createRouteHandlerClient()
+      const typedArgs = args as { source_id: string; style?: string };
+
       const { data: source } = await supabase
         .from('sources')
         .select('*')
-        .eq('id', args.source_id)
+        .eq('id' as never, typedArgs.source_id)
         .single()
 
       if (!source) throw new Error('Source not found')
 
       // Simplified citation generation
-      const citation = `${source.title} (${new Date(source.created_at).getFullYear()})`
+      const sourceData = source as unknown as { title: string; created_at: string };
+      const citation = `${sourceData.title} (${new Date(sourceData.created_at).getFullYear()})`
 
-      return { citation, style: args.style }
+      return { citation, style: typedArgs.style }
     }
   }
 ]

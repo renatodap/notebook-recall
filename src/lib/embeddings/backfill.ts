@@ -106,7 +106,11 @@ async function processSummaries(
   }
 
   // Process summaries
-  for (const summary of summaries) {
+  for (const summary of summaries as Array<{
+    id: string;
+    summary_text: string;
+    key_topics: string[] | null;
+  }>) {
     let attempts = 0;
     let success = false;
 
@@ -177,7 +181,7 @@ export async function getPendingCount(): Promise<number> {
   const { count, error } = await supabase
     .from('summaries')
     .select('*', { count: 'exact', head: true })
-    .isNull('embedding');
+    .is('embedding', null);
 
   if (error) {
     throw error;

@@ -137,15 +137,17 @@ export function validateSummarizationResponse(data: unknown): {
     return { valid: false, error: 'Response is not an object' }
   }
 
-  if (!data.summary || typeof data.summary !== 'string') {
+  const obj = data as Record<string, unknown>;
+
+  if (!obj.summary || typeof obj.summary !== 'string') {
     return { valid: false, error: 'Missing or invalid summary field' }
   }
 
-  if (!Array.isArray(data.actions)) {
+  if (!Array.isArray(obj.actions)) {
     return { valid: false, error: 'Missing or invalid actions field' }
   }
 
-  if (!Array.isArray(data.topics)) {
+  if (!Array.isArray(obj.topics)) {
     return { valid: false, error: 'Missing or invalid topics field' }
   }
 

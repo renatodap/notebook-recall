@@ -161,7 +161,7 @@ async function performOCR(buffer: Buffer | ArrayBuffer, language: string): Promi
         return {
           text: result.ParsedResults[0].ParsedText || '',
           confidence: result.ParsedResults[0].TextOverlay?.Lines?.reduce(
-            (acc: number, line: unknown) => acc + (line.MaxHeight || 0),
+            (acc: number, line: { MaxHeight?: number }) => acc + (line.MaxHeight || 0),
             0
           ) / (result.ParsedResults[0].TextOverlay?.Lines?.length || 1) || 0.8,
           language

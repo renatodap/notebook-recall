@@ -96,6 +96,87 @@ export interface Database {
           created_at?: string
         }
       }
+      content_chunks: {
+        Row: {
+          id: string
+          source_id: string
+          content: string
+          chunk_index: number
+          start_pos: number
+          end_pos: number
+          embedding: number[] | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          source_id: string
+          content: string
+          chunk_index: number
+          start_pos: number
+          end_pos: number
+          embedding?: number[] | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          source_id?: string
+          content?: string
+          chunk_index?: number
+          start_pos?: number
+          end_pos?: number
+          embedding?: number[] | null
+          created_at?: string
+        }
+      }
+      source_embeddings: {
+        Row: {
+          id: string
+          source_id: string
+          chunk_id: number
+          embedding: number[]
+          content_preview: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          source_id: string
+          chunk_id: number
+          embedding: number[]
+          content_preview: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          source_id?: string
+          chunk_id?: number
+          embedding?: number[]
+          content_preview?: string
+          created_at?: string
+        }
+      }
+      user_profiles: {
+        Row: {
+          id: string
+          user_id: string
+          preferences: Record<string, unknown> | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          preferences?: Record<string, unknown> | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          preferences?: Record<string, unknown> | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never

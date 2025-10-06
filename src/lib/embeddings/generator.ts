@@ -95,9 +95,12 @@ export async function generateEmbeddingsBatch(
         throw new Error(`Batch embedding failed: ${response.statusText}`)
       }
 
-      const data = await response.json()
+      const data = await response.json() as {
+        data: Array<{ embedding: number[] }>;
+        usage: { total_tokens: number };
+      };
 
-      data.data.forEach((item: unknown) => {
+      data.data.forEach((item) => {
         results.push({
           embedding: item.embedding,
           tokenCount: data.usage.total_tokens / batch.length, // Approximate
