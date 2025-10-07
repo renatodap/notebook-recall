@@ -1,16 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
-import type { CreateCollectionRequest } from '@/types'
+import { createCollectionSchema } from '@/lib/validation/schemas'
+import { validateRequestBody } from '@/lib/validation/middleware'
+import {
+  ValidationError,
+  AuthenticationError,
+  DatabaseError,
+  RateLimitError,
+  handleAPIError
+} from '@/lib/errors/custom-errors'
+import type { TypedSupabaseClient } from '@/types/supabase-helpers'
+import { DatabaseCollection } from '@/types/api'
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limiter'
+import { authenticateRequest } from '@/lib/api-auth'
 
-// GET: List all collections for current user
-export async function GET() {
+/**
+ * GET /api/collections - List all collections for current user
+ * Supports both session auth and API key auth
+ * @returns Array of collections with source counts
+ */
+export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = await createRouteHandlerClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    // Support API key auth
+    const { userId } = await authenticateRequest(request)
 
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // Rate limiting - SEARCH limit for GET
+    const rateLimit = await checkRateLimit(userId, RATE_LIMITS.SEARCH)
+    if (rateLimit.isLimited) {
+      throw new RateLimitError(
+        `Too many requests. Please try again in ${rateLimit.retryAfter} seconds`,
+        rateLimit.retryAfter
+      )
     }
+
+    const supabase = await createRouteHandlerClient() as TypedSupabaseClient
 
     const { data: collections, error } = await supabase
       .from('collections')
@@ -18,12 +41,12 @@ export async function GET() {
         *,
         sources:collection_sources(count)
       `)
-      .eq('user_id', user.id as never)
+      .eq('user_id', userId)
       .order('created_at', { ascending: false })
 
     if (error) {
       console.error('Fetch collections error:', error)
-      return NextResponse.json({ error: 'Failed to fetch collections' }, { status: 500 })
+      throw new DatabaseError('Failed to retrieve collections. Please try again')
     }
 
     // Transform to include source count
@@ -34,34 +57,40 @@ export async function GET() {
     })) || []
 
     return NextResponse.json({
-      collections: collectionsWithCount,
-      total: collectionsWithCount.length,
+      success: true,
+      data: collectionsWithCount,
     })
   } catch (error) {
-    console.error('GET collections error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return handleAPIError(error)
   }
 }
 
-// POST: Create new collection
-export async function POST(request: NextRequest) {
+/**
+ * POST /api/collections - Create new collection
+ * @body CreateCollectionSchema - Collection data
+ * @returns Created collection object
+ */
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = await createRouteHandlerClient()
+    const supabase = await createRouteHandlerClient() as TypedSupabaseClient
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      throw new AuthenticationError('Please sign in to create a collection')
     }
 
-    const body: CreateCollectionRequest = await request.json()
-    const { name, description, is_public, collection_type, source_ids } = body
-
-    if (!name?.trim()) {
-      return NextResponse.json({ error: 'name required' }, { status: 400 })
+    // Rate limiting - DATA_MODIFICATION limit for POST
+    const rateLimit = await checkRateLimit(user.id, RATE_LIMITS.DATA_MODIFICATION)
+    if (rateLimit.isLimited) {
+      throw new RateLimitError(
+        `Too many modifications. Please try again in ${rateLimit.retryAfter} seconds`,
+        rateLimit.retryAfter
+      )
     }
+
+    // Validate request body
+    const validatedData = await validateRequestBody(request, createCollectionSchema)
+    const { name, description, is_public, collection_type, source_ids, metadata } = validatedData
 
     // Create collection
     const { data: collection, error: createError } = await supabase
@@ -71,14 +100,15 @@ export async function POST(request: NextRequest) {
         name: name.trim(),
         description: description?.trim() || null,
         is_public: is_public || false,
-        collection_type: collection_type || 'project',
-      } as any)
+        collection_type: collection_type || 'reading_list',
+        metadata: metadata || null,
+      } as never)
       .select()
       .single()
 
     if (createError || !collection) {
       console.error('Create collection error:', createError)
-      return NextResponse.json({ error: 'Failed to create collection' }, { status: 500 })
+      throw new DatabaseError('Failed to create collection. Please try again')
     }
 
     // Add sources if provided
@@ -91,7 +121,7 @@ export async function POST(request: NextRequest) {
 
       const { error: linkError } = await supabase
         .from('collection_sources')
-        .insert(sourceLinks as any)
+        .insert(sourceLinks as never)
 
       if (linkError) {
         console.error('Link sources error:', linkError)
@@ -101,10 +131,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ collection }, { status: 201 })
   } catch (error) {
-    console.error('POST collection error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return handleAPIError(error)
   }
 }
