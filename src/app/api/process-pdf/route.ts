@@ -4,7 +4,7 @@ import { createServerClient } from '@/lib/supabase/server'
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 import { getErrorMessage } from '@/types/api-types'
 
-const MAX_PDF_SIZE = 10 * 1024 * 1024 // 10MB
+const MAX_PDF_SIZE = 5 * 1024 * 1024 // 5MB (Vercel limit)
 
 export async function POST(request: NextRequest) {
   try {
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
 
     if (file.size > MAX_PDF_SIZE) {
       return NextResponse.json(
-        { error: 'PDF file size must be less than 10MB' },
+        { error: 'PDF file size must be less than 5MB' },
         { status: 400 }
       )
     }

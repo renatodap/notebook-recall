@@ -1,0 +1,14 @@
+{
+  "functions": {
+    "src/app/api/process-pdf/route.ts": {
+      "maxDuration": 60,
+      "memory": 1024
+    },
+    "src/app/api/summaries/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/embeddings/route.ts": {
+      "maxDuration": 60
+    }
+  }
+}
