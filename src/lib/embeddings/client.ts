@@ -1,7 +1,11 @@
 /**
  * Embedding Client
  *
- * Handles embedding generation via OpenAI API
+ * Handles embedding generation with intelligent provider selection:
+ * - Gemini (FREE tier - 1500/day) as primary
+ * - OpenAI ($0.13/M tokens) as automatic fallback
+ *
+ * Includes automatic retry, rate limiting, cost tracking, and normalization.
  */
 
 import {
@@ -10,21 +14,32 @@ import {
   BatchEmbeddingRequest,
   BatchEmbeddingResult,
   EmbeddingError,
-  RetryConfig,
   Embedding,
 } from './types';
-import { normalizeVector } from './utils';
+import { getGlobalEmbeddingProvider } from './provider';
 
 const MAX_TEXT_LENGTH = 8000;
-const DEFAULT_RETRY_CONFIG: RetryConfig = {
-  maxRetries: 3,
-  initialDelay: 1000,
-  maxDelay: 10000,
-  backoffMultiplier: 2,
-};
 
 /**
- * Generate embedding for a single text
+ * Generates a single embedding vector using intelligent provider selection
+ *
+ * Uses Gemini (FREE tier) as primary with automatic fallback to OpenAI.
+ * Automatically retries on failures and normalizes vectors by default.
+ *
+ * @param request - Embedding generation request with text and options
+ * @returns Promise resolving to embedding result with vector, model info, and token count
+ * @throws {EmbeddingError} If text is empty, too long, or API call fails
+ *
+ * @example
+ * const result = await generateEmbedding({
+ *   text: 'Machine learning is fascinating',
+ *   type: 'document',
+ *   normalize: true
+ * })
+ * console.log(result.embedding) // [0.1, -0.2, 0.3, ...]
+ * console.log(result.tokenCount) // 5
+ * console.log(result.provider) // 'gemini' or 'openai'
+ * console.log(result.cost) // 0.0 (if Gemini) or ~0.000001 (if OpenAI)
  */
 export async function generateEmbedding(
   request: EmbeddingGenerationRequest
@@ -41,58 +56,55 @@ export async function generateEmbedding(
     throw new EmbeddingError('Text cannot be empty', 'VALIDATION_ERROR');
   }
 
-  return withRetry(async () => {
-    try {
-      // Note: Anthropic doesn't have a direct embeddings endpoint
-      // We'll use OpenAI's API for embeddings instead
-      const response = await fetch('https://api.openai.com/v1/embeddings', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-        },
-        body: JSON.stringify({
-          input: request.text,
-          model: 'text-embedding-3-small',
-        }),
-      });
+  try {
+    // Use provider with intelligent routing and fallback
+    const provider = getGlobalEmbeddingProvider();
+    const result = await provider.generateEmbedding(request);
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error?.message || 'Failed to generate embedding');
-      }
-
-      const data = await response.json();
-      let embedding: Embedding = data.data[0].embedding;
-
-      // Normalize if requested
-      if (request.normalize !== false) {
-        embedding = normalizeVector(embedding);
-      }
-
-      return {
-        embedding,
-        model: 'text-embedding-3-small',
-        tokenCount: data.usage.total_tokens,
-        tokens: data.usage.total_tokens,
-      };
-    } catch (error) {
-      if (error instanceof EmbeddingError) {
-        throw error;
-      }
-
-      throw new EmbeddingError(
-        `Failed to generate embedding: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        'API_ERROR',
-        true,
-        error
-      );
+    return {
+      embedding: result.embedding,
+      model: result.model,
+      tokenCount: result.tokenCount,
+      tokens: result.tokens,
+      provider: result.provider,
+      cost: result.cost,
+      latency_ms: result.latency_ms,
+      fallbackUsed: result.fallbackUsed,
+    };
+  } catch (error) {
+    if (error instanceof EmbeddingError) {
+      throw error;
     }
-  }, DEFAULT_RETRY_CONFIG);
+
+    throw new EmbeddingError(
+      `Failed to generate embedding: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      'API_ERROR',
+      true,
+      error
+    );
+  }
 }
 
 /**
- * Generate embeddings for multiple texts in batch
+ * Generates embeddings for multiple texts in a batch operation
+ *
+ * Processes each text individually but returns aggregated results including
+ * success/failure counts and total token usage. Continues processing even
+ * if individual texts fail.
+ *
+ * @param request - Batch request with array of texts and options
+ * @returns Promise resolving to batch result with per-text embeddings and statistics
+ *
+ * @example
+ * const result = await generateEmbeddings({
+ *   texts: ['First text', 'Second text', 'Third text'],
+ *   type: 'document',
+ *   normalize: true
+ * })
+ * console.log(result.successful)  // 3
+ * console.log(result.failed)      // 0
+ * console.log(result.totalTokens) // 15
+ * console.log(result.results)     // Array of embeddings with indices
  */
 export async function generateEmbeddings(
   request: BatchEmbeddingRequest
@@ -137,7 +149,18 @@ export async function generateEmbeddings(
 }
 
 /**
- * Generate embedding from plain text (convenience method)
+ * Convenience method to generate embedding from plain text with sensible defaults
+ *
+ * Simplified interface that automatically uses 'query' type and enables normalization.
+ * Use this for quick embedding generation when you don't need detailed metadata.
+ *
+ * @param text - Text to generate embedding for (max 8000 characters)
+ * @returns Promise resolving to normalized embedding vector
+ * @throws {EmbeddingError} If text is invalid or API call fails
+ *
+ * @example
+ * const embedding = await embed('What is machine learning?')
+ * // Returns normalized vector ready for similarity search
  */
 export async function embed(text: string): Promise<Embedding> {
   const result = await generateEmbedding({
@@ -149,43 +172,3 @@ export async function embed(text: string): Promise<Embedding> {
   return result.embedding;
 }
 
-/**
- * Execute function with retry logic
- */
-async function withRetry<T>(
-  fn: () => Promise<T>,
-  config: RetryConfig = DEFAULT_RETRY_CONFIG
-): Promise<T> {
-  let lastError: unknown;
-
-  for (let attempt = 0; attempt <= config.maxRetries; attempt++) {
-    try {
-      return await fn();
-    } catch (error) {
-      lastError = error;
-
-      // Don't retry on validation errors
-      if (
-        error instanceof EmbeddingError &&
-        error.code === 'VALIDATION_ERROR'
-      ) {
-        throw error;
-      }
-
-      // Don't retry if this was the last attempt
-      if (attempt === config.maxRetries) {
-        break;
-      }
-
-      // Calculate delay with exponential backoff
-      const delay = Math.min(
-        config.initialDelay * Math.pow(config.backoffMultiplier, attempt),
-        config.maxDelay
-      );
-
-      await new Promise((resolve) => setTimeout(resolve, delay));
-    }
-  }
-
-  throw lastError;
-}

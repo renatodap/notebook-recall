@@ -1,26 +1,38 @@
 # 💰 Cost-Optimized AI Integration
 
-## 🎯 Intelligent Model Routing System
+## 🎯 Intelligent Multi-Provider AI System
 
-Your app now uses **THREE AI providers** with automatic routing to minimize costs while maintaining quality:
+Your app now uses **FOUR AI providers** with automatic routing to minimize costs while maintaining quality:
 
-1. **Groq** - Ultra-fast, ultra-cheap (98% cost savings)
-2. **OpenRouter** - Model diversity, fallback options (80%+ savings)
-3. **Anthropic Claude** - Reserved for complex reasoning only
+1. **Google Gemini** - FREE embeddings (1500/day) 🎉
+2. **Groq** - Ultra-fast, ultra-cheap (98% cost savings)
+3. **OpenRouter** - Model diversity, fallback options (80%+ savings)
+4. **Anthropic Claude** - Reserved for complex reasoning only
 
 ---
 
 ## 📊 Cost Comparison
 
-| Task Type | Old (Claude Only) | New (Optimized) | Savings |
-|-----------|------------------|-----------------|---------|
+| Task Type | Old (OpenAI/Claude) | New (Optimized) | Savings |
+|-----------|---------------------|-----------------|---------|
+| **Embeddings** | **$0.13/1M tokens** | **$0.00 (Gemini FREE)** | **🎉 100%** |
 | Quick Chat | $3.00/1M tokens | $0.05/1M (Groq) | **98.3%** |
 | Summarization | $3.00/1M | $0.59/1M (Groq 70B) | **80.3%** |
 | Function Calling | $3.00/1M | $0.05/1M (Groq) | **98.3%** |
 | Complex Reasoning | $3.00/1M | $0.50/1M (OpenRouter) | **83.3%** |
 | Batch Processing | $3.00/1M | $0.025/1M (Groq Batch) | **99.2%** |
 
-**Average Savings: 91%+**
+**Average Savings: 93%+ (100% on embeddings!)**
+
+### 💎 Embeddings Cost Breakdown
+
+- **1000 sources** with embeddings:
+  - Old (OpenAI): ~$0.65
+  - New (Gemini): **$0.00** ✨
+- **10,000 searches/month**:
+  - Old (OpenAI): ~$0.13
+  - New (Gemini): **$0.00** ✨
+- **Annual savings**: ~$94/year on embeddings alone
 
 ---
 

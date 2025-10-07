@@ -19,10 +19,10 @@ An AI-powered knowledge management system that ingests content from multiple sou
 - **Backend**: Next.js API Routes
 - **Database**: Supabase (PostgreSQL with pgvector)
 - **Authentication**: Supabase Auth
-- **AI**:
-  - Anthropic Claude API (Summaries, Analysis)
-  - Google Gemini (Embeddings - FREE tier, 1500/day)
-  - OpenAI (Embeddings fallback)
+- **AI** (Cost-optimized):
+  - **Anthropic Claude** (Summaries, Analysis) - $3-15/M tokens
+  - **Google Gemini** (Embeddings - **FREE tier**, 1500/day) 🎉
+  - **OpenAI** (Embeddings fallback) - $0.13/M tokens
 - **Content Processing**: Cheerio (URLs), pdf-parse (PDFs)
 - **Deployment**: Vercel-ready
 
