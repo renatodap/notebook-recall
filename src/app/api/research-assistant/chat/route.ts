@@ -72,14 +72,13 @@ export async function POST(request: NextRequest) {
 
     // Get collection-specific source IDs if collection is selected
     let collectionSourceIds: string[] | null = null
-    let collectionName = 'All Sources'
 
     if (collection_id) {
       try {
-        // Fetch collection to get name and verify ownership
+        // Fetch collection to verify ownership
         const { data: collection, error: collectionError } = await supabase
           .from('collections')
-          .select('id, name')
+          .select('id')
           .eq('id', collection_id)
           .eq('user_id', user.id as never)
           .single()
@@ -90,8 +89,6 @@ export async function POST(request: NextRequest) {
             { status: 404 }
           )
         }
-
-        collectionName = collection.name
 
         // Fetch source IDs from collection
         const { data: collectionSources, error: sourcesError } = await supabase
