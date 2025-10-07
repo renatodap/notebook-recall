@@ -3,6 +3,7 @@
  */
 
 import OpenAI from 'openai'
+import { retryAICall } from '@/lib/retry'
 
 let openRouterClient: OpenAI | null = null
 
@@ -47,28 +48,30 @@ export interface OpenRouterChatOptions {
 export async function openRouterChatCompletion(
   options: OpenRouterChatOptions
 ): Promise<string> {
-  const client = getOpenRouterClient()
+  return retryAICall(async () => {
+    const client = getOpenRouterClient()
 
-  const requestBody: any = {
-    model: options.model,
-    messages: options.messages,
-    temperature: options.temperature ?? 0.7,
-    max_tokens: options.max_tokens ?? 4000,
-    top_p: options.top_p ?? 1,
-    stream: false,
-  }
+    const requestBody: any = {
+      model: options.model,
+      messages: options.messages,
+      temperature: options.temperature ?? 0.7,
+      max_tokens: options.max_tokens ?? 4000,
+      top_p: options.top_p ?? 1,
+      stream: false,
+    }
 
-  // Add OpenRouter-specific params if provided
-  if (options.transforms) {
-    requestBody.transforms = options.transforms
-  }
-  if (options.route) {
-    requestBody.route = options.route
-  }
+    // Add OpenRouter-specific params if provided
+    if (options.transforms) {
+      requestBody.transforms = options.transforms
+    }
+    if (options.route) {
+      requestBody.route = options.route
+    }
 
-  const response = await client.chat.completions.create(requestBody)
+    const response = await client.chat.completions.create(requestBody)
 
-  return response.choices[0]?.message?.content || ''
+    return response.choices[0]?.message?.content || ''
+  })
 }
 
 /**
@@ -142,27 +145,29 @@ export async function openRouterFunctionCall(
   tools: OpenRouterTool[],
   model: string = 'anthropic/claude-3.5-sonnet'
 ): Promise<{ response: string; toolCalls: unknown[] }> {
-  const client = getOpenRouterClient()
+  return retryAICall(async () => {
+    const client = getOpenRouterClient()
 
-  const response = await client.chat.completions.create({
-    model,
-    messages,
-    tools: tools as any,
-    tool_choice: 'auto'
+    const response = await client.chat.completions.create({
+      model,
+      messages,
+      tools: tools as any,
+      tool_choice: 'auto'
+    })
+
+    const message = response.choices[0]?.message
+    const toolCalls = message?.tool_calls || []
+
+    return {
+      response: message?.content || '',
+      toolCalls: toolCalls.map((tc: any) => ({
+        name: tc.function.name,
+        arguments: typeof tc.function.arguments === 'string'
+          ? JSON.parse(tc.function.arguments)
+          : tc.function.arguments
+      }))
+    }
   })
-
-  const message = response.choices[0]?.message
-  const toolCalls = message?.tool_calls || []
-
-  return {
-    response: message?.content || '',
-    toolCalls: toolCalls.map((tc: any) => ({
-      name: tc.function.name,
-      arguments: typeof tc.function.arguments === 'string'
-        ? JSON.parse(tc.function.arguments)
-        : tc.function.arguments
-    }))
-  }
 }
 
 /**
@@ -175,12 +180,14 @@ export async function openRouterMultimodal(
   }>,
   model: string = 'anthropic/claude-3.5-sonnet'
 ): Promise<string> {
-  const client = getOpenRouterClient()
+  return retryAICall(async () => {
+    const client = getOpenRouterClient()
 
-  const response = await client.chat.completions.create({
-    model,
-    messages: messages as any
+    const response = await client.chat.completions.create({
+      model,
+      messages: messages as any
+    })
+
+    return response.choices[0]?.message?.content || ''
   })
-
-  return response.choices[0]?.message?.content || ''
 }

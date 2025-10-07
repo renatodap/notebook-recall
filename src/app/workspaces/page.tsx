@@ -3,6 +3,15 @@ import { redirect } from 'next/navigation'
 import WorkspacesClient from '@/components/workspaces/WorkspacesClient'
 import Link from 'next/link'
 import Button from '@/components/ui/Button'
+import { generateMetadata as generateMeta } from '@/lib/metadata'
+
+export const metadata = generateMeta({
+  title: 'Workspaces',
+  description: 'Collaborate with your team on research projects. Create and manage shared workspaces for knowledge collaboration.',
+  keywords: ['workspaces', 'team collaboration', 'shared research', 'collaborative knowledge'],
+  path: '/workspaces',
+  noIndex: true,
+})
 
 export const dynamic = 'force-dynamic'
 

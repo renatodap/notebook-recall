@@ -3,6 +3,9 @@ import { createRouteHandlerClient } from '@/lib/supabase/server'
 import { fetchCitationMetadata } from '@/lib/citations/fetchers'
 import { formatAllCitations } from '@/lib/citations/formatters'
 import type { FetchCitationRequest } from '@/types'
+import { DatabaseSource } from '@/types/api'
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limiter'
+import { RateLimitError } from '@/lib/errors/custom-errors'
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,6 +14,14 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const rateLimit = await checkRateLimit(user.id, RATE_LIMITS.SEARCH)
+    if (rateLimit.isLimited) {
+      throw new RateLimitError(
+        `Too many requests. Please try again in ${rateLimit.retryAfter} seconds`,
+        rateLimit.retryAfter
+      )
     }
 
     const body: FetchCitationRequest = await request.json()
@@ -43,7 +54,7 @@ export async function POST(request: NextRequest) {
         .from('sources')
         .select('id')
         .eq('id', source_id as never)
-        .eq('user_id', user.id as never)
+        .eq('user_id', user.id)
         .single()
 
       if (!source) {

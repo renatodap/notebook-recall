@@ -3,6 +3,42 @@ import { Card, CardBody } from '@/components/ui/Card'
 import Link from 'next/link'
 import Button from '@/components/ui/Button'
 import FollowButton from '@/components/social/FollowButton'
+import { generateMetadata as generateMeta } from '@/lib/metadata'
+
+export async function generateMetadata({ params }: { params: Promise<{ userId: string }> }) {
+  const { userId } = await params
+
+  try {
+    const profileRes = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/profiles/${userId}`, {
+      cache: 'no-store'
+    })
+
+    if (!profileRes.ok) {
+      return generateMeta({
+        title: 'Profile Not Found',
+        description: 'This profile is private or doesn\'t exist.',
+        path: '/profile',
+        noIndex: true,
+      })
+    }
+
+    const { profile } = await profileRes.json()
+
+    return generateMeta({
+      title: `${profile.display_name || 'Researcher'} - Profile`,
+      description: profile.bio || `View ${profile.display_name || 'researcher'}\'s public research and knowledge contributions.`,
+      keywords: ['researcher profile', 'public research', profile.display_name, ...(profile.research_interests || [])],
+      path: `/profile/${userId}`,
+    })
+  } catch (error) {
+    return generateMeta({
+      title: 'Profile',
+      description: 'View researcher profile and public knowledge.',
+      path: '/profile',
+      noIndex: true,
+    })
+  }
+}
 
 export const dynamic = 'force-dynamic'
 

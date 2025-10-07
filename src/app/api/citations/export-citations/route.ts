@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
 import { formatBibliography } from '@/lib/citations/formatters'
 import type { CitationFormat } from '@/types'
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limiter'
+import { RateLimitError } from '@/lib/errors/custom-errors'
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,6 +12,15 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Check rate limit
+    const rateLimit = await checkRateLimit(user.id, RATE_LIMITS.EXPORT)
+    if (rateLimit.isLimited) {
+      throw new RateLimitError(
+        `Too many requests. Please try again in ${rateLimit.retryAfter} seconds`,
+        rateLimit.retryAfter
+      )
     }
 
     const body = await request.json()

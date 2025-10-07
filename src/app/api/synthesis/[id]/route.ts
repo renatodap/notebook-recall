@@ -1,23 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
+import { ResourceIdParamSchema } from '@/lib/validation/schemas'
+import {
+  AuthenticationError,
+  AuthorizationError,
+  NotFoundError,
+  ValidationError,
+  handleAPIError,
+} from '@/lib/errors/custom-errors'
+import type { TypedSupabaseClient } from '@/types/supabase-helpers'
 
-// GET: Get synthesis report details
+// GET: Get synthesis report details with validation
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) {
+): Promise<NextResponse> {
   try {
-    const supabase = await createRouteHandlerClient()
+    const supabase = await createRouteHandlerClient() as TypedSupabaseClient
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      throw new AuthenticationError('Please sign in to view synthesis reports')
     }
 
-    const { id: reportId } = await params
+    const resolvedParams = await params
+    const validation = ResourceIdParamSchema.safeParse(resolvedParams)
+    if (!validation.success) {
+      throw new ValidationError('Invalid synthesis report ID format')
+    }
+
+    const { id: reportId } = validation.data
 
     // Fetch report with linked sources
-    const { data: report, error } = await (supabase as any)
+    const { data: report, error } = await supabase
       .from('synthesis_reports')
       .select(`
         *,
@@ -35,76 +50,80 @@ export async function GET(
 
     if (error) {
       console.error('Fetch synthesis report error:', error)
-      return NextResponse.json({ error: 'Report not found' }, { status: 404 })
+      throw new NotFoundError('Synthesis report not found')
     }
 
     // Check ownership
-    if (report.user_id !== user.id) {
-      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+    if ((report as any).user_id !== user.id) {
+      throw new AuthorizationError('You do not have permission to view this synthesis report')
     }
 
     // Transform sources
-    const sources = report.synthesis_sources?.map((ss: any) => ss.source) || []
+    const sources = (report as any).synthesis_sources?.map((ss: any) => ss.source) || []
 
     return NextResponse.json({
       report: {
-        ...report,
+        ...(report as any),
         sources,
         synthesis_sources: undefined,
       },
     })
   } catch (error) {
     console.error('GET synthesis report error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return handleAPIError(error)
   }
 }
 
-// DELETE: Delete synthesis report
+// DELETE: Delete synthesis report with validation
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) {
+): Promise<NextResponse> {
   try {
-    const supabase = await createRouteHandlerClient()
+    const supabase = await createRouteHandlerClient() as TypedSupabaseClient
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      throw new AuthenticationError('Please sign in to delete synthesis reports')
     }
 
-    const { id: reportId } = await params
+    const resolvedParams = await params
+    const validation = ResourceIdParamSchema.safeParse(resolvedParams)
+    if (!validation.success) {
+      throw new ValidationError('Invalid synthesis report ID format')
+    }
+
+    const { id: reportId } = validation.data
 
     // Verify ownership
-    const { data: report } = await (supabase as any)
+    const { data: report } = await supabase
       .from('synthesis_reports')
       .select('user_id')
       .eq('id', reportId)
       .single()
 
-    if (!report || report.user_id !== user.id) {
-      return NextResponse.json({ error: 'Report not found or access denied' }, { status: 404 })
+    if (!report) {
+      throw new NotFoundError('Synthesis report not found')
+    }
+
+    if ((report as any).user_id !== user.id) {
+      throw new AuthorizationError('You do not have permission to delete this synthesis report')
     }
 
     // Delete (will cascade to synthesis_sources)
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from('synthesis_reports')
       .delete()
       .eq('id', reportId)
 
     if (error) {
       console.error('Delete synthesis report error:', error)
-      return NextResponse.json({ error: 'Failed to delete report' }, { status: 500 })
+      throw new Error('Failed to delete synthesis report')
     }
 
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('DELETE synthesis report error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return handleAPIError(error)
   }
 }

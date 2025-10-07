@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import MobileNav from '@/components/MobileNav'
+import AIDisclaimer from '@/components/AIDisclaimer'
+import { showError, showSuccess, showInfo } from '@/lib/toast'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -111,7 +113,7 @@ export default function ChatPage() {
       }
     } catch (error) {
       console.error('Failed to send message:', error)
-      alert('Failed to send message')
+      showError('Failed to send message. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -151,7 +153,7 @@ export default function ChatPage() {
       })
 
       // Update UI to show feedback was recorded
-      alert(wasHelpful ? 'Thanks for the positive feedback!' : 'Thanks for the feedback! We\'ll improve.')
+      showSuccess(wasHelpful ? 'Thanks for the positive feedback!' : 'Thanks for the feedback! We\'ll improve.')
     } catch (error) {
       console.error('Failed to submit feedback:', error)
     }
@@ -168,6 +170,9 @@ export default function ChatPage() {
             ← Dashboard
           </Link>
         </div>
+
+        {/* AI Information Disclaimer */}
+        <AIDisclaimer variant="full" className="mb-6" />
 
         {/* Collection Selector */}
         <div className="mb-6 bg-white rounded-lg shadow p-4">
@@ -369,12 +374,13 @@ export default function ChatPage() {
                 ))}
                 {loading && (
                   <div className="flex justify-start">
-                    <div className="bg-gray-100 p-4 rounded-lg">
-                      <div className="flex gap-2">
+                    <div className="bg-gray-100 p-4 rounded-lg" role="status" aria-live="polite" aria-label="AI is thinking">
+                      <div className="flex gap-2" aria-hidden="true">
                         <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
                         <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
                         <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
                       </div>
+                      <span className="sr-only">AI is generating a response, please wait</span>
                     </div>
                   </div>
                 )}
@@ -398,6 +404,8 @@ export default function ChatPage() {
                 onClick={sendMessage}
                 disabled={loading || !input.trim()}
                 className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-busy={loading}
+                aria-label={loading ? 'Sending message' : 'Send message'}
               >
                 Send
               </button>

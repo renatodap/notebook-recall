@@ -33,7 +33,10 @@ export default function AnalyticsPage() {
       <div className="min-h-screen bg-gray-50 pb-20 md:pb-0 md:pl-64">
         <MobileNav />
         <div className="container mx-auto px-4 py-8">
-          <p>Loading analytics...</p>
+          <div role="status" aria-live="polite" aria-label="Loading analytics data">
+            <p>Loading analytics...</p>
+            <span className="sr-only">Loading analytics data, please wait</span>
+          </div>
         </div>
       </div>
     )

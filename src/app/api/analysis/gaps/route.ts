@@ -1,21 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
 import { analyzeResearchGaps } from '@/lib/analysis/gap-analyzer'
+import {
+  AuthenticationError,
+  ValidationError,
+  RateLimitError,
+  handleAPIError,
+} from '@/lib/errors/custom-errors'
+import type { TypedSupabaseClient } from '@/types/supabase-helpers'
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limiter'
 
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = await createRouteHandlerClient()
+    const supabase = await createRouteHandlerClient() as TypedSupabaseClient
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      throw new AuthenticationError('Please sign in to analyze research gaps')
+    }
+
+    const rateLimit = await checkRateLimit(user.id, RATE_LIMITS.AI_ANALYSIS)
+    if (rateLimit.isLimited) {
+      throw new RateLimitError(
+        `Too many requests. Please try again in ${rateLimit.retryAfter} seconds`,
+        rateLimit.retryAfter
+      )
     }
 
     const body = await request.json()
     const { source_ids, focus } = body
 
     if (!source_ids || source_ids.length < 2) {
-      return NextResponse.json({ error: 'At least 2 sources required' }, { status: 400 })
+      throw new ValidationError('At least 2 sources required for gap analysis')
     }
 
     // Verify user owns all sources
@@ -30,14 +46,14 @@ export async function POST(request: NextRequest) {
         )
       `)
       .in('id', source_ids)
-      .eq('user_id', user.id as never)
+      .eq('user_id', user.id)
 
     if (sourcesError || !sources || sources.length < 2) {
-      return NextResponse.json({ error: 'Sources not found or access denied' }, { status: 404 })
+      throw new ValidationError('Sources not found or access denied. Please ensure you own all selected sources.')
     }
 
     // Prepare sources for analysis
-    const sourcesForAnalysis = (sources as any[]).map((s: any) => ({
+    const sourcesForAnalysis = sources.map((s: any) => ({
       id: s.id,
       title: s.title,
       summary: s.summaries?.[0]?.summary_text || '',
@@ -47,7 +63,7 @@ export async function POST(request: NextRequest) {
     // Analyze gaps using AI
     const anthropicKey = process.env.ANTHROPIC_API_KEY
     if (!anthropicKey) {
-      return NextResponse.json({ error: 'AI service not configured' }, { status: 500 })
+      throw new Error('AI service not configured')
     }
 
     const analysis = await analyzeResearchGaps(
@@ -69,7 +85,7 @@ export async function POST(request: NextRequest) {
         identified_gaps: analysis.identified_gaps,
         recommendations: analysis.recommendations,
         future_directions: analysis.future_directions,
-      } as any)
+      } as never)
       .select()
       .single()
 
@@ -84,27 +100,24 @@ export async function POST(request: NextRequest) {
     }, { status: 201 })
   } catch (error) {
     console.error('Gap analysis error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return handleAPIError(error)
   }
 }
 
 // GET: List all gap analyses for current user
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
-    const supabase = await createRouteHandlerClient()
+    const supabase = await createRouteHandlerClient() as TypedSupabaseClient
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      throw new AuthenticationError('Please sign in to view gap analyses')
     }
 
     const { data: analyses, error } = await supabase
       .from('research_gap_analyses')
       .select('id, focus, total_gaps, created_at, source_ids')
-      .eq('user_id', user.id as never)
+      .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(20)
 
@@ -119,9 +132,6 @@ export async function GET() {
     })
   } catch (error) {
     console.error('GET gap analyses error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return handleAPIError(error)
   }
 }

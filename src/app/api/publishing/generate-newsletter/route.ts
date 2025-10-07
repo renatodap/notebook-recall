@@ -1,29 +1,52 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
 import { generateNewsletter, wrapNewsletterHTML } from '@/lib/publishing/newsletter-generator'
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limiter'
+import { GenerateNewsletterRequestSchema } from '@/lib/validation/schemas'
+import {
+  RateLimitError,
+  AuthenticationError,
+  ValidationError,
+  NotFoundError,
+  handleAPIError,
+} from '@/lib/errors/custom-errors'
+import type { TypedSupabaseClient } from '@/types/supabase-helpers'
+import type { DatabaseSource } from '@/types/api'
 
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = await createRouteHandlerClient()
+    const supabase = await createRouteHandlerClient() as TypedSupabaseClient
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      throw new AuthenticationError('Please sign in to generate newsletters')
     }
 
+    // Rate limiting check
+    const rateLimit = await checkRateLimit(user.id, RATE_LIMITS.AI_PUBLISHING)
+    if (rateLimit.isLimited) {
+      throw new RateLimitError(
+        `You have reached your daily limit of ${RATE_LIMITS.AI_PUBLISHING.maxRequests} publishing requests. Please try again in ${rateLimit.retryAfter} seconds`,
+        rateLimit.retryAfter
+      )
+    }
+
+    // Validate request body
     const body = await request.json()
+    const validation = GenerateNewsletterRequestSchema.safeParse(body)
+
+    if (!validation.success) {
+      throw new ValidationError(validation.error.issues[0].message)
+    }
+
     const {
       source_ids,
-      newsletter_name = 'Research Digest',
+      newsletter_name,
       theme,
       sections,
-      tone = 'professional',
-      format = 'html',
-    } = body
-
-    if (!source_ids || source_ids.length === 0) {
-      return NextResponse.json({ error: 'source_ids required' }, { status: 400 })
-    }
+      tone,
+      format,
+    } = validation.data
 
     // Verify user owns all sources
     const { data: sources, error: sourcesError } = await supabase
@@ -36,11 +59,11 @@ export async function POST(request: NextRequest) {
           key_topics
         )
       `)
-      .in('id', source_ids as any)
-      .eq('user_id', user.id as never)
+      .in('id', source_ids)
+      .eq('user_id', user.id)
 
     if (sourcesError || !sources || sources.length === 0) {
-      return NextResponse.json({ error: 'Sources not found or access denied' }, { status: 404 })
+      throw new NotFoundError('Sources not found or access denied')
     }
 
     // Prepare sources for newsletter generation
@@ -54,7 +77,7 @@ export async function POST(request: NextRequest) {
     // Generate newsletter using AI
     const anthropicKey = process.env.ANTHROPIC_API_KEY
     if (!anthropicKey) {
-      return NextResponse.json({ error: 'AI service not configured' }, { status: 500 })
+      throw new Error('AI service not configured')
     }
 
     const newsletter = await generateNewsletter(
@@ -65,7 +88,7 @@ export async function POST(request: NextRequest) {
         sections,
         tone,
         format,
-      },
+      } as any,
       anthropicKey
     )
 
@@ -91,13 +114,13 @@ export async function POST(request: NextRequest) {
           format,
         },
         status: 'draft',
-      } as any)
+      } as never)
       .select()
       .single()
 
     if (outputError) {
       console.error('Save output error:', outputError)
-      return NextResponse.json({ error: 'Failed to save newsletter' }, { status: 500 })
+      throw new Error('Failed to save newsletter')
     }
 
     // Link sources to output
@@ -108,14 +131,18 @@ export async function POST(request: NextRequest) {
 
     await supabase
       .from('output_sources')
-      .insert(links as any)
+      .insert(links as never)
 
-    return NextResponse.json({ output, newsletter }, { status: 201 })
+    return NextResponse.json({ output, newsletter }, {
+      status: 201,
+      headers: {
+        'X-RateLimit-Limit': RATE_LIMITS.AI_PUBLISHING.maxRequests.toString(),
+        'X-RateLimit-Remaining': rateLimit.remaining.toString(),
+        'X-RateLimit-Reset': new Date(rateLimit.resetTime).toISOString(),
+      }
+    })
   } catch (error) {
     console.error('Newsletter generation error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return handleAPIError(error)
   }
 }

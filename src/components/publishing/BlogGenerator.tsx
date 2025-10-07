@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import AIDisclaimer from '../AIDisclaimer'
 
 interface BlogGeneratorProps {
   sourceIds: string[]
@@ -80,6 +81,8 @@ export default function BlogGenerator({ sourceIds, onClose }: BlogGeneratorProps
               Generate an AI-powered blog post from {sourceIds.length} source{sourceIds.length !== 1 ? 's' : ''}
             </p>
           </div>
+
+          <AIDisclaimer variant="full" />
 
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">

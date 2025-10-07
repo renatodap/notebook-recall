@@ -6,18 +6,22 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/lib/supabase/server';
-import { z } from 'zod';
+import { BulkTagSchema } from '@/lib/validation/schemas';
+import {
+  AuthenticationError,
+  NotFoundError,
+  ValidationError,
+  RateLimitError,
+  handleAPIError,
+} from '@/lib/errors/custom-errors';
+import type { TypedSupabaseClient } from '@/types/supabase-helpers';
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limiter';
 
 export const dynamic = 'force-dynamic';
 
-const BulkTagSchema = z.object({
-  source_ids: z.array(z.string().uuid()).min(1, 'At least one source ID required'),
-  tags: z.array(z.string()).min(1, 'At least one tag required'),
-});
-
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = await createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient() as TypedSupabaseClient;
 
     // Check authentication
     const {
@@ -25,7 +29,16 @@ export async function POST(request: NextRequest) {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      throw new AuthenticationError('Please sign in to add tags');
+    }
+
+    // Check rate limit
+    const rateLimit = await checkRateLimit(user.id, RATE_LIMITS.DATA_MODIFICATION);
+    if (rateLimit.isLimited) {
+      throw new RateLimitError(
+        `Too many requests. Please try again in ${rateLimit.retryAfter} seconds`,
+        rateLimit.retryAfter
+      );
     }
 
     // Parse and validate request
@@ -33,10 +46,7 @@ export async function POST(request: NextRequest) {
     const validation = BulkTagSchema.safeParse(body);
 
     if (!validation.success) {
-      return NextResponse.json(
-        { error: validation.error.issues[0].message },
-        { status: 400 }
-      );
+      throw new ValidationError(validation.error.issues[0].message);
     }
 
     const { source_ids, tags } = validation.data;
@@ -45,23 +55,21 @@ export async function POST(request: NextRequest) {
     const normalizedTags = tags.map((tag) => tag.toLowerCase().trim());
 
     // Verify all sources belong to the user
-    const { data: sources, error: fetchError } = await (supabase as any)
+    const { data: sources, error: fetchError } = await supabase
       .from('sources')
       .select('id')
       .in('id', source_ids)
-      .eq('user_id', user.id as never);
+      .eq('user_id', user.id);
 
     if (fetchError) {
-      throw fetchError;
+      console.error('Fetch sources error:', fetchError);
+      throw new Error('Failed to verify source ownership');
     }
 
     const validSourceIds = sources?.map((s: any) => s.id) || [];
 
     if (validSourceIds.length === 0) {
-      return NextResponse.json(
-        { error: 'No valid sources found' },
-        { status: 404 }
-      );
+      throw new NotFoundError('No valid sources found');
     }
 
     // Get existing tags to avoid duplicates
@@ -71,7 +79,8 @@ export async function POST(request: NextRequest) {
       .in('source_id', validSourceIds);
 
     if (existingError) {
-      throw existingError;
+      console.error('Fetch existing tags error:', existingError);
+      throw new Error('Failed to fetch existing tags');
     }
 
     // Build set of existing tag combinations
@@ -103,12 +112,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Insert new tags
-    const { error: insertError } = await (supabase as any)
+    const { error: insertError } = await supabase
       .from('tags')
-      .insert(newTags);
+      .insert(newTags as never);
 
     if (insertError) {
-      throw insertError;
+      console.error('Insert tags error:', insertError);
+      throw new Error('Failed to add tags');
     }
 
     return NextResponse.json({
@@ -118,9 +128,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Bulk tag error:', error);
-    return NextResponse.json(
-      { error: 'Failed to add tags' },
-      { status: 500 }
-    );
+    return handleAPIError(error);
   }
 }

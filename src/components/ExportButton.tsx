@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Button from './ui/Button'
+import { showError } from '@/lib/toast'
 
 interface ExportButtonProps {
   sourceIds?: string[]
@@ -44,7 +45,7 @@ export default function ExportButton({ sourceIds, className }: ExportButtonProps
       window.URL.revokeObjectURL(downloadUrl)
     } catch (error) {
       console.error('Export error:', error)
-      alert('Failed to export sources. Please try again.')
+      showError('Failed to export sources. Please try again.')
     } finally {
       setIsExporting(false)
     }
@@ -56,6 +57,9 @@ export default function ExportButton({ sourceIds, className }: ExportButtonProps
         onClick={() => setShowMenu(!showMenu)}
         disabled={isExporting}
         variant="secondary"
+        aria-label="Export sources"
+        aria-expanded={showMenu}
+        aria-haspopup="menu"
       >
         {isExporting ? 'Exporting...' : '📥 Export'}
       </Button>
@@ -66,22 +70,31 @@ export default function ExportButton({ sourceIds, className }: ExportButtonProps
           <div
             className="fixed inset-0 z-10"
             onClick={() => setShowMenu(false)}
+            aria-hidden="true"
           />
 
           {/* Menu */}
-          <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+          <div
+            className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20"
+            role="menu"
+            aria-label="Export format options"
+          >
             <button
               onClick={() => handleExport('markdown')}
               className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+              role="menuitem"
+              aria-label="Export as Markdown"
             >
-              <span>📄</span>
+              <span aria-hidden="true">📄</span>
               <span>Export as Markdown</span>
             </button>
             <button
               onClick={() => handleExport('json')}
               className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+              role="menuitem"
+              aria-label="Export as JSON"
             >
-              <span>📊</span>
+              <span aria-hidden="true">📊</span>
               <span>Export as JSON</span>
             </button>
           </div>

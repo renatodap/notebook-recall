@@ -1,14 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
+import { AuthenticationError, RateLimitError, handleAPIError } from '@/lib/errors/custom-errors'
+import type { TypedSupabaseClient } from '@/types/supabase-helpers'
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limiter'
 
-// GET: Get timeline of sources
-export async function GET(request: NextRequest) {
+/**
+ * GET /api/timeline - Get timeline of sources grouped by period
+ * Query params:
+ *   - group_by: 'day' | 'week' | 'month' | 'year' (default: 'month')
+ */
+export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = await createRouteHandlerClient()
+    const supabase = await createRouteHandlerClient() as TypedSupabaseClient
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      throw new AuthenticationError('Please sign in to view timeline')
+    }
+
+    // Rate limiting - SEARCH limit for GET
+    const rateLimit = await checkRateLimit(user.id, RATE_LIMITS.SEARCH)
+    if (rateLimit.isLimited) {
+      throw new RateLimitError(
+        `Too many requests. Please try again in ${rateLimit.retryAfter} seconds`,
+        rateLimit.retryAfter
+      )
     }
 
     const { searchParams } = new URL(request.url)
@@ -18,12 +34,12 @@ export async function GET(request: NextRequest) {
     const { data: sources, error } = await supabase
       .from('sources')
       .select('id, title, content_type, created_at')
-      .eq('user_id', user.id as never)
+      .eq('user_id', user.id)
       .order('created_at', { ascending: true })
 
     if (error) {
       console.error('Fetch sources error:', error)
-      return NextResponse.json({ error: 'Failed to fetch sources' }, { status: 500 })
+      throw new Error('Failed to fetch sources')
     }
 
     // Group sources by time period
@@ -74,6 +90,6 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('GET timeline error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return handleAPIError(error)
   }
 }

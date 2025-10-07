@@ -2,6 +2,8 @@
  * AI-powered contradiction detection across sources
  */
 
+import { retryAICall } from '@/lib/retry'
+
 export interface ContradictionAnalysis {
   source_a_id: string
   source_b_id: string
@@ -51,25 +53,28 @@ Return a JSON array:
 
 Return an empty array [] if no contradictions found.`
 
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 4000,
-      messages: [{ role: 'user', content: prompt }],
-    }),
+  const data = await retryAICall(async () => {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 4000,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    })
+
+    if (!response.ok) {
+      throw new Error(`Claude API error: ${await response.text()}`)
+    }
+
+    return response.json()
   })
 
-  if (!response.ok) {
-    throw new Error(`Claude API error: ${await response.text()}`)
-  }
-
-  const data = await response.json()
   const content = data.content[0].text
 
   try {

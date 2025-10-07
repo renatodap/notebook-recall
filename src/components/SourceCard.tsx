@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Card, CardBody } from './ui/Card'
 import { Source, Summary, Tag, Collection } from '@/types'
+import AIDisclaimer from './AIDisclaimer'
 
 interface SourceCardProps {
   source: Source & { summary: Summary[]; tags: Tag[]; collections?: Collection[] }
@@ -71,9 +72,12 @@ export default function SourceCard({
               </div>
 
               {summary && (
-                <p className="text-sm text-gray-600 line-clamp-3 mb-3">
-                  {summary.summary_text}
-                </p>
+                <div className="mb-3 space-y-2">
+                  <p className="text-sm text-gray-600 line-clamp-3">
+                    {summary.summary_text}
+                  </p>
+                  <AIDisclaimer variant="inline" />
+                </div>
               )}
 
               {/* Collection badges */}

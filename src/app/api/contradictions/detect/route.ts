@@ -1,22 +1,44 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
 import { detectAllContradictions, groupContradictionsByTopic, getContradictionStats } from '@/lib/contradictions/detector'
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limiter'
+import { DetectContradictionsSchema } from '@/lib/validation/schemas'
+import {
+  RateLimitError,
+  AuthenticationError,
+  NotFoundError,
+  ValidationError,
+  handleAPIError,
+} from '@/lib/errors/custom-errors'
+import type { TypedSupabaseClient } from '@/types/supabase-helpers'
 
-export async function POST(request: NextRequest) {
+// POST: Detect contradictions between sources
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = await createRouteHandlerClient()
+    const supabase = await createRouteHandlerClient() as TypedSupabaseClient
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      throw new AuthenticationError('Please sign in to detect contradictions')
     }
 
+    // Rate limiting check
+    const rateLimit = await checkRateLimit(user.id, RATE_LIMITS.AI_CONTRADICTIONS)
+    if (rateLimit.isLimited) {
+      throw new RateLimitError(
+        `You have reached your daily limit of ${RATE_LIMITS.AI_CONTRADICTIONS.maxRequests} contradiction detections. Please try again in ${rateLimit.retryAfter} seconds`,
+        rateLimit.retryAfter
+      )
+    }
+
+    // Validate request body
     const body = await request.json()
-    const { source_ids, min_confidence = 0.6 } = body
-
-    if (!source_ids || source_ids.length < 2) {
-      return NextResponse.json({ error: 'At least 2 sources required' }, { status: 400 })
+    const validation = DetectContradictionsSchema.safeParse(body)
+    if (!validation.success) {
+      throw new ValidationError(validation.error.issues[0].message)
     }
+
+    const { source_ids, threshold } = validation.data
 
     // Verify user owns all sources
     const { data: sources, error: sourcesError } = await supabase
@@ -29,10 +51,10 @@ export async function POST(request: NextRequest) {
         )
       `)
       .in('id', source_ids)
-      .eq('user_id', user.id as never)
+      .eq('user_id', user.id)
 
     if (sourcesError || !sources || sources.length < 2) {
-      return NextResponse.json({ error: 'Sources not found or access denied' }, { status: 404 })
+      throw new NotFoundError('At least 2 sources are required and must be accessible')
     }
 
     // Prepare sources for analysis
@@ -45,13 +67,13 @@ export async function POST(request: NextRequest) {
     // Detect contradictions using AI
     const anthropicKey = process.env.ANTHROPIC_API_KEY
     if (!anthropicKey) {
-      return NextResponse.json({ error: 'AI service not configured' }, { status: 500 })
+      throw new Error('AI service not configured')
     }
 
     const contradictions = await detectAllContradictions(
       sourcesForAnalysis,
       anthropicKey,
-      min_confidence
+      threshold
     )
 
     // Save contradictions to database
@@ -71,7 +93,7 @@ export async function POST(request: NextRequest) {
 
       await supabase
         .from('contradictions')
-        .insert(contradictionsToInsert as any)
+        .insert(contradictionsToInsert as never)
     }
 
     // Group and analyze
@@ -83,12 +105,16 @@ export async function POST(request: NextRequest) {
       grouped,
       stats,
       total: contradictions.length,
-    }, { status: 201 })
+    }, {
+      status: 201,
+      headers: {
+        'X-RateLimit-Limit': RATE_LIMITS.AI_CONTRADICTIONS.maxRequests.toString(),
+        'X-RateLimit-Remaining': rateLimit.remaining.toString(),
+        'X-RateLimit-Reset': new Date(rateLimit.resetTime).toISOString(),
+      }
+    })
   } catch (error) {
     console.error('Contradiction detection error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return handleAPIError(error)
   }
 }

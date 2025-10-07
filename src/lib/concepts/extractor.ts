@@ -1,22 +1,53 @@
-// Extract key concepts from source content using AI
-import { generateEmbedding } from '../embeddings/client'
+/**
+ * Concept Extraction - Extract key concepts from source content using AI
+ *
+ * COST OPTIMIZATION: Now uses Groq Llama 3.3 70B ($0.59/M tokens) instead of
+ * Claude Haiku ($0.80/M tokens) for ~26% cost savings while maintaining quality.
+ */
 
+import { generateEmbedding } from '../embeddings/client'
+import { quickChat } from '@/lib/ai-router/unified-client'
+import { TaskType } from '@/lib/ai-router/index'
+import { unifiedChatCompletion } from '@/lib/ai-router/unified-client'
+
+/**
+ * Extracted concept with relevance score
+ */
 export interface ExtractedConcept {
+  /** Concept name (1-3 words) */
   name: string
-  relevance: number // 0-1
+  /** Relevance score from 0-1 (how central is this concept) */
+  relevance: number
+  /** Brief context where this concept appears */
   context?: string
 }
 
 /**
- * Extract concepts from text using Claude
+ * Extracts key concepts from text using cost-optimized AI routing
+ *
+ * Uses Groq Llama 3.3 70B for concept extraction to reduce costs by 26%
+ * compared to Claude Haiku while maintaining high quality results.
+ *
+ * @param text - Text content to analyze (truncated to 3000 chars)
+ * @param apiKey - DEPRECATED: No longer needed, kept for backward compatibility
+ * @param maxConcepts - Maximum number of concepts to extract (default: 10)
+ * @returns Promise resolving to array of extracted concepts with relevance scores
+ *
+ * @example
+ * const concepts = await extractConcepts(
+ *   'Research paper about machine learning...',
+ *   '', // apiKey no longer used
+ *   10
+ * )
+ * // Returns: [{ name: 'machine learning', relevance: 0.95, context: '...' }, ...]
  */
 export async function extractConcepts(
   text: string,
-  apiKey: string,
+  apiKey: string, // Kept for backward compatibility but not used
   maxConcepts: number = 10
 ): Promise<ExtractedConcept[]> {
   try {
-    const prompt = `Extract the ${maxConcepts} most important concepts, themes, or topics from this text.
+      const prompt = `Extract the ${maxConcepts} most important concepts, themes, or topics from this text.
 Focus on:
 - Key theoretical frameworks
 - Important methodologies
@@ -40,39 +71,31 @@ Respond in JSON format:
 
 Keep concept names concise (1-3 words). Relevance should be 0-1 (how central is this concept).`
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-3-haiku-20240307',
+      // Use unified AI router with SUMMARIZATION task type for cost optimization
+      const response = await unifiedChatCompletion({
+        messages: [
+          { role: 'user', content: prompt }
+        ],
+        taskType: TaskType.SUMMARIZATION, // Uses Groq Llama 3.3 70B at $0.59/M
         max_tokens: 1000,
-        messages: [{ role: 'user', content: prompt }],
-      }),
-    })
+        temperature: 0.3,
+        budget: 'low'
+      })
 
-    if (!response.ok) {
-      throw new Error('Failed to extract concepts')
-    }
+      const content = response.content
 
-    const data = await response.json()
-    const content = data.content?.[0]?.text
+      if (!content) {
+        throw new Error('No content in response')
+      }
 
-    if (!content) {
-      throw new Error('No content in response')
-    }
+      // Extract JSON from response
+      const jsonMatch = content.match(/\{[\s\S]*\}/)
+      if (!jsonMatch) {
+        throw new Error('Could not parse JSON')
+      }
 
-    // Extract JSON from response
-    const jsonMatch = content.match(/\{[\s\S]*\}/)
-    if (!jsonMatch) {
-      throw new Error('Could not parse JSON')
-    }
-
-    const result = JSON.parse(jsonMatch[0])
-    return result.concepts || []
+      const result = JSON.parse(jsonMatch[0])
+      return result.concepts || []
   } catch (error) {
     console.error('Concept extraction error:', error)
     return []
@@ -80,7 +103,15 @@ Keep concept names concise (1-3 words). Relevance should be 0-1 (how central is 
 }
 
 /**
- * Normalize concept name (lowercase, trim, remove extra spaces)
+ * Normalizes concept name to lowercase with cleaned whitespace
+ *
+ * Ensures consistent concept naming for deduplication and comparison.
+ *
+ * @param name - Concept name to normalize
+ * @returns Normalized concept name
+ *
+ * @example
+ * normalizeConcept(' Machine  Learning ') // 'machine learning'
  */
 export function normalizeConcept(name: string): string {
   return name
@@ -90,7 +121,16 @@ export function normalizeConcept(name: string): string {
 }
 
 /**
- * Generate embedding for a concept
+ * Generates embedding vector for a concept name
+ *
+ * Uses OpenAI's text-embedding-3-small model for efficient vector generation.
+ * Embeddings enable semantic similarity search across concepts.
+ *
+ * @param conceptName - Concept name to generate embedding for
+ * @returns Promise resolving to embedding vector
+ *
+ * @example
+ * const embedding = await generateConceptEmbedding('machine learning')
  */
 export async function generateConceptEmbedding(
   conceptName: string
@@ -109,7 +149,20 @@ export async function generateConceptEmbedding(
 }
 
 /**
- * Merge duplicate concepts (same normalized name)
+ * Merges duplicate concepts based on normalized names
+ *
+ * When multiple concepts have the same normalized name, keeps the one
+ * with the highest relevance score.
+ *
+ * @param concepts - Array of concepts to deduplicate
+ * @returns Deduplicated array of concepts
+ *
+ * @example
+ * const merged = mergeConcepts([
+ *   { name: 'AI', relevance: 0.8 },
+ *   { name: 'ai', relevance: 0.9 }
+ * ])
+ * // Returns: [{ name: 'ai', relevance: 0.9 }]
  */
 export function mergeConcepts(concepts: ExtractedConcept[]): ExtractedConcept[] {
   const conceptMap = new Map<string, ExtractedConcept>()
@@ -132,7 +185,21 @@ export function mergeConcepts(concepts: ExtractedConcept[]): ExtractedConcept[] 
 }
 
 /**
- * Calculate concept frequency across multiple sources
+ * Calculates frequency of concepts across multiple sources
+ *
+ * Returns a map of normalized concept names to their occurrence counts.
+ * Useful for identifying common themes across a collection of sources.
+ *
+ * @param sourceConcepts - Array of source-concept pairs
+ * @returns Map of concept names to frequency counts
+ *
+ * @example
+ * const frequencies = calculateConceptFrequency([
+ *   { source_id: '1', concept_name: 'AI' },
+ *   { source_id: '2', concept_name: 'ai' },
+ *   { source_id: '3', concept_name: 'machine learning' }
+ * ])
+ * // Returns: Map { 'ai' => 2, 'machine learning' => 1 }
  */
 export function calculateConceptFrequency(
   sourceConcepts: Array<{ source_id: string; concept_name: string }>

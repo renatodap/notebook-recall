@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import AIDisclaimer from '@/components/AIDisclaimer'
 
 interface Contradiction {
   id: string
@@ -79,6 +80,7 @@ export default function ContradictionsPanel({ sourceId }: ContradictionsPanelPro
         </p>
       ) : (
         <div className="space-y-4">
+          <AIDisclaimer variant="warning" />
           {displayedContradictions.map((contradiction) => {
             const otherSource = contradiction.source_a_id === sourceId
               ? contradiction.source_b

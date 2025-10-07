@@ -1,14 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase/server'
-import Anthropic from '@anthropic-ai/sdk'
+import { createRouteHandlerClient } from '@/lib/supabase/server'
+import { AuthenticationError, RateLimitError, handleAPIError } from '@/lib/errors/custom-errors'
+import type { TypedSupabaseClient } from '@/types/supabase-helpers'
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limiter'
+import { unifiedChatCompletion } from '@/lib/ai-router/unified-client'
+import { TaskType } from '@/lib/ai-router'
 
-export async function POST(request: NextRequest) {
+/**
+ * POST /api/digest/generate - Generate AI digest email for a period
+ * Body: { period?: 'day' | 'week' | 'month' }
+ */
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = await createServerClient()
+    const supabase = await createRouteHandlerClient() as TypedSupabaseClient
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      throw new AuthenticationError('Please sign in to generate digests')
+    }
+
+    const rateLimit = await checkRateLimit(user.id, RATE_LIMITS.AI_PUBLISHING)
+    if (rateLimit.isLimited) {
+      throw new RateLimitError(
+        `Too many requests. Please try again in ${rateLimit.retryAfter} seconds`,
+        rateLimit.retryAfter
+      )
     }
 
     const { period = 'week' } = await request.json()
@@ -39,7 +55,7 @@ export async function POST(request: NextRequest) {
         created_at,
         summaries (summary_text, key_actions, key_topics)
       `)
-      .eq('user_id', user.id as never)
+      .eq('user_id', user.id)
       .gte('created_at', startDate.toISOString())
       .order('created_at', { ascending: false })
 
@@ -50,11 +66,7 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Generate digest using Claude
-    const anthropic = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY
-    })
-
+    // Generate digest using cost-optimized AI router
     const sourcesText = sources.map((s: any) => {
       const summary = s.summaries?.[0]
       return `
@@ -66,9 +78,7 @@ ${summary?.key_topics ? `- Topics: ${summary.key_topics.join(', ')}` : ''}
 `
     }).join('\n')
 
-    const message = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 2000,
+    const result = await unifiedChatCompletion({
       messages: [{
         role: 'user',
         content: `Create a digest email for this ${period}'s knowledge captures. Here are the sources:
@@ -82,13 +92,18 @@ Please create:
 4. Emerging themes or patterns
 
 Format as HTML for an email.`
-      }]
+      }],
+      taskType: TaskType.CREATIVE_WRITING,
+      needsHighAccuracy: true,
+      budget: 'medium',
+      max_tokens: 2000
     })
 
-    const digestContent = message.content[0].type === 'text' ? message.content[0].text : ''
+    const digestContent = result.content
+    console.log(`💰 Digest generation cost: $${result.estimatedCost.toFixed(6)} (${result.provider}/${result.model})`)
 
     // Save digest to database
-    const { data: digest } = await supabase
+    const { data: digest, error: digestError } = await supabase
       .from('digest_emails')
       .insert({
         user_id: user.id,
@@ -97,9 +112,14 @@ Format as HTML for an email.`
         period_end: now.toISOString(),
         content: digestContent,
         source_count: sources.length
-      } as any)
+      } as never)
       .select()
       .single()
+
+    if (digestError) {
+      console.error('Save digest error:', digestError)
+      throw new Error('Failed to save digest')
+    }
 
     return NextResponse.json({
       digest,
@@ -109,6 +129,6 @@ Format as HTML for an email.`
 
   } catch (error) {
     console.error('Digest generation error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return handleAPIError(error)
   }
 }

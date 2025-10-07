@@ -3,6 +3,16 @@ import { createServerClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import Button from '@/components/ui/Button'
 import ReferenceImporter from '@/components/import/ReferenceImporter'
+import { generateMetadata as generateMeta } from '@/lib/metadata'
+
+
+export const metadata = generateMeta({
+  title: 'Import Sources',
+  description: 'Import your existing knowledge from other platforms. Bring in notes, bookmarks, and references.',
+  keywords: ['import', 'migrate', 'import notes', 'bulk upload'],
+  path: '/import',
+  noIndex: true,
+})
 
 export const dynamic = 'force-dynamic'
 

@@ -1,30 +1,54 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
 import { generateBlogPost } from '@/lib/publishing/blog-generator'
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limiter'
+import {
+  RateLimitError,
+  AuthenticationError,
+  NotFoundError,
+  ConfigurationError,
+  DatabaseError,
+  handleAPIError,
+} from '@/lib/errors/custom-errors'
+import {
+  generateBlogPostSchema,
+  validateRequestBody,
+} from '@/lib/validation'
+import { DatabaseSource } from '@/types/api'
 
-export async function POST(request: NextRequest) {
+/**
+ * POST /api/publishing/generate-blog - Generate AI blog post
+ * @returns Promise<NextResponse> - Created blog post output
+ */
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     const supabase = await createRouteHandlerClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      throw new AuthenticationError('Please sign in to generate blog posts')
     }
 
-    const body = await request.json()
+    // Rate limiting check
+    const rateLimit = await checkRateLimit(user.id, RATE_LIMITS.AI_PUBLISHING)
+    if (rateLimit.isLimited) {
+      throw new RateLimitError(
+        `You have reached your daily limit of ${RATE_LIMITS.AI_PUBLISHING.maxRequests} publishing requests. Please try again in ${rateLimit.retryAfter} seconds`,
+        rateLimit.retryAfter
+      )
+    }
+
+    // Validate request body
     const {
       source_ids,
       title,
-      target_audience = 'general',
-      tone = 'professional',
-      length = 'medium',
+      target_audience,
+      tone,
+      length,
       focus,
       custom_instructions,
-    } = body
-
-    if (!source_ids || source_ids.length === 0) {
-      return NextResponse.json({ error: 'source_ids required' }, { status: 400 })
-    }
+      include_citations,
+    } = await validateRequestBody(request, generateBlogPostSchema)
 
     // Verify user owns all sources
     const { data: sources, error: sourcesError } = await supabase
@@ -38,10 +62,10 @@ export async function POST(request: NextRequest) {
         )
       `)
       .in('id', source_ids as any)
-      .eq('user_id', user.id as never)
+      .eq('user_id', user.id)
 
     if (sourcesError || !sources || sources.length === 0) {
-      return NextResponse.json({ error: 'Sources not found or access denied' }, { status: 404 })
+      throw new NotFoundError('No sources found with the provided IDs')
     }
 
     // Prepare sources for blog generation
@@ -55,14 +79,16 @@ export async function POST(request: NextRequest) {
     // Generate blog post using AI
     const anthropicKey = process.env.ANTHROPIC_API_KEY
     if (!anthropicKey) {
-      return NextResponse.json({ error: 'AI service not configured' }, { status: 500 })
+      throw new ConfigurationError(
+        'AI service is not configured. Please contact support.'
+      )
     }
 
     const blogPost = await generateBlogPost(
       {
         sources: blogInput,
-        target_audience,
-        tone,
+        target_audience: target_audience as 'general' | 'technical' | 'academic' | 'business' | undefined,
+        tone: tone as 'formal' | 'casual' | 'professional' | 'conversational' | undefined,
         length,
         focus,
         custom_instructions,
@@ -96,7 +122,7 @@ export async function POST(request: NextRequest) {
 
     if (outputError) {
       console.error('Save output error:', outputError)
-      return NextResponse.json({ error: 'Failed to save blog post' }, { status: 500 })
+      throw new DatabaseError('Failed to save blog post. Please try again.')
     }
 
     // Link sources to output
@@ -109,12 +135,16 @@ export async function POST(request: NextRequest) {
       .from('output_sources')
       .insert(links as any)
 
-    return NextResponse.json({ output, blog_post: blogPost }, { status: 201 })
+    return NextResponse.json({ output, blog_post: blogPost }, {
+      status: 201,
+      headers: {
+        'X-RateLimit-Limit': RATE_LIMITS.AI_PUBLISHING.maxRequests.toString(),
+        'X-RateLimit-Remaining': rateLimit.remaining.toString(),
+        'X-RateLimit-Reset': new Date(rateLimit.resetTime).toISOString(),
+      }
+    })
   } catch (error) {
     console.error('Blog generation error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return handleAPIError(error)
   }
 }

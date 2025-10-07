@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import AIDisclaimer from '../AIDisclaimer'
 
 interface NewsletterGeneratorProps {
   sourceIds: string[]
@@ -66,6 +67,8 @@ export default function NewsletterGenerator({ sourceIds, onClose }: NewsletterGe
           <p className="text-sm text-gray-600">
             Create an email newsletter from {sourceIds.length} source{sourceIds.length !== 1 ? 's' : ''}
           </p>
+
+          <AIDisclaimer variant="full" />
 
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">

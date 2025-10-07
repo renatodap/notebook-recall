@@ -2,6 +2,8 @@
  * AI-powered research gap analysis
  */
 
+import { retryAICall } from '@/lib/retry'
+
 export interface ResearchGap {
   title: string
   description: string
@@ -89,25 +91,28 @@ Return a JSON object with this structure:
 
 Be specific and actionable.`
 
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 6000,
-      messages: [{ role: 'user', content: prompt }],
-    }),
+  const data = await retryAICall(async () => {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 6000,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    })
+
+    if (!response.ok) {
+      throw new Error(`Claude API error: ${await response.text()}`)
+    }
+
+    return response.json()
   })
 
-  if (!response.ok) {
-    throw new Error(`Claude API error: ${await response.text()}`)
-  }
-
-  const data = await response.json()
   const content = data.content[0].text
 
   try {

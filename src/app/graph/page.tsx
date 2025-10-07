@@ -2,6 +2,16 @@ import { redirect } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import KnowledgeGraphLoader from '@/components/visualization/KnowledgeGraphLoader'
+import { generateMetadata as generateMeta } from '@/lib/metadata'
+
+
+export const metadata = generateMeta({
+  title: 'Knowledge Graph',
+  description: 'Visualize connections between your sources. Explore your knowledge as an interactive network graph.',
+  keywords: ['knowledge graph', 'visual network', 'connected notes', 'graph visualization'],
+  path: '/graph',
+  noIndex: true,
+})
 
 export default async function GraphPage() {
   const supabase = await createServerClient()

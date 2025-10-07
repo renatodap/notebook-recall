@@ -1,27 +1,45 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
+import {
+  AuthenticationError,
+  ValidationError,
+  RateLimitError,
+  handleAPIError,
+} from '@/lib/errors/custom-errors'
+import type { TypedSupabaseClient } from '@/types/supabase-helpers'
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limiter'
 
 /**
  * Feature 28: Social Features (Likes, Comments)
  * Like and comment on shared sources and published outputs
  */
 
-export async function POST(request: NextRequest) {
+/**
+ * POST /api/social/interactions - Like or comment on content
+ * Body: { action: 'like' | 'comment', target_type: string, target_id: string, comment_text?: string }
+ */
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = await createRouteHandlerClient()
+    const supabase = await createRouteHandlerClient() as TypedSupabaseClient
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      throw new AuthenticationError('Please sign in to interact with content')
+    }
+
+    const rateLimit = await checkRateLimit(user.id, RATE_LIMITS.DATA_MODIFICATION)
+    if (rateLimit.isLimited) {
+      throw new RateLimitError(
+        `Too many requests. Please try again in ${rateLimit.retryAfter} seconds`,
+        rateLimit.retryAfter
+      )
     }
 
     const body = await request.json()
     const { action, target_type, target_id, comment_text } = body
 
     if (!action || !target_type || !target_id) {
-      return NextResponse.json({
-        error: 'action, target_type, and target_id required'
-      }, { status: 400 })
+      throw new ValidationError('action, target_type, and target_id are required')
     }
 
     if (action === 'like') {
@@ -38,16 +56,17 @@ export async function POST(request: NextRequest) {
 
       if (error) {
         if (error.code === '23505') {
-          return NextResponse.json({ error: 'Already liked' }, { status: 400 })
+          throw new ValidationError('You have already liked this content')
         }
-        throw error
+        console.error('Create like error:', error)
+        throw new Error('Failed to like content')
       }
 
       return NextResponse.json({ like }, { status: 201 })
     } else if (action === 'comment') {
       // Add comment
       if (!comment_text?.trim()) {
-        return NextResponse.json({ error: 'comment_text required' }, { status: 400 })
+        throw new ValidationError('comment_text is required for comments')
       }
 
       const { data: comment, error } = await supabase
@@ -61,25 +80,40 @@ export async function POST(request: NextRequest) {
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('Create comment error:', error)
+        throw new Error('Failed to create comment')
+      }
 
       return NextResponse.json({ comment }, { status: 201 })
     }
 
-    return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
+    throw new ValidationError('Invalid action. Must be "like" or "comment"')
   } catch (error) {
     console.error('Social interaction error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return handleAPIError(error)
   }
 }
 
-export async function GET(request: NextRequest) {
+/**
+ * GET /api/social/interactions - Get likes and comments for content
+ * Query params: target_type, target_id, type ('likes' | 'comments' | 'all')
+ */
+export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = await createRouteHandlerClient()
+    const supabase = await createRouteHandlerClient() as TypedSupabaseClient
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      throw new AuthenticationError('Please sign in to view interactions')
+    }
+
+    const rateLimit = await checkRateLimit(user.id, RATE_LIMITS.SEARCH)
+    if (rateLimit.isLimited) {
+      throw new RateLimitError(
+        `Too many requests. Please try again in ${rateLimit.retryAfter} seconds`,
+        rateLimit.retryAfter
+      )
     }
 
     const { searchParams } = new URL(request.url)
@@ -88,9 +122,7 @@ export async function GET(request: NextRequest) {
     const interactionType = searchParams.get('type') || 'all'
 
     if (!targetType || !targetId) {
-      return NextResponse.json({
-        error: 'target_type and target_id required'
-      }, { status: 400 })
+      throw new ValidationError('target_type and target_id are required')
     }
 
     let likes: unknown[] = []
@@ -100,8 +132,8 @@ export async function GET(request: NextRequest) {
       const { data } = await supabase
         .from('likes')
         .select('*')
-        .eq('target_type' as never, targetType)
-        .eq('target_id' as never, targetId)
+        .eq('target_type', targetType)
+        .eq('target_id', targetId)
 
       likes = data || []
     }
@@ -110,8 +142,8 @@ export async function GET(request: NextRequest) {
       const { data } = await supabase
         .from('comments')
         .select('*')
-        .eq('target_type' as never, targetType)
-        .eq('target_id' as never, targetId)
+        .eq('target_type', targetType)
+        .eq('target_id', targetId)
         .order('created_at', { ascending: true })
 
       comments = data || []
@@ -125,17 +157,29 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('Get interactions error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return handleAPIError(error)
   }
 }
 
-export async function DELETE(request: NextRequest) {
+/**
+ * DELETE /api/social/interactions - Unlike or delete comment
+ * Query params: action ('unlike' | 'delete_comment'), target_type, target_id, comment_id (for delete_comment)
+ */
+export async function DELETE(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = await createRouteHandlerClient()
+    const supabase = await createRouteHandlerClient() as TypedSupabaseClient
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      throw new AuthenticationError('Please sign in to delete interactions')
+    }
+
+    const rateLimit = await checkRateLimit(user.id, RATE_LIMITS.DATA_MODIFICATION)
+    if (rateLimit.isLimited) {
+      throw new RateLimitError(
+        `Too many requests. Please try again in ${rateLimit.retryAfter} seconds`,
+        rateLimit.retryAfter
+      )
     }
 
     const { searchParams } = new URL(request.url)
@@ -148,26 +192,32 @@ export async function DELETE(request: NextRequest) {
       const { error } = await supabase
         .from('likes')
         .delete()
-        .eq('user_id' as never, user.id)
-        .eq('target_type' as never, targetType)
-        .eq('target_id' as never, targetId)
+        .eq('user_id', user.id)
+        .eq('target_type', targetType)
+        .eq('target_id', targetId)
 
-      if (error) throw error
+      if (error) {
+        console.error('Unlike error:', error)
+        throw new Error('Failed to unlike content')
+      }
       return NextResponse.json({ success: true })
     } else if (action === 'delete_comment' && commentId) {
       const { error } = await supabase
         .from('comments')
         .delete()
-        .eq('id' as never, commentId)
-        .eq('user_id' as never, user.id)
+        .eq('id', commentId)
+        .eq('user_id', user.id)
 
-      if (error) throw error
+      if (error) {
+        console.error('Delete comment error:', error)
+        throw new Error('Failed to delete comment')
+      }
       return NextResponse.json({ success: true })
     }
 
-    return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
+    throw new ValidationError('Invalid action or missing required parameters')
   } catch (error) {
     console.error('Delete interaction error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return handleAPIError(error)
   }
 }

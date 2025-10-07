@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import AIDisclaimer from '@/components/AIDisclaimer'
 
 interface SynthesisGeneratorProps {
   sourceIds: string[]
@@ -73,6 +74,7 @@ export default function SynthesisGenerator({ sourceIds, onClose }: SynthesisGene
             <p className="text-sm text-gray-600 mb-4">
               Generate an AI-powered synthesis report combining {sourceIds.length} source{sourceIds.length !== 1 ? 's' : ''}
             </p>
+            <AIDisclaimer variant="compact" />
           </div>
 
           {error && (

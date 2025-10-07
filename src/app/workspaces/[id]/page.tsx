@@ -3,6 +3,43 @@ import { redirect } from 'next/navigation'
 import WorkspaceDetailClient from '@/components/workspaces/WorkspaceDetailClient'
 import Link from 'next/link'
 import Button from '@/components/ui/Button'
+import { generateMetadata as generateMeta } from '@/lib/metadata'
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+
+  try {
+    const workspaceRes = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/workspaces/${id}`, {
+      cache: 'no-store'
+    })
+
+    if (!workspaceRes.ok) {
+      return generateMeta({
+        title: 'Workspace Not Found',
+        description: 'The requested workspace could not be found.',
+        path: '/workspaces',
+        noIndex: true,
+      })
+    }
+
+    const { workspace } = await workspaceRes.json()
+
+    return generateMeta({
+      title: workspace.name || 'Workspace',
+      description: workspace.description || 'Collaborate on research with your team in this shared workspace.',
+      keywords: ['workspace', 'collaboration', 'team research', workspace.name],
+      path: `/workspaces/${id}`,
+      noIndex: true,
+    })
+  } catch (error) {
+    return generateMeta({
+      title: 'Workspace',
+      description: 'Collaborative research workspace.',
+      path: '/workspaces',
+      noIndex: true,
+    })
+  }
+}
 
 export const dynamic = 'force-dynamic'
 

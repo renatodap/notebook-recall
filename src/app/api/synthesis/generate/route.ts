@@ -1,23 +1,51 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
 import { generateSynthesisReport } from '@/lib/synthesis/generator'
-import type { GenerateSynthesisRequest } from '@/types'
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limiter'
+import {
+  RateLimitError,
+  AuthenticationError,
+  ValidationError,
+  NotFoundError,
+  AuthorizationError,
+  DatabaseError,
+  ConfigurationError,
+  handleAPIError,
+} from '@/lib/errors/custom-errors'
+import {
+  generateSynthesisSchema,
+  validateRequestBody,
+} from '@/lib/validation'
+import type { TypedSupabaseClient } from '@/types/supabase-helpers'
+import { DatabaseSource } from '@/types/api'
 
-export async function POST(request: NextRequest) {
+/**
+ * POST /api/synthesis/generate - Generate AI synthesis report
+ * @returns Promise<NextResponse> - Created synthesis report
+ */
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = await createRouteHandlerClient()
+    const supabase = await createRouteHandlerClient() as TypedSupabaseClient
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      throw new AuthenticationError('Please sign in to generate synthesis reports')
     }
 
-    const body: GenerateSynthesisRequest = await request.json()
-    const { source_ids, title, focus, report_type = 'literature_review' } = body
-
-    if (!source_ids || source_ids.length === 0) {
-      return NextResponse.json({ error: 'source_ids required' }, { status: 400 })
+    // Rate limiting check
+    const rateLimit = await checkRateLimit(user.id, RATE_LIMITS.AI_SYNTHESIS)
+    if (rateLimit.isLimited) {
+      throw new RateLimitError(
+        `You have reached your daily limit of ${RATE_LIMITS.AI_SYNTHESIS.maxRequests} synthesis reports. Please try again in ${rateLimit.retryAfter} seconds`,
+        rateLimit.retryAfter
+      )
     }
+
+    // Validate request body
+    const { source_ids, title, focus, report_type } = await validateRequestBody(
+      request,
+      generateSynthesisSchema
+    )
 
     // Verify user owns all sources
     const { data: sources, error: sourcesError } = await supabase
@@ -30,15 +58,17 @@ export async function POST(request: NextRequest) {
           key_topics
         )
       `)
-      .in('id' as never, source_ids)
-      .eq('user_id' as never, user.id)
+      .in('id', source_ids)
+      .eq('user_id', user.id)
 
     if (sourcesError || !sources || sources.length === 0) {
-      return NextResponse.json({ error: 'Sources not found or access denied' }, { status: 404 })
+      throw new NotFoundError('No sources found with the provided IDs')
     }
 
     if (sources.length !== source_ids.length) {
-      return NextResponse.json({ error: 'Some sources not found or not owned by user' }, { status: 403 })
+      throw new AuthorizationError(
+        'You do not have access to all the requested sources'
+      )
     }
 
     // Prepare sources for synthesis
@@ -52,14 +82,16 @@ export async function POST(request: NextRequest) {
     // Generate synthesis using AI
     const anthropicKey = process.env.ANTHROPIC_API_KEY
     if (!anthropicKey) {
-      return NextResponse.json({ error: 'AI service not configured' }, { status: 500 })
+      throw new ConfigurationError(
+        'AI service is not configured. Please contact support.'
+      )
     }
 
     const synthesis = await generateSynthesisReport(
       {
         sources: synthesisInput,
         focus,
-        report_type: report_type as any,
+        report_type: report_type as 'literature_review' | 'comparative' | 'thematic' | 'chronological' | undefined,
       },
       anthropicKey
     )
@@ -87,7 +119,7 @@ export async function POST(request: NextRequest) {
 
     if (reportError || !report) {
       console.error('Save synthesis report error:', reportError)
-      return NextResponse.json({ error: 'Failed to save synthesis report' }, { status: 500 })
+      throw new DatabaseError('Failed to save synthesis report. Please try again.')
     }
 
     const savedReport = report as unknown as { id: string; [key: string]: unknown }
@@ -102,12 +134,16 @@ export async function POST(request: NextRequest) {
       .from('synthesis_sources')
       .insert(links as never)
 
-    return NextResponse.json({ report: savedReport }, { status: 201 })
+    return NextResponse.json({ report: savedReport }, {
+      status: 201,
+      headers: {
+        'X-RateLimit-Limit': RATE_LIMITS.AI_SYNTHESIS.maxRequests.toString(),
+        'X-RateLimit-Remaining': rateLimit.remaining.toString(),
+        'X-RateLimit-Reset': new Date(rateLimit.resetTime).toISOString(),
+      }
+    })
   } catch (error) {
     console.error('Synthesis generation error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return handleAPIError(error)
   }
 }

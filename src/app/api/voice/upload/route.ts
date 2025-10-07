@@ -1,13 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase/server'
+import { createRouteHandlerClient } from '@/lib/supabase/server'
+import {
+  AuthenticationError,
+  ValidationError,
+  RateLimitError,
+  handleAPIError,
+} from '@/lib/errors/custom-errors'
+import type { TypedSupabaseClient } from '@/types/supabase-helpers'
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limiter'
 
-export async function POST(request: NextRequest) {
+/**
+ * POST /api/voice/upload - Upload and transcribe voice note
+ * Body (multipart/form-data):
+ *   - audio: File (audio file)
+ *   - duration: number (duration in seconds)
+ */
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = await createServerClient()
+    const supabase = await createRouteHandlerClient() as TypedSupabaseClient
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      throw new AuthenticationError('Please sign in to upload voice notes')
+    }
+
+    // Check rate limit
+    const rateLimit = await checkRateLimit(user.id, RATE_LIMITS.IMPORT)
+    if (rateLimit.isLimited) {
+      throw new RateLimitError(
+        `Too many requests. Please try again in ${rateLimit.retryAfter} seconds`,
+        rateLimit.retryAfter
+      )
     }
 
     const formData = await request.formData()
@@ -15,7 +38,11 @@ export async function POST(request: NextRequest) {
     const duration = parseInt(formData.get('duration') as string) || 0
 
     if (!audioFile) {
-      return NextResponse.json({ error: 'No audio file provided' }, { status: 400 })
+      throw new ValidationError('No audio file provided')
+    }
+
+    if (audioFile.size > 10 * 1024 * 1024) { // 10MB limit
+      throw new ValidationError('Audio file must be less than 10MB')
     }
 
     // Upload audio to Supabase Storage
@@ -29,7 +56,7 @@ export async function POST(request: NextRequest) {
 
     if (uploadError) {
       console.error('Upload error:', uploadError)
-      return NextResponse.json({ error: 'Failed to upload audio' }, { status: 500 })
+      throw new Error('Failed to upload audio file')
     }
 
     // Get public URL
@@ -81,10 +108,10 @@ export async function POST(request: NextRequest) {
 
     if (sourceError || !source) {
       console.error('Source creation error:', sourceError)
-      return NextResponse.json({ error: 'Failed to create source' }, { status: 500 })
+      throw new Error('Failed to create source from voice note')
     }
 
-    const createdSource = source as unknown as { id: string; [key: string]: unknown }
+    const createdSource = source as any
 
     // Auto-summarize the transcript if available
     if (transcript && transcript !== '[Voice note transcription will be available soon]') {
@@ -103,6 +130,6 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Voice upload error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return handleAPIError(error)
   }
 }

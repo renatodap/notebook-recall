@@ -1,30 +1,58 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase/server'
+import { createRouteHandlerClient } from '@/lib/supabase/server'
+import {
+  AuthenticationError,
+  ValidationError,
+  NotFoundError,
+  RateLimitError,
+  handleAPIError,
+} from '@/lib/errors/custom-errors'
+import type { TypedSupabaseClient } from '@/types/supabase-helpers'
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limiter'
 
-export async function POST(request: NextRequest) {
+/**
+ * POST /api/email-capture - Process incoming email capture (webhook endpoint)
+ * Body: { from: string, subject: string, body: string, user_email: string }
+ */
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = await createServerClient()
+    const supabase = await createRouteHandlerClient() as TypedSupabaseClient
 
     // Parse email content
     const body = await request.json()
     const { from, subject, body: emailBody, user_email } = body
 
+    if (!from || !user_email || !emailBody) {
+      throw new ValidationError('Missing required fields: from, user_email, and body are required')
+    }
+
     // Find user by capture email
-    const { data: userPref } = await supabase
+    const { data: userPref, error: prefError } = await supabase
       .from('user_preferences')
       .select('user_id')
-      .eq('capture_email', user_email as never)
+      .eq('capture_email', user_email)
       .maybeSingle()
 
-    if (!userPref) {
-      return NextResponse.json({ error: 'Invalid capture email' }, { status: 404 })
+    if (prefError || !userPref) {
+      throw new NotFoundError('Invalid capture email address')
+    }
+
+    const userId = (userPref as any).user_id
+
+    // Rate limit by user ID
+    const rateLimit = await checkRateLimit(userId, RATE_LIMITS.DATA_MODIFICATION)
+    if (rateLimit.isLimited) {
+      throw new RateLimitError(
+        `Too many requests. Please try again in ${rateLimit.retryAfter} seconds`,
+        rateLimit.retryAfter
+      )
     }
 
     // Save email capture
     const { data: capture, error: captureError } = await supabase
       .from('email_captures')
       .insert({
-        user_id: (userPref as any).user_id,
+        user_id: userId,
         email_from: from,
         email_subject: subject,
         email_body: emailBody,
@@ -37,15 +65,17 @@ export async function POST(request: NextRequest) {
 
     if (captureError) {
       console.error('Capture error:', captureError)
-      return NextResponse.json({ error: 'Failed to save capture' }, { status: 500 })
+      throw new Error('Failed to save email capture')
     }
+
+    const captureId = (capture as any).id
 
     // Create source from email
     const title = subject || `Email from ${from}`
-    const { data: source } = await supabase
+    const { data: source, error: sourceError } = await supabase
       .from('sources')
       .insert({
-        user_id: (userPref as any).user_id,
+        user_id: userId,
         title,
         content_type: 'email',
         original_content: emailBody,
@@ -59,51 +89,77 @@ export async function POST(request: NextRequest) {
       .select()
       .single()
 
+    if (sourceError) {
+      console.error('Create source error:', sourceError)
+      throw new Error('Failed to create source from email')
+    }
+
+    const sourceId = (source as any).id
+
     // Update capture with source_id
-    await supabase
+    const { error: updateError } = await supabase
       .from('email_captures')
-      .update({ source_id: (source as any).id, processed: true } as never)
-      .eq('id', (capture as any).id as never)
+      .update({ source_id: sourceId, processed: true } as never)
+      .eq('id', captureId)
+
+    if (updateError) {
+      console.error('Update capture error:', updateError)
+    }
 
     // Auto-summarize
     try {
       await fetch(`${request.nextUrl.origin}/api/summarize`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ source_id: (source as any).id })
+        body: JSON.stringify({ source_id: sourceId })
       })
     } catch (err) {
       console.error('Summarization error:', err)
     }
 
-    return NextResponse.json({ success: true, source_id: (source as any)?.id }, { status: 201 })
+    return NextResponse.json({ success: true, source_id: sourceId }, { status: 201 })
 
   } catch (error) {
     console.error('Email capture error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return handleAPIError(error)
   }
 }
 
-// GET endpoint to retrieve user's capture email
-export async function GET(_request: NextRequest) {
+/**
+ * GET /api/email-capture - Get user's capture email address
+ */
+export async function GET(_request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = await createServerClient()
+    const supabase = await createRouteHandlerClient() as TypedSupabaseClient
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      throw new AuthenticationError('Please sign in to view capture email')
     }
 
-    const { data: pref } = await supabase
+    const rateLimit = await checkRateLimit(user.id, RATE_LIMITS.SEARCH)
+    if (rateLimit.isLimited) {
+      throw new RateLimitError(
+        `Too many requests. Please try again in ${rateLimit.retryAfter} seconds`,
+        rateLimit.retryAfter
+      )
+    }
+
+    const { data: pref, error: prefError } = await supabase
       .from('user_preferences')
       .select('capture_email')
-      .eq('user_id', user.id as never)
+      .eq('user_id', user.id)
       .maybeSingle()
+
+    if (prefError) {
+      console.error('Fetch preferences error:', prefError)
+      throw new Error('Failed to fetch capture email')
+    }
 
     return NextResponse.json({ capture_email: (pref as any)?.capture_email || null })
 
   } catch (error) {
     console.error('Get capture email error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return handleAPIError(error)
   }
 }

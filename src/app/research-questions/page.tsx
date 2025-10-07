@@ -3,6 +3,16 @@ import { redirect } from 'next/navigation'
 import ResearchQuestionsClient from '@/components/research/ResearchQuestionsClient'
 import Link from 'next/link'
 import Button from '@/components/ui/Button'
+import { generateMetadata as generateMeta } from '@/lib/metadata'
+
+
+export const metadata = generateMeta({
+  title: 'Research Questions',
+  description: 'Develop and track your research questions. Get AI assistance in refining your research focus.',
+  keywords: ['research questions', 'research planning', 'academic questions'],
+  path: '/research-questions',
+  noIndex: true,
+})
 
 export const dynamic = 'force-dynamic'
 

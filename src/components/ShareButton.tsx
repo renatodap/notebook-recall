@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import Button from './ui/Button'
 import { Card, CardBody } from './ui/Card'
+import { showError } from '@/lib/toast'
 
 interface ShareButtonProps {
   sourceId: string
@@ -58,11 +59,11 @@ export default function ShareButton({ sourceId }: ShareButtonProps) {
           setPublicUrl('')
         }
       } else {
-        alert('Failed to update sharing settings')
+        showError('Failed to update sharing settings')
       }
     } catch (error) {
       console.error('Failed to update sharing:', error)
-      alert('Failed to update sharing settings')
+      showError('Failed to update sharing settings')
     } finally {
       setLoading(false)
     }

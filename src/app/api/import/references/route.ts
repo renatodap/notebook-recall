@@ -5,6 +5,9 @@ import { summarizeContent } from '@/lib/claude/client'
 import { generateEmbedding } from '@/lib/embeddings/client'
 import { backfillEmbeddings } from '@/lib/embeddings/backfill'
 import { ContentType } from '@/types'
+import { DatabaseSource } from '@/types/api'
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limiter'
+import { RateLimitError } from '@/lib/errors/custom-errors'
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,6 +16,15 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Check rate limit
+    const rateLimit = await checkRateLimit(user.id, RATE_LIMITS.IMPORT)
+    if (rateLimit.isLimited) {
+      throw new RateLimitError(
+        `Too many requests. Please try again in ${rateLimit.retryAfter} seconds`,
+        rateLimit.retryAfter
+      )
     }
 
     const formData = await request.formData()

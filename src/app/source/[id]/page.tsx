@@ -3,6 +3,37 @@ import { createServerClient } from '@/lib/supabase/server'
 import Button from '@/components/ui/Button'
 import Link from 'next/link'
 import SourceDetailClient from '@/components/SourceDetailClient'
+import { generateMetadata as generateMeta } from '@/lib/metadata'
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const supabase = await createServerClient()
+
+  const { data: source } = await supabase
+    .from('sources')
+    .select('title, content_type')
+    .eq('id' as never, id)
+    .single()
+
+  const typedSource = source as unknown as { title?: string; content_type?: string } | null
+
+  if (!typedSource) {
+    return generateMeta({
+      title: 'Source Not Found',
+      description: 'The requested source could not be found.',
+      path: '/source',
+      noIndex: true,
+    })
+  }
+
+  return generateMeta({
+    title: typedSource.title || 'Source Detail',
+    description: `View and manage your ${typedSource.content_type || 'source'}. Read AI summaries, take notes, and explore connections.`,
+    keywords: ['source detail', typedSource.content_type || '', 'knowledge base', 'AI summary'],
+    path: `/source/${id}`,
+    noIndex: true,
+  })
+}
 
 export const dynamic = 'force-dynamic'
 

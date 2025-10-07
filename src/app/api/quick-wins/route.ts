@@ -19,7 +19,7 @@ import type { UserQuickWin, QuickWinsGetResponse, QuickWinsPostResponse } from '
  * - ✅ Row-level security
  */
 
-export async function GET(_request: NextRequest) {
+export async function GET(_request: NextRequest): Promise<Response> {
   try {
     const supabase = await createRouteHandlerClient()
 
@@ -60,7 +60,7 @@ export async function GET(_request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<Response> {
   try {
     const supabase = await createRouteHandlerClient()
 

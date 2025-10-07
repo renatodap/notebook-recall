@@ -1,36 +1,60 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
 import { discoverSimilarSources } from '@/lib/connections/discovery'
-import type { DiscoverConnectionsRequest } from '@/types'
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limiter'
+import {
+  RateLimitError,
+  AuthenticationError,
+  NotFoundError,
+  AuthorizationError,
+  handleAPIError,
+} from '@/lib/errors/custom-errors'
+import {
+  DiscoverConnectionsSchema,
+  validateRequestBody,
+} from '@/lib/validation'
+import type { TypedSupabaseClient } from '@/types/supabase-helpers'
+import { DatabaseSource } from '@/types/api'
 
-export async function POST(request: NextRequest) {
+/**
+ * POST /api/connections/discover - Discover AI connections between sources
+ * @returns Promise<NextResponse> - Discovered connections
+ */
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = await createRouteHandlerClient()
+    const supabase = await createRouteHandlerClient() as TypedSupabaseClient
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      throw new AuthenticationError('Please sign in to discover connections')
     }
 
-    const body: DiscoverConnectionsRequest = await request.json()
-    const { source_id, limit = 10, connection_types } = body
-
-    if (!source_id) {
-      return NextResponse.json({ error: 'source_id required' }, { status: 400 })
+    // Rate limiting check
+    const rateLimit = await checkRateLimit(user.id, RATE_LIMITS.AI_CONNECTIONS)
+    if (rateLimit.isLimited) {
+      throw new RateLimitError(
+        `You have reached your daily limit of ${RATE_LIMITS.AI_CONNECTIONS.maxRequests} connection discoveries. Please try again in ${rateLimit.retryAfter} seconds`,
+        rateLimit.retryAfter
+      )
     }
+
+    // Validate request body
+    const { source_id, limit, connection_types } = await validateRequestBody(
+      request,
+      DiscoverConnectionsSchema
+    )
 
     // Verify user owns this source
     const { data: source } = await supabase
       .from('sources')
       .select('id, title')
-      .eq('id', source_id as never)
-      .eq('user_id', user.id as never)
+      .eq('id', source_id)
+      .eq('user_id', user.id)
       .single()
 
     if (!source) {
-      return NextResponse.json(
-        { error: 'Source not found or access denied' },
-        { status: 404 }
+      throw new NotFoundError(
+        'Source not found. Please check the source ID and try again.'
       )
     }
 
@@ -45,11 +69,11 @@ export async function POST(request: NextRequest) {
           summary_text
         )
       `)
-      .eq('user_id', user.id as never)
+      .eq('user_id', user.id)
 
     if (sourcesError) {
       console.error('Fetch sources error:', sourcesError)
-      return NextResponse.json({ error: 'Failed to fetch sources' }, { status: 500 })
+      throw new NotFoundError('Failed to fetch your sources. Please try again.')
     }
 
     // Discover similar sources
@@ -79,8 +103,8 @@ export async function POST(request: NextRequest) {
     const { data: existingConnections } = await supabase
       .from('source_connections')
       .select('source_b_id, connection_type')
-      .eq('source_a_id', source_id as never)
-      .in('source_b_id', newConnectionIds as any)
+      .eq('source_a_id', source_id)
+      .in('source_b_id', newConnectionIds)
 
     const existingSet = new Set(
       existingConnections?.map((c: any) => `${c.source_b_id}:${c.connection_type}`) || []
@@ -104,7 +128,7 @@ export async function POST(request: NextRequest) {
 
       const { error: insertError } = await supabase
         .from('source_connections')
-        .insert(connectionsToInsert as any)
+        .insert(connectionsToInsert as never)
 
       if (insertError) {
         console.error('Insert connections error:', insertError)
@@ -124,25 +148,28 @@ export async function POST(request: NextRequest) {
           created_at
         )
       `)
-      .eq('source_a_id', source_id as never)
+      .eq('source_a_id', source_id)
       .order('strength', { ascending: false })
       .limit(limit)
 
     if (connError) {
       console.error('Fetch connections error:', connError)
-      return NextResponse.json({ error: 'Failed to fetch connections' }, { status: 500 })
+      throw new NotFoundError('Failed to fetch connections. Please try again.')
     }
 
     return NextResponse.json({
       connections: connections || [],
       discovered_new: newDiscoveries.length,
       total: connections?.length || 0,
+    }, {
+      headers: {
+        'X-RateLimit-Limit': RATE_LIMITS.AI_CONNECTIONS.maxRequests.toString(),
+        'X-RateLimit-Remaining': rateLimit.remaining.toString(),
+        'X-RateLimit-Reset': new Date(rateLimit.resetTime).toISOString(),
+      }
     })
   } catch (error) {
     console.error('Connection discovery error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return handleAPIError(error)
   }
 }

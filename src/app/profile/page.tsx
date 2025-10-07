@@ -3,6 +3,16 @@ import { createServerClient } from '@/lib/supabase/server'
 import { signOut } from '@/lib/auth/actions'
 import MobileNav from '@/components/MobileNav'
 import Link from 'next/link'
+import { generateMetadata as generateMeta } from '@/lib/metadata'
+
+
+export const metadata = generateMeta({
+  title: 'Profile',
+  description: 'View and edit your profile. Manage your personal information and public presence.',
+  keywords: ['profile', 'user account', 'personal info'],
+  path: '/profile',
+  noIndex: true,
+})
 
 export const dynamic = 'force-dynamic'
 

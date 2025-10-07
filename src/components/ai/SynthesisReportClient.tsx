@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { showError } from '@/lib/toast'
+import AIDisclaimer from '@/components/AIDisclaimer'
 
 interface SynthesisReportClientProps {
   report: any
@@ -25,10 +27,10 @@ export default function SynthesisReportClient({ report }: SynthesisReportClientP
       if (response.ok) {
         router.push('/synthesis')
       } else {
-        alert('Failed to delete report')
+        showError('Failed to delete report')
       }
     } catch {
-      alert('Error deleting report')
+      showError('Error deleting report')
     } finally {
       setIsDeleting(false)
     }
@@ -82,6 +84,9 @@ ${report.sources.map((s: any, i: number) => `${i + 1}. ${s.title}`).join('\n')}
           {' / '}
           <span className="text-gray-600 text-sm">{report.title}</span>
         </div>
+
+        {/* AI Disclaimer - Required by CLAUDE.md Section 4 */}
+        <AIDisclaimer variant="warning" className="mb-6" />
 
         {/* Header */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">

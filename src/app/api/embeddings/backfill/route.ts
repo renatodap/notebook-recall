@@ -9,6 +9,8 @@ import { backfillEmbeddings } from '@/lib/embeddings/backfill';
 import { requireAdmin } from '@/lib/auth/admin';
 import { z } from 'zod';
 import type { BackfillRequest } from '@/types';
+import { handleAPIError, RateLimitError } from '@/lib/errors/custom-errors';
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limiter';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,12 +19,33 @@ const requestSchema = z.object({
   dry_run: z.boolean().optional(),
 });
 
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     // Admin-only endpoint
     const adminCheck = await requireAdmin();
     if (!adminCheck.authorized) {
-      return adminCheck.response;
+      return NextResponse.json(
+        await adminCheck.response.json(),
+        { status: adminCheck.response.status }
+      );
+    }
+
+    // Get user for rate limiting
+    const { createRouteHandlerClient } = await import('@/lib/supabase/server');
+    const supabase = await createRouteHandlerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check rate limit (even for admin)
+    const rateLimit = await checkRateLimit(user.id, RATE_LIMITS.EMBEDDINGS);
+    if (rateLimit.isLimited) {
+      throw new RateLimitError(
+        `Too many requests. Please try again in ${rateLimit.retryAfter} seconds`,
+        rateLimit.retryAfter
+      );
     }
 
     // Parse request
@@ -44,7 +67,7 @@ export async function POST(request: NextRequest) {
       dryRun: dry_run,
     });
 
-    const response: any = {
+    const response = {
       total: result.total,
       processed: result.processed,
       successes: result.successes,
@@ -55,13 +78,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(response);
   } catch (error) {
     console.error('Backfill error:', error);
-
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : 'Backfill operation failed',
-      },
-      { status: 500 }
-    );
+    return handleAPIError(error);
   }
 }

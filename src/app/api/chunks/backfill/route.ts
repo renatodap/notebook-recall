@@ -9,6 +9,9 @@ import { createRouteHandlerClient } from '@/lib/supabase/server';
 import { backfillChunks } from '@/lib/chunking/embeddings';
 import { z } from 'zod';
 import type { ChunkBackfillRequest, ChunkBackfillResponse } from '@/types/chunks';
+import { DatabaseSource } from '@/types/api';
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limiter';
+import { RateLimitError } from '@/lib/errors/custom-errors';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes for backfill operations
@@ -32,6 +35,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Check rate limit
+    const rateLimit = await checkRateLimit(user.id, RATE_LIMITS.EMBEDDINGS);
+    if (rateLimit.isLimited) {
+      throw new RateLimitError(
+        `Too many requests. Please try again in ${rateLimit.retryAfter} seconds`,
+        rateLimit.retryAfter
+      );
+    }
+
     const body = await request.json();
 
     // Validate request
@@ -53,7 +65,7 @@ export async function POST(request: NextRequest) {
       const { data: sources } = await supabase
         .from('sources')
         .select('id, original_content, content_type')
-        .eq('user_id', user.id as never)
+        .eq('user_id', user.id)
         .not('content_type', 'eq', 'image');
 
       let needsChunking = 0;
@@ -128,7 +140,7 @@ export async function GET() {
     const { count: totalSources } = await supabase
       .from('sources')
       .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id as never);
+      .eq('user_id', user.id);
 
     // Count sources with chunks
     const { data: sourcesWithChunks } = await (supabase as any)

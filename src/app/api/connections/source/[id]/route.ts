@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limiter'
 
 export async function GET(
   request: NextRequest,
@@ -11,6 +12,18 @@ export async function GET(
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Rate limiting - SEARCH limit for GET
+    const rateLimit = await checkRateLimit(user.id, RATE_LIMITS.SEARCH)
+    if (rateLimit.isLimited) {
+      return NextResponse.json(
+        {
+          error: `Too many requests. Please try again in ${rateLimit.retryAfter} seconds`,
+          retryAfter: rateLimit.retryAfter
+        },
+        { status: 429 }
+      )
     }
 
     const { id: sourceId } = await params

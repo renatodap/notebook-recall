@@ -5,6 +5,8 @@ import { Card, CardBody, CardHeader } from '../ui/Card'
 import Button from '../ui/Button'
 import Link from 'next/link'
 import type { SourceConnection } from '@/types'
+import { showSuccess, showError, showInfo } from '@/lib/toast'
+import AIDisclaimer from '@/components/AIDisclaimer'
 
 interface ConnectionsPanelProps {
   sourceId: string
@@ -58,15 +60,15 @@ export default function ConnectionsPanel({ sourceId }: ConnectionsPanelProps) {
       if (response.ok) {
         const data = await response.json()
         if (data.discovered_new > 0) {
-          alert(`Discovered ${data.discovered_new} new connection(s)!`)
+          showSuccess(`Discovered ${data.discovered_new} new connection(s)!`)
           fetchConnections()
         } else {
-          alert('No new connections found.')
+          showInfo('No new connections found.')
         }
       }
     } catch (error) {
       console.error('Discovery error:', error)
-      alert('Failed to discover connections')
+      showError('Failed to discover connections')
     } finally {
       setDiscovering(false)
     }
@@ -143,7 +145,9 @@ export default function ConnectionsPanel({ sourceId }: ConnectionsPanelProps) {
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <>
+            <AIDisclaimer variant="compact" className="mb-4" />
+            <div className="space-y-3">
             {connections.map((connection) => (
               <Link
                 key={connection.id}
@@ -181,7 +185,8 @@ export default function ConnectionsPanel({ sourceId }: ConnectionsPanelProps) {
                 </div>
               </Link>
             ))}
-          </div>
+            </div>
+          </>
         )}
       </CardBody>
     </Card>

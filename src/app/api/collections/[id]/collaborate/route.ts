@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limiter'
 
 /**
  * Feature 27: Collaborative Collections
@@ -17,6 +18,18 @@ export async function POST(
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Rate limiting - DATA_MODIFICATION limit for POST
+    const rateLimit = await checkRateLimit(user.id, RATE_LIMITS.DATA_MODIFICATION)
+    if (rateLimit.isLimited) {
+      return NextResponse.json(
+        {
+          error: `Too many modifications. Please try again in ${rateLimit.retryAfter} seconds`,
+          retryAfter: rateLimit.retryAfter
+        },
+        { status: 429 }
+      )
     }
 
     const body = await request.json()
@@ -71,6 +84,18 @@ export async function GET(
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Rate limiting - SEARCH limit for GET
+    const rateLimit = await checkRateLimit(user.id, RATE_LIMITS.SEARCH)
+    if (rateLimit.isLimited) {
+      return NextResponse.json(
+        {
+          error: `Too many requests. Please try again in ${rateLimit.retryAfter} seconds`,
+          retryAfter: rateLimit.retryAfter
+        },
+        { status: 429 }
+      )
     }
 
     // Get collaborators for this collection

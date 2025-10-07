@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
+import { retryAICall } from '@/lib/retry'
 
 export interface ImageProcessResult {
   content: string
@@ -32,26 +33,28 @@ export async function processImage(
     const client = new Anthropic({ apiKey: anthropicKey })
 
     // Use Claude with vision to extract text and understand the image
-    const response = await client.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 4000,
-      messages: [{
-        role: 'user',
-        content: [
-          {
-            type: 'image',
-            source: {
-              type: 'base64',
-              media_type: mediaType as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp',
-              data: base64
+    const response = await retryAICall(async () => {
+      return client.messages.create({
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 4000,
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              source: {
+                type: 'base64',
+                media_type: mediaType as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp',
+                data: base64
+              }
+            },
+            {
+              type: 'text',
+              text: 'Extract all text from this image. If there is no text, describe what you see in detail. Preserve formatting and structure. Return the extracted text or description without any additional commentary.'
             }
-          },
-          {
-            type: 'text',
-            text: 'Extract all text from this image. If there is no text, describe what you see in detail. Preserve formatting and structure. Return the extracted text or description without any additional commentary.'
-          }
-        ]
-      }]
+          ]
+        }]
+      })
     })
 
     const extractedContent = response.content.find((c) => c.type === 'text')
@@ -62,13 +65,15 @@ export async function processImage(
     const content = extractedContent.text.trim()
 
     // Generate a title from the content
-    const titleResponse = await client.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 100,
-      messages: [{
-        role: 'user',
-        content: `Generate a brief, descriptive title (5-10 words max) for content with this text/description: "${content.substring(0, 500)}". Return only the title with no additional text.`
-      }]
+    const titleResponse = await retryAICall(async () => {
+      return client.messages.create({
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 100,
+        messages: [{
+          role: 'user',
+          content: `Generate a brief, descriptive title (5-10 words max) for content with this text/description: "${content.substring(0, 500)}". Return only the title with no additional text.`
+        }]
+      })
     })
 
     const titleContent = titleResponse.content.find((c) => c.type === 'text')

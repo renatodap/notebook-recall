@@ -1,5 +1,15 @@
 import ForgotPasswordForm from '@/components/auth/ForgotPasswordForm'
 import { Card, CardBody } from '@/components/ui/Card'
+import { generateMetadata as generateMeta } from '@/lib/metadata'
+
+
+export const metadata = generateMeta({
+  title: 'Forgot Password',
+  description: 'Reset your Recall Notebook password. Enter your email to receive password reset instructions.',
+  keywords: ['forgot password', 'password reset', 'recover account'],
+  path: '/auth/forgot-password',
+  noIndex: true,
+})
 
 export default function ForgotPasswordPage() {
   return (

@@ -3,6 +3,7 @@
  */
 
 import Groq from 'groq-sdk'
+import { retryAICall } from '@/lib/retry'
 
 let groqClient: Groq | null = null
 
@@ -39,19 +40,21 @@ export interface GroqChatOptions {
 export async function groqChatCompletion(
   options: GroqChatOptions
 ): Promise<string> {
-  const client = getGroqClient()
+  return retryAICall(async () => {
+    const client = getGroqClient()
 
-  const response = await client.chat.completions.create({
-    model: options.model || 'llama-3.1-8b-instant',
-    messages: options.messages,
-    temperature: options.temperature ?? 0.7,
-    max_tokens: options.max_tokens ?? 8000,
-    top_p: options.top_p ?? 1,
-    stream: false,
-    stop: options.stop
+    const response = await client.chat.completions.create({
+      model: options.model || 'llama-3.1-8b-instant',
+      messages: options.messages,
+      temperature: options.temperature ?? 0.7,
+      max_tokens: options.max_tokens ?? 8000,
+      top_p: options.top_p ?? 1,
+      stream: false,
+      stop: options.stop
+    })
+
+    return response.choices[0]?.message?.content || ''
   })
-
-  return response.choices[0]?.message?.content || ''
 }
 
 /**
@@ -104,45 +107,47 @@ export async function groqBatchCompletion(
  * Note: This uses LLM to generate dense representations, not true embeddings
  */
 export async function groqPseudoEmbedding(text: string): Promise<number[]> {
-  const client = getGroqClient()
+  return retryAICall(async () => {
+    const client = getGroqClient()
 
-  // Use Groq to generate a dense representation
-  const response = await client.chat.completions.create({
-    model: 'llama-3.1-8b-instant',
-    messages: [
-      {
-        role: 'system',
-        content: 'Convert the following text into a semantic fingerprint by extracting key concepts and themes. Return ONLY a comma-separated list of 100 floating point numbers between -1 and 1.'
-      },
-      {
-        role: 'user',
-        content: text.substring(0, 8000) // Limit input
+    // Use Groq to generate a dense representation
+    const response = await client.chat.completions.create({
+      model: 'llama-3.1-8b-instant',
+      messages: [
+        {
+          role: 'system',
+          content: 'Convert the following text into a semantic fingerprint by extracting key concepts and themes. Return ONLY a comma-separated list of 100 floating point numbers between -1 and 1.'
+        },
+        {
+          role: 'user',
+          content: text.substring(0, 8000) // Limit input
+        }
+      ],
+      temperature: 0.1,
+      max_tokens: 512
+    })
+
+    const content = response.choices[0]?.message?.content || ''
+
+    // Parse the output into numbers
+    try {
+      const numbers = content
+        .split(',')
+        .map(n => parseFloat(n.trim()))
+        .filter(n => !isNaN(n))
+
+      // Pad or truncate to exactly 1536 dimensions (OpenAI embedding size)
+      while (numbers.length < 1536) {
+        numbers.push(0)
       }
-    ],
-    temperature: 0.1,
-    max_tokens: 512
-  })
 
-  const content = response.choices[0]?.message?.content || ''
-
-  // Parse the output into numbers
-  try {
-    const numbers = content
-      .split(',')
-      .map(n => parseFloat(n.trim()))
-      .filter(n => !isNaN(n))
-
-    // Pad or truncate to exactly 1536 dimensions (OpenAI embedding size)
-    while (numbers.length < 1536) {
-      numbers.push(0)
+      return numbers.slice(0, 1536)
+    } catch (error) {
+      console.error('Failed to parse pseudo-embedding:', error)
+      // Return zero vector on error
+      return new Array(1536).fill(0)
     }
-
-    return numbers.slice(0, 1536)
-  } catch (error) {
-    console.error('Failed to parse pseudo-embedding:', error)
-    // Return zero vector on error
-    return new Array(1536).fill(0)
-  }
+  })
 }
 
 /**
@@ -161,24 +166,26 @@ export async function groqFunctionCall(
   messages: GroqChatMessage[],
   tools: GroqTool[]
 ): Promise<{ response: string; toolCalls: unknown[] }> {
-  const client = getGroqClient()
+  return retryAICall(async () => {
+    const client = getGroqClient()
 
-  const response = await client.chat.completions.create({
-    model: 'llama-3.1-70b-versatile', // Function calling works best with 70B
-    messages,
-    tools: tools as any,
-    tool_choice: 'auto',
-    temperature: 0.1
+    const response = await client.chat.completions.create({
+      model: 'llama-3.1-70b-versatile', // Function calling works best with 70B
+      messages,
+      tools: tools as any,
+      tool_choice: 'auto',
+      temperature: 0.1
+    })
+
+    const message = response.choices[0]?.message
+    const toolCalls = message?.tool_calls || []
+
+    return {
+      response: message?.content || '',
+      toolCalls: toolCalls.map((tc: any) => ({
+        name: tc.function.name,
+        arguments: JSON.parse(tc.function.arguments)
+      }))
+    }
   })
-
-  const message = response.choices[0]?.message
-  const toolCalls = message?.tool_calls || []
-
-  return {
-    response: message?.content || '',
-    toolCalls: toolCalls.map((tc: any) => ({
-      name: tc.function.name,
-      arguments: JSON.parse(tc.function.arguments)
-    }))
-  }
 }

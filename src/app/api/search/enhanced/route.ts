@@ -14,6 +14,13 @@ import type {
   ChunkSearchResult,
   GroupedSearchResults,
 } from '@/types/chunks';
+import {
+  AuthenticationError,
+  RateLimitError,
+  handleAPIError,
+} from '@/lib/errors/custom-errors';
+import type { TypedSupabaseClient } from '@/types/supabase-helpers';
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limiter';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,9 +32,9 @@ const SearchRequestSchema = z.object({
   collection_id: z.string().uuid().optional(),
 });
 
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = await createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient() as TypedSupabaseClient;
 
     // Check authentication
     const {
@@ -35,7 +42,16 @@ export async function POST(request: NextRequest) {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      throw new AuthenticationError('Please sign in to search sources');
+    }
+
+    // Check rate limit
+    const rateLimit = await checkRateLimit(user.id, RATE_LIMITS.SEARCH);
+    if (rateLimit.isLimited) {
+      throw new RateLimitError(
+        `Too many requests. Please try again in ${rateLimit.retryAfter} seconds`,
+        rateLimit.retryAfter
+      );
     }
 
     const body = await request.json();
@@ -180,15 +196,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(response);
   } catch (error) {
     console.error('Enhanced search API error:', error);
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : 'Failed to search sources',
-      },
-      { status: 500 }
-    );
+    return handleAPIError(error);
   }
 }
 

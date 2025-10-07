@@ -4,6 +4,16 @@ import MobileNav from '@/components/MobileNav'
 import SourcesView from '@/components/SourcesView'
 import Link from 'next/link'
 import { Sparkles, TrendingUp, FileText } from 'lucide-react'
+import { generateMetadata as generateMeta } from '@/lib/metadata'
+
+
+export const metadata = generateMeta({
+  title: 'Dashboard',
+  description: 'Your personal knowledge dashboard. View all your saved sources, AI summaries, and recent activity in one place.',
+  keywords: ['dashboard', 'knowledge base', 'saved sources', 'recent activity'],
+  path: '/dashboard',
+  noIndex: true,
+})
 
 export const dynamic = 'force-dynamic'
 

@@ -9,6 +9,13 @@ import { createRouteHandlerClient } from '@/lib/supabase/server';
 import { generateEmbedding } from '@/lib/embeddings/client';
 import { z } from 'zod';
 import type { EmbeddingGenerateRequest, EmbeddingGenerateResponse } from '@/types';
+import {
+  AuthenticationError,
+  RateLimitError,
+  handleAPIError,
+} from '@/lib/errors/custom-errors';
+import type { TypedSupabaseClient } from '@/types/supabase-helpers';
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limiter';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,16 +24,25 @@ const requestSchema = z.object({
   type: z.enum(['summary', 'query']),
 });
 
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     // Authenticate
-    const supabase = await createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient() as TypedSupabaseClient;
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      throw new AuthenticationError('Please sign in to generate embeddings');
+    }
+
+    // Check rate limit
+    const rateLimit = await checkRateLimit(user.id, RATE_LIMITS.EMBEDDINGS);
+    if (rateLimit.isLimited) {
+      throw new RateLimitError(
+        `Too many requests. Please try again in ${rateLimit.retryAfter} seconds`,
+        rateLimit.retryAfter
+      );
     }
 
     // Parse request
@@ -58,15 +74,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(response);
   } catch (error) {
     console.error('Embedding generation error:', error);
-
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : 'Failed to generate embedding',
-      },
-      { status: 500 }
-    );
+    return handleAPIError(error);
   }
 }

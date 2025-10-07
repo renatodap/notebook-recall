@@ -1,5 +1,14 @@
 import SignupForm from '@/components/auth/SignupForm'
 import { Card, CardBody } from '@/components/ui/Card'
+import { generateMetadata as generateMeta } from '@/lib/metadata'
+
+
+export const metadata = generateMeta({
+  title: 'Sign Up',
+  description: 'Create your free Recall Notebook account. Start building your AI-powered knowledge base today.',
+  keywords: ['sign up', 'register', 'create account', 'get started'],
+  path: '/signup',
+})
 
 export default function SignupPage() {
   return (

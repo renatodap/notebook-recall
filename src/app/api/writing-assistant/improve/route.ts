@@ -1,5 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
+import {
+  AuthenticationError,
+  ValidationError,
+  RateLimitError,
+  handleAPIError,
+} from '@/lib/errors/custom-errors'
+import type { TypedSupabaseClient } from '@/types/supabase-helpers'
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limiter'
+import { unifiedChatCompletion } from '@/lib/ai-router/unified-client'
+import { TaskType } from '@/lib/ai-router'
 
 export interface WritingSuggestion {
   type: 'grammar' | 'clarity' | 'academic_tone' | 'structure' | 'citation' | 'wordiness'
@@ -24,28 +34,31 @@ export interface WritingAnalysis {
   weaknesses: string[]
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = await createRouteHandlerClient()
+    const supabase = await createRouteHandlerClient() as TypedSupabaseClient
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      throw new AuthenticationError('Please sign in to use the writing assistant')
+    }
+
+    const rateLimit = await checkRateLimit(user.id, RATE_LIMITS.AI_ANALYSIS)
+    if (rateLimit.isLimited) {
+      throw new RateLimitError(
+        `Too many requests. Please try again in ${rateLimit.retryAfter} seconds`,
+        rateLimit.retryAfter
+      )
     }
 
     const body = await request.json()
     const { text, context, focus } = body
 
     if (!text?.trim()) {
-      return NextResponse.json({ error: 'text required' }, { status: 400 })
+      throw new ValidationError('Text is required and cannot be empty')
     }
 
-    const anthropicKey = process.env.ANTHROPIC_API_KEY
-    if (!anthropicKey) {
-      return NextResponse.json({ error: 'AI service not configured' }, { status: 500 })
-    }
-
-    // Analyze and improve text using Claude
+    // Analyze and improve text using cost-optimized AI router
     const prompt = `You are an expert academic writing assistant. Analyze this text and provide detailed feedback.
 
 ${context ? `Context: ${context}\n\n` : ''}${focus ? `Focus Areas: ${focus.join(', ')}\n\n` : ''}Text to Analyze:
@@ -97,22 +110,16 @@ Return JSON:
   "weaknesses": ["weakness 1", "weakness 2"]
 }`
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': anthropicKey,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 4000,
-        messages: [{ role: 'user', content: prompt }]
-      })
+    const result = await unifiedChatCompletion({
+      messages: [{ role: 'user', content: prompt }],
+      taskType: TaskType.COMPLEX_REASONING,
+      needsHighAccuracy: true,
+      budget: 'medium',
+      max_tokens: 4000
     })
 
-    const data = await response.json()
-    const content = data.content[0].text
+    console.log(`💰 Writing analysis cost: $${result.estimatedCost.toFixed(6)} (${result.provider}/${result.model})`)
+    const content = result.content
 
     let analysis: WritingAnalysis
     try {
@@ -154,6 +161,6 @@ Return JSON:
     return NextResponse.json({ analysis })
   } catch (error) {
     console.error('Writing assistant error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return handleAPIError(error)
   }
 }

@@ -1,21 +1,56 @@
 /**
- * AI-powered methodology extraction from academic sources
+ * Methodology Extraction - AI-powered methodology extraction from academic sources
+ *
+ * COST OPTIMIZATION: Now uses Groq Llama 3.3 70B ($0.59/M tokens) instead of
+ * Claude Haiku ($0.80/M tokens) for ~26% cost savings while maintaining quality.
  */
 
+import { TaskType } from '@/lib/ai-router/index'
+import { unifiedChatCompletion } from '@/lib/ai-router/unified-client'
+
+/**
+ * Extracted methodology information from academic source
+ */
 export interface ExtractedMethodology {
+  /** Type of research design (experimental, qualitative, etc.) */
   research_design: string
+  /** Data collection methods used */
   data_collection_methods: string[]
+  /** Analysis techniques applied */
   analysis_techniques: string[]
+  /** Description of sample or participants */
   sample_description?: string
+  /** Limitations acknowledged by authors */
   limitations: string[]
+  /** Validity/reliability considerations */
   validity_considerations?: string
+  /** Direct quote of methodology section if found */
   extracted_text: string
 }
 
+/**
+ * Extracts research methodology from academic source using cost-optimized AI
+ *
+ * Uses Groq Llama 3.3 70B for methodology extraction, reducing costs by 26%
+ * compared to Claude Haiku while maintaining quality for academic analysis.
+ *
+ * @param sourceText - Full text of the academic source (truncated to 3000 chars)
+ * @param sourceTitle - Title of the source
+ * @param apiKey - DEPRECATED: No longer needed, kept for backward compatibility
+ * @returns Promise resolving to extracted methodology information
+ *
+ * @example
+ * const methodology = await extractMethodology(
+ *   'Full research paper text...',
+ *   'A Study on AI Ethics',
+ *   '' // apiKey no longer used
+ * )
+ * console.log(methodology.research_design) // 'qualitative case study'
+ */
 export async function extractMethodology(
   sourceText: string,
   sourceTitle: string,
-  apiKey: string
+  apiKey: string // Kept for backward compatibility but not used
 ): Promise<ExtractedMethodology> {
   const prompt = `Extract the research methodology from this academic source.
 
@@ -43,26 +78,16 @@ Return JSON:
 
 If methodology is not clearly stated, return best inference from available information.`
 
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'claude-3-haiku-20240307',
-      max_tokens: 2000,
-      messages: [{ role: 'user', content: prompt }],
-    }),
+  // Use unified AI router with SUMMARIZATION task type for cost optimization
+  const response = await unifiedChatCompletion({
+    messages: [{ role: 'user', content: prompt }],
+    taskType: TaskType.SUMMARIZATION, // Uses Groq Llama 3.3 70B at $0.59/M
+    max_tokens: 2000,
+    temperature: 0.3,
+    budget: 'low'
   })
 
-  if (!response.ok) {
-    throw new Error(`Claude API error: ${await response.text()}`)
-  }
-
-  const data = await response.json()
-  const content = data.content[0].text
+  const content = response.content
 
   try {
     const jsonMatch = content.match(/\{[\s\S]*\}/)
@@ -78,6 +103,25 @@ If methodology is not clearly stated, return best inference from available infor
   }
 }
 
+/**
+ * Compares methodologies across multiple sources to identify patterns
+ *
+ * Analyzes a collection of methodologies to find common research designs,
+ * data collection methods, and analysis techniques. Calculates methodological
+ * diversity as a metric of variety across studies.
+ *
+ * @param methodologies - Array of extracted methodologies to compare
+ * @returns Comparison results with common patterns and diversity score
+ *
+ * @example
+ * const comparison = compareMethodologies([
+ *   { research_design: 'qualitative', ... },
+ *   { research_design: 'qualitative', ... },
+ *   { research_design: 'mixed methods', ... }
+ * ])
+ * console.log(comparison.common_designs) // ['qualitative']
+ * console.log(comparison.methodological_diversity) // 12
+ */
 export function compareMethodologies(
   methodologies: ExtractedMethodology[]
 ): {

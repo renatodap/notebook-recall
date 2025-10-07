@@ -1,6 +1,14 @@
-// Auto-discover connections between sources
+/**
+ * Connection Discovery - Auto-discover connections between sources
+ *
+ * COST OPTIMIZATION: Now uses Groq Llama 3.3 70B ($0.59/M tokens) instead of
+ * Claude Haiku ($0.80/M tokens) for contradiction detection and analysis.
+ */
+
 import type { ConnectionType } from '@/types'
 import { cosineSimilarity } from '@/lib/embeddings/utils'
+import { TaskType } from '@/lib/ai-router/index'
+import { unifiedChatCompletion } from '@/lib/ai-router/unified-client'
 
 interface Source {
   id: string
@@ -12,7 +20,24 @@ interface Source {
 }
 
 /**
- * Discover similar sources based on embedding similarity
+ * Discovers similar sources based on embedding similarity
+ *
+ * Uses cosine similarity between source embeddings to find related content.
+ * No AI API calls involved, purely mathematical comparison.
+ *
+ * @param sourceId - ID of the source to find similarities for
+ * @param allSources - Array of all available sources with embeddings
+ * @param threshold - Minimum similarity score (0-1, default: 0.7)
+ * @param limit - Maximum number of similar sources to return (default: 10)
+ * @returns Promise resolving to array of similar sources with strength scores
+ *
+ * @example
+ * const similar = await discoverSimilarSources(
+ *   'source-123',
+ *   allSources,
+ *   0.7,
+ *   10
+ * )
  */
 export async function discoverSimilarSources(
   sourceId: string,
@@ -48,15 +73,30 @@ export async function discoverSimilarSources(
 }
 
 /**
- * Detect contradictions between sources using LLM
+ * Detects contradictions between sources using cost-optimized AI
+ *
+ * Uses Groq Llama 3.3 70B for contradiction detection, reducing costs by 26%
+ * compared to Claude Haiku while maintaining quality.
+ *
+ * @param sourceA - First source with summary text
+ * @param sourceB - Second source with summary text
+ * @param apiKey - DEPRECATED: No longer needed, kept for backward compatibility
+ * @returns Promise resolving to contradiction details or null if none found
+ *
+ * @example
+ * const contradiction = await detectContradictions(
+ *   { id: '1', summary_text: 'AI is deterministic' },
+ *   { id: '2', summary_text: 'AI uses randomness' },
+ *   '' // apiKey no longer used
+ * )
  */
 export async function detectContradictions(
   sourceA: { id: string; summary_text: string },
   sourceB: { id: string; summary_text: string },
-  apiKey: string
+  apiKey: string // Kept for backward compatibility but not used
 ): Promise<{ contradicts: boolean; topic: string; evidence: string } | null> {
   try {
-    const prompt = `Compare these two research summaries and determine if they contradict each other:
+      const prompt = `Compare these two research summaries and determine if they contradict each other:
 
 Summary A: ${sourceA.summary_text}
 
@@ -73,42 +113,34 @@ Respond in JSON format:
 
 Only mark as contradicting if there's a clear disagreement on facts or conclusions.`
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-3-haiku-20240307',
-        max_tokens: 500,
+      // Use unified AI router with SUMMARIZATION task type for cost optimization
+      const response = await unifiedChatCompletion({
         messages: [{ role: 'user', content: prompt }],
-      }),
-    })
+        taskType: TaskType.SUMMARIZATION, // Uses Groq Llama 3.3 70B at $0.59/M
+        max_tokens: 500,
+        temperature: 0.3,
+        budget: 'low'
+      })
 
-    if (!response.ok) return null
+      const content = response.content
 
-    const data = await response.json()
-    const content = data.content?.[0]?.text
+      if (!content) return null
 
-    if (!content) return null
+      // Extract JSON from response
+      const jsonMatch = content.match(/\{[\s\S]*\}/)
+      if (!jsonMatch) return null
 
-    // Extract JSON from response
-    const jsonMatch = content.match(/\{[\s\S]*\}/)
-    if (!jsonMatch) return null
+      const result = JSON.parse(jsonMatch[0])
 
-    const result = JSON.parse(jsonMatch[0])
-
-    if (result.contradicts) {
-      return {
-        contradicts: true,
-        topic: result.topic,
-        evidence: `Source A: "${result.claim_a}" vs Source B: "${result.claim_b}"`,
+      if (result.contradicts) {
+        return {
+          contradicts: true,
+          topic: result.topic,
+          evidence: `Source A: "${result.claim_a}" vs Source B: "${result.claim_b}"`,
+        }
       }
-    }
 
-    return null
+      return null
   } catch (error) {
     console.error('Contradiction detection error:', error)
     return null
@@ -116,7 +148,14 @@ Only mark as contradicting if there's a clear disagreement on facts or conclusio
 }
 
 /**
- * Analyze citation relationships from DOIs
+ * Analyzes citation relationships from DOIs
+ *
+ * NOTE: Currently returns null. Implement with OpenAlex API or similar
+ * citation database in the future.
+ *
+ * @param sourceA - First source with DOI metadata
+ * @param sourceB - Second source with DOI metadata
+ * @returns Citation relationship details or null
  */
 export function detectCitationRelationships(
   sourceA: { doi?: string; citation_metadata?: { doi?: string } },
@@ -133,7 +172,16 @@ export function detectCitationRelationships(
 }
 
 /**
- * Generate connection evidence text
+ * Generates human-readable evidence text for a connection
+ *
+ * @param connectionType - Type of connection (similar, contradicts, cites, etc.)
+ * @param strength - Connection strength score (0-1)
+ * @param details - Optional additional details
+ * @returns Evidence description string
+ *
+ * @example
+ * const evidence = generateConnectionEvidence('similar', 0.85)
+ * // Returns: "85% semantic similarity. "
  */
 export function generateConnectionEvidence(
   connectionType: ConnectionType,
@@ -157,7 +205,22 @@ export function generateConnectionEvidence(
 }
 
 /**
- * Score connection strength
+ * Calculates connection strength score with boosting for multiple signals
+ *
+ * @param connectionType - Type of connection
+ * @param semanticSimilarity - Optional similarity score (0-1)
+ * @param hasSharedConcepts - Whether sources share concepts
+ * @param citationRelationship - Whether citation relationship exists
+ * @returns Strength score from 0-1
+ *
+ * @example
+ * const strength = scoreConnectionStrength(
+ *   'similar',
+ *   0.75,
+ *   true,
+ *   false
+ * )
+ * // Returns: 0.85 (0.75 + 0.1 boost for shared concepts)
  */
 export function scoreConnectionStrength(
   connectionType: ConnectionType,

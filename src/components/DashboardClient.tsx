@@ -6,6 +6,7 @@ import BulkActions from './BulkActions'
 import TagFilter from './tags/TagFilter'
 import ExportButton from './ExportButton'
 import type { Source, Summary, Tag } from '@/types'
+import { SourceListSkeleton } from './ui/Skeleton'
 
 interface DashboardClientProps {
   initialSources: (Source & { summary: Summary[]; tags: Tag[] })[]
@@ -17,6 +18,7 @@ export default function DashboardClient({ initialSources }: DashboardClientProps
   const [filteredSources, setFilteredSources] = useState(initialSources)
   const [filterTags, setFilterTags] = useState<string[]>([])
   const [filterLogic, setFilterLogic] = useState<'OR' | 'AND'>('OR')
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
   // Sync sources when initialSources changes (after router.refresh())
   useEffect(() => {
@@ -26,6 +28,7 @@ export default function DashboardClient({ initialSources }: DashboardClientProps
 
   // Refresh sources from API
   const refreshSources = useCallback(async () => {
+    setIsRefreshing(true)
     try {
       const response = await fetch('/api/sources')
       if (response.ok) {
@@ -34,6 +37,8 @@ export default function DashboardClient({ initialSources }: DashboardClientProps
       }
     } catch (error) {
       console.error('Failed to refresh sources:', error)
+    } finally {
+      setIsRefreshing(false)
     }
   }, [])
 
@@ -109,7 +114,9 @@ export default function DashboardClient({ initialSources }: DashboardClientProps
         />
 
         {/* Sources Grid */}
-        {filteredSources.length > 0 ? (
+        {isRefreshing ? (
+          <SourceListSkeleton count={5} />
+        ) : filteredSources.length > 0 ? (
           <div className="grid gap-4">
             {filteredSources.map((source) => (
               <SourceCard

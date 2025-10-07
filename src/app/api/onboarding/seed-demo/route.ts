@@ -4,6 +4,7 @@ import { getAllDemoSources } from '@/lib/onboarding/demo-data'
 import { generateEmbedding } from '@/lib/embeddings/client'
 import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 import type { SeedDemoResponse, Source } from '@/types'
+import { DatabaseSource } from '@/types/api'
 
 /**
  * Seed Demo Data API

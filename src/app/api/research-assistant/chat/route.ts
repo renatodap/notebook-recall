@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limiter'
+import { RateLimitError } from '@/lib/errors/custom-errors'
+import { DatabaseSource, DatabaseCollection } from '@/types/api'
 
 export interface ChatMessage {
   role: 'user' | 'assistant'
@@ -42,6 +45,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Rate limiting check
+    const rateLimit = await checkRateLimit(user.id, RATE_LIMITS.AI_CHAT)
+    if (rateLimit.isLimited) {
+      throw new RateLimitError(
+        `You have reached your daily limit of ${RATE_LIMITS.AI_CHAT.maxRequests} chat messages. Please try again in ${rateLimit.retryAfter} seconds`,
+        rateLimit.retryAfter
+      )
+    }
+
     const body = await request.json()
     const { message, session_id, context_source_ids, collection_id } = body
 
@@ -63,7 +75,7 @@ export async function POST(request: NextRequest) {
         .from('chat_sessions')
         .select('*')
         .eq('id', session_id)
-        .eq('user_id', user.id as never)
+        .eq('user_id', user.id)
         .single()
 
       session = data
@@ -80,7 +92,7 @@ export async function POST(request: NextRequest) {
           .from('collections')
           .select('id')
           .eq('id', collection_id)
-          .eq('user_id', user.id as never)
+          .eq('user_id', user.id)
           .single()
 
         if (collectionError || !collection) {
@@ -164,7 +176,7 @@ export async function POST(request: NextRequest) {
           summaries (summary_text, key_topics, key_actions)
         `)
         .in('id', sourceIds)
-        .eq('user_id', user.id as never)
+        .eq('user_id', user.id)
         .limit(10)
 
       if (sources && sources.length > 0) {
@@ -365,7 +377,7 @@ ${sourceContext || '\n\nNote: No sources are currently available.'}${insightsTex
           updated_at: new Date().toISOString()
         } as never)
         .eq('id', session_id)
-        .eq('user_id', user.id as never)
+        .eq('user_id', user.id)
         .select()
         .single()
 
@@ -393,7 +405,7 @@ ${sourceContext || '\n\nNote: No sources are currently available.'}${insightsTex
         interaction_count: userProfile.interaction_count + 1,
         last_active: new Date().toISOString()
       } as never)
-      .eq('user_id', user.id as never)
+      .eq('user_id', user.id)
 
     return NextResponse.json({
       session_id: session.id,
@@ -408,9 +420,26 @@ ${sourceContext || '\n\nNote: No sources are currently available.'}${insightsTex
       provider_used: usedProvider,
       estimated_cost: estimatedCost,
       cost_savings_vs_claude: ((3.0 - (estimatedCost * 1_000_000)) / 3.0 * 100).toFixed(1) + '%'
+    }, {
+      headers: {
+        'X-RateLimit-Limit': RATE_LIMITS.AI_CHAT.maxRequests.toString(),
+        'X-RateLimit-Remaining': rateLimit.remaining.toString(),
+        'X-RateLimit-Reset': new Date(rateLimit.resetTime).toISOString(),
+      }
     })
   } catch (error) {
     console.error('Research assistant chat error:', error)
+
+    if (error instanceof RateLimitError) {
+      return NextResponse.json(
+        {
+          error: error.message,
+          retryAfter: error.retryAfter
+        },
+        { status: 429 }
+      )
+    }
+
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -435,7 +464,7 @@ export async function GET(request: NextRequest) {
         .from('chat_sessions')
         .select('*')
         .eq('id' as never, sessionId)
-        .eq('user_id' as never, user.id as never)
+        .eq('user_id' as never, user.id)
         .single()
 
       if (error || !session) {
@@ -447,7 +476,7 @@ export async function GET(request: NextRequest) {
       const { data: sessions, error } = await supabase
         .from('chat_sessions')
         .select('id, title, created_at, updated_at')
-        .eq('user_id', user.id as never)
+        .eq('user_id', user.id)
         .order('updated_at', { ascending: false })
         .limit(50)
 

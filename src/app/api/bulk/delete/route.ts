@@ -6,17 +6,22 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/lib/supabase/server';
-import { z } from 'zod';
+import { BulkDeleteSchema } from '@/lib/validation/schemas';
+import {
+  AuthenticationError,
+  NotFoundError,
+  ValidationError,
+  RateLimitError,
+  handleAPIError,
+} from '@/lib/errors/custom-errors';
+import type { TypedSupabaseClient } from '@/types/supabase-helpers';
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limiter';
 
 export const dynamic = 'force-dynamic';
 
-const BulkDeleteSchema = z.object({
-  source_ids: z.array(z.string().uuid()).min(1, 'At least one source ID required'),
-});
-
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = await createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient() as TypedSupabaseClient;
 
     // Check authentication
     const {
@@ -24,7 +29,16 @@ export async function POST(request: NextRequest) {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      throw new AuthenticationError('Please sign in to delete sources');
+    }
+
+    // Check rate limit
+    const rateLimit = await checkRateLimit(user.id, RATE_LIMITS.DATA_MODIFICATION);
+    if (rateLimit.isLimited) {
+      throw new RateLimitError(
+        `Too many requests. Please try again in ${rateLimit.retryAfter} seconds`,
+        rateLimit.retryAfter
+      );
     }
 
     // Parse and validate request
@@ -32,44 +46,40 @@ export async function POST(request: NextRequest) {
     const validation = BulkDeleteSchema.safeParse(body);
 
     if (!validation.success) {
-      return NextResponse.json(
-        { error: validation.error.issues[0].message },
-        { status: 400 }
-      );
+      throw new ValidationError(validation.error.issues[0].message);
     }
 
-    const { source_ids } = validation.data;
+    const { source_ids, confirm } = validation.data;
 
     // Verify all sources belong to the user
-    const { data: sources, error: fetchError } = await (supabase as any)
+    const { data: sources, error: fetchError } = await supabase
       .from('sources')
       .select('id')
       .in('id', source_ids)
-      .eq('user_id', user.id as never);
+      .eq('user_id', user.id);
 
     if (fetchError) {
-      throw fetchError;
+      console.error('Fetch sources error:', fetchError);
+      throw new Error('Failed to verify source ownership');
     }
 
     const validSourceIds = sources?.map((s: any) => s.id) || [];
     const invalidCount = source_ids.length - validSourceIds.length;
 
     if (validSourceIds.length === 0) {
-      return NextResponse.json(
-        { error: 'No valid sources found to delete' },
-        { status: 404 }
-      );
+      throw new NotFoundError('No valid sources found to delete');
     }
 
     // Delete sources (cascades to summaries and tags via foreign key constraints)
-    const { error: deleteError } = await (supabase as any)
+    const { error: deleteError } = await supabase
       .from('sources')
       .delete()
       .in('id', validSourceIds)
-      .eq('user_id', user.id as never);
+      .eq('user_id', user.id);
 
     if (deleteError) {
-      throw deleteError;
+      console.error('Delete sources error:', deleteError);
+      throw new Error('Failed to delete sources');
     }
 
     return NextResponse.json({
@@ -81,9 +91,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Bulk delete error:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete sources' },
-      { status: 500 }
-    );
+    return handleAPIError(error);
   }
 }

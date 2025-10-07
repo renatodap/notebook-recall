@@ -6,13 +6,20 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/lib/supabase/server';
+import {
+  AuthenticationError,
+  RateLimitError,
+  handleAPIError,
+} from '@/lib/errors/custom-errors';
+import type { TypedSupabaseClient } from '@/types/supabase-helpers';
 import type { GetTagsResponse, TagWithCount } from '@/types';
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limiter';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(_request: NextRequest) {
+export async function GET(_request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = await createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient() as TypedSupabaseClient;
 
     // Check authentication
     const {
@@ -20,7 +27,15 @@ export async function GET(_request: NextRequest) {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      throw new AuthenticationError('Please sign in to view tags');
+    }
+
+    const rateLimit = await checkRateLimit(user.id, RATE_LIMITS.SEARCH);
+    if (rateLimit.isLimited) {
+      throw new RateLimitError(
+        `Too many requests. Please try again in ${rateLimit.retryAfter} seconds`,
+        rateLimit.retryAfter
+      );
     }
 
     // Get tags with counts
@@ -34,10 +49,11 @@ export async function GET(_request: NextRequest) {
         sources!inner(user_id)
       `
       )
-      .eq('sources.user_id', user.id as never);
+      .eq('sources.user_id', user.id);
 
     if (tagsError) {
-      throw tagsError;
+      console.error('Fetch tags error:', tagsError);
+      throw new Error('Failed to fetch tags');
     }
 
     // Aggregate tags and count sources
@@ -76,9 +92,6 @@ export async function GET(_request: NextRequest) {
     return NextResponse.json(response);
   } catch (error) {
     console.error('GET /api/tags error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch tags' },
-      { status: 500 }
-    );
+    return handleAPIError(error);
   }
 }

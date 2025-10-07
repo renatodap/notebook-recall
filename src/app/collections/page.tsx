@@ -3,6 +3,16 @@ import { redirect } from 'next/navigation'
 import MobileNav from '@/components/MobileNav'
 import Link from 'next/link'
 import { Plus } from 'lucide-react'
+import { generateMetadata as generateMeta } from '@/lib/metadata'
+
+
+export const metadata = generateMeta({
+  title: 'Collections',
+  description: 'Organize your knowledge into collections. Group related sources together for better organization and discovery.',
+  keywords: ['collections', 'organize notes', 'folders', 'knowledge organization'],
+  path: '/collections',
+  noIndex: true,
+})
 
 export default async function CollectionsPage() {
   const supabase = await createServerClient()

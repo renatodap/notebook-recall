@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
 import type { DatabaseRecord } from '@/types/api-types'
+import { DatabaseSource } from '@/types/api'
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limiter'
+import { RateLimitError } from '@/lib/errors/custom-errors'
+import { unifiedChatCompletion } from '@/lib/ai-router/unified-client'
+import { TaskType } from '@/lib/ai-router'
 
 /**
  * Feature 30: Book Outline Generator
@@ -14,6 +19,14 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const rateLimit = await checkRateLimit(user.id, RATE_LIMITS.AI_PUBLISHING)
+    if (rateLimit.isLimited) {
+      throw new RateLimitError(
+        `Too many requests. Please try again in ${rateLimit.retryAfter} seconds`,
+        rateLimit.retryAfter
+      )
     }
 
     const body = await request.json()
@@ -33,7 +46,7 @@ export async function POST(request: NextRequest) {
       .from('sources')
       .select('id, title, summaries (summary_text, key_topics)')
       .in('id', source_ids as any)
-      .eq('user_id', user.id as never)
+      .eq('user_id', user.id)
 
     if (!sources || sources.length === 0) {
       return NextResponse.json({ error: 'Sources not found' }, { status: 404 })
@@ -42,11 +55,6 @@ export async function POST(request: NextRequest) {
     const sourceContext = sources.map((s: any, idx: number) =>
       `[${idx + 1}] ${s.title}\nTopics: ${s.summaries?.[0]?.key_topics?.join(', ') || 'N/A'}\n${s.summaries?.[0]?.summary_text || ''}`
     ).join('\n\n')
-
-    const anthropicKey = process.env.ANTHROPIC_API_KEY
-    if (!anthropicKey) {
-      return NextResponse.json({ error: 'AI service not configured' }, { status: 500 })
-    }
 
     const prompt = `Create a comprehensive book outline based on these research sources.
 
@@ -99,22 +107,16 @@ Return JSON:
   "estimatedTimeline": "12-18 months"
 }`
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': anthropicKey,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 6000,
-        messages: [{ role: 'user', content: prompt }]
-      })
+    const result = await unifiedChatCompletion({
+      messages: [{ role: 'user', content: prompt }],
+      taskType: TaskType.CREATIVE_WRITING,
+      needsHighAccuracy: true,
+      budget: 'medium',
+      max_tokens: 6000
     })
 
-    const data = await response.json()
-    const content = data.content[0].text
+    console.log(`💰 Book outline generation cost: $${result.estimatedCost.toFixed(6)} (${result.provider}/${result.model})`)
+    const content = result.content
 
     let outline: any
     try {

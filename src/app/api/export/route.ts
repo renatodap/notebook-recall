@@ -1,19 +1,30 @@
 /**
  * GET /api/export
  *
- * Export sources in markdown or JSON format
+ * Export sources in markdown or JSON format with validation
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/lib/supabase/server';
 import { exportToMarkdown } from '@/lib/export/markdown';
 import { exportToJSON } from '@/lib/export/json';
+import { ExportSourcesQuerySchema, validateSourceIds } from '@/lib/validation/schemas';
+import {
+  AuthenticationError,
+  ValidationError,
+  NotFoundError,
+  RateLimitError,
+  handleAPIError,
+} from '@/lib/errors/custom-errors';
+import type { TypedSupabaseClient } from '@/types/supabase-helpers';
+import type { DatabaseSource } from '@/types/api';
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limiter';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = await createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient() as TypedSupabaseClient;
 
     // Check authentication
     const {
@@ -21,19 +32,36 @@ export async function GET(request: NextRequest) {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      throw new AuthenticationError('Please sign in to export sources');
     }
 
-    // Get query parameters
-    const { searchParams } = new URL(request.url);
-    const format = searchParams.get('format') || 'json';
-    const sourcesParam = searchParams.get('sources');
-
-    if (format !== 'markdown' && format !== 'json') {
-      return NextResponse.json(
-        { error: 'Invalid format. Use "markdown" or "json"' },
-        { status: 400 }
+    // Check rate limit
+    const rateLimit = await checkRateLimit(user.id, RATE_LIMITS.EXPORT);
+    if (rateLimit.isLimited) {
+      throw new RateLimitError(
+        `Too many requests. Please try again in ${rateLimit.retryAfter} seconds`,
+        rateLimit.retryAfter
       );
+    }
+
+    // Get and validate query parameters
+    const { searchParams } = new URL(request.url);
+    const params = Object.fromEntries(searchParams.entries());
+
+    const validation = ExportSourcesQuerySchema.safeParse(params);
+    if (!validation.success) {
+      throw new ValidationError(validation.error.issues[0].message);
+    }
+
+    const { format, sources: sourcesParam } = validation.data;
+
+    // Validate source IDs if provided
+    let sourceIds: string[] | null = null;
+    if (sourcesParam) {
+      sourceIds = validateSourceIds(sourcesParam);
+      if (sourceIds === null) {
+        throw new ValidationError('Invalid source IDs provided. All IDs must be valid UUIDs.');
+      }
     }
 
     // Build query
@@ -45,13 +73,12 @@ export async function GET(request: NextRequest) {
         summary:summaries(*)
       `
       )
-      .eq('user_id', user.id as never)
+      .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
     // Filter by specific source IDs if provided
-    if (sourcesParam) {
-      const sourceIds = sourcesParam.split(',').map((id) => id.trim());
-      query = query.in('id', sourceIds as any);
+    if (sourceIds) {
+      query = query.in('id', sourceIds);
     }
 
     const { data, error } = await query;
@@ -61,10 +88,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (!data || data.length === 0) {
-      return NextResponse.json(
-        { error: 'No sources found to export' },
-        { status: 404 }
-      );
+      throw new NotFoundError('No sources found to export');
     }
 
     // Transform data
@@ -114,9 +138,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Export error:', error);
-    return NextResponse.json(
-      { error: 'Failed to export sources' },
-      { status: 500 }
-    );
+    return handleAPIError(error);
   }
 }

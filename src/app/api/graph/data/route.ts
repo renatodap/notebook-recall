@@ -1,23 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
+import { AuthenticationError, RateLimitError, handleAPIError } from '@/lib/errors/custom-errors'
+import type { TypedSupabaseClient } from '@/types/supabase-helpers'
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limiter'
 
-export async function GET(request: NextRequest) {
+/**
+ * GET /api/graph/data - Get knowledge graph data
+ * Query params:
+ *   - limit: Number of sources to include (default: 50, max: 200)
+ */
+export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = await createRouteHandlerClient()
+    const supabase = await createRouteHandlerClient() as TypedSupabaseClient
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      throw new AuthenticationError('Please sign in to view graph data')
+    }
+
+    // Rate limiting - SEARCH limit for GET
+    const rateLimit = await checkRateLimit(user.id, RATE_LIMITS.SEARCH)
+    if (rateLimit.isLimited) {
+      throw new RateLimitError(
+        `Too many requests. Please try again in ${rateLimit.retryAfter} seconds`,
+        rateLimit.retryAfter
+      )
     }
 
     const { searchParams } = new URL(request.url)
-    const limit = parseInt(searchParams.get('limit') || '50')
+    const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 200)
 
     // Fetch sources
     const { data: sources } = await supabase
       .from('sources')
       .select('id, title, content_type')
-      .eq('user_id', user.id as never)
+      .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(limit)
 
@@ -53,7 +70,7 @@ export async function GET(request: NextRequest) {
         name,
         collection_sources (source_id)
       `)
-      .eq('user_id', user.id as never)
+      .eq('user_id', user.id)
       .limit(10)
 
     // Build graph nodes
@@ -117,9 +134,6 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('Graph data error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return handleAPIError(error)
   }
 }

@@ -6,6 +6,7 @@ import SynthesisGenerator from './ai/SynthesisGenerator'
 import BlogGenerator from './publishing/BlogGenerator'
 import NewsletterGenerator from './publishing/NewsletterGenerator'
 import type { CitationFormat, Collection } from '@/types'
+import { showSuccess, showError, showInfo } from '@/lib/toast'
 
 interface BulkActionsProps {
   selectedSourceIds: string[]
@@ -62,16 +63,16 @@ export default function BulkActions({
       }
 
       if (successCount > 0) {
-        alert(`Added ${successCount} source(s) to collection`)
+        showSuccess(`Added ${successCount} source(s) to collection`)
         setShowCollectionModal(false)
         onClearSelection()
         onActionComplete()
       } else {
-        alert('Failed to add sources to collection')
+        showError('Failed to add sources to collection')
       }
     } catch (error) {
       console.error('Add to collection error:', error)
-      alert('Failed to add sources to collection')
+      showError('Failed to add sources to collection')
     } finally {
       setAddingToCollection(false)
     }
@@ -94,12 +95,12 @@ export default function BulkActions({
         throw new Error('Delete failed')
       }
 
-      alert('Sources deleted successfully')
+      showSuccess('Sources deleted successfully')
       onClearSelection()
       onActionComplete()
     } catch (error) {
       console.error('Delete error:', error)
-      alert('Failed to delete sources. Please try again.')
+      showError('Failed to delete sources. Please try again.')
     } finally {
       setIsDeleting(false)
     }
@@ -107,7 +108,7 @@ export default function BulkActions({
 
   const handleAddTags = async () => {
     if (!tagInput.trim()) {
-      alert('Please enter at least one tag')
+      showInfo('Please enter at least one tag')
       return
     }
 
@@ -117,7 +118,7 @@ export default function BulkActions({
       .filter((t) => t.length > 0)
 
     if (tags.length === 0) {
-      alert('Please enter valid tags')
+      showInfo('Please enter valid tags')
       return
     }
 
@@ -136,14 +137,14 @@ export default function BulkActions({
         throw new Error('Tag addition failed')
       }
 
-      alert('Tags added successfully')
+      showSuccess('Tags added successfully')
       setTagInput('')
       setShowTagInput(false)
       onClearSelection()
       onActionComplete()
     } catch (error) {
       console.error('Add tags error:', error)
-      alert('Failed to add tags. Please try again.')
+      showError('Failed to add tags. Please try again.')
     } finally {
       setIsAddingTags(false)
     }
@@ -305,11 +306,11 @@ export default function BulkActions({
                       window.URL.revokeObjectURL(url)
                       setShowCitationExport(false)
                     } else {
-                      alert('Some sources may not have citations yet. Visit each source and use "Cite" button to generate citations first.')
+                      showInfo('Some sources may not have citations yet. Visit each source and use "Cite" button to generate citations first.')
                     }
                   } catch (error) {
                     console.error('Export error:', error)
-                    alert('Failed to export citations')
+                    showError('Failed to export citations')
                   } finally {
                     setExportingCitations(false)
                   }

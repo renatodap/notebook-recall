@@ -2,6 +2,38 @@ import { createServerClient } from '@/lib/supabase/server'
 import { Card, CardBody, CardHeader } from '@/components/ui/Card'
 import Link from 'next/link'
 import Button from '@/components/ui/Button'
+import { generateMetadata as generateMeta } from '@/lib/metadata'
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const supabase = await createServerClient()
+
+  const { data: shareInfo } = await (supabase as any)
+    .from('source_shares')
+    .select('*, sources (title, content_type, summaries (summary_text))')
+    .eq('source_id', id)
+    .eq('visibility', 'public')
+    .single()
+
+  if (!shareInfo || !shareInfo.sources) {
+    return generateMeta({
+      title: 'Source Not Found',
+      description: 'This source is either private or doesn\'t exist.',
+      path: '/public/source',
+      noIndex: true,
+    })
+  }
+
+  const source = shareInfo.sources
+  const summary = source.summaries?.[0]?.summary_text
+
+  return generateMeta({
+    title: source.title || 'Public Research Source',
+    description: summary || `Publicly shared ${source.content_type || 'research'} on Recall Notebook. View AI summaries and insights.`,
+    keywords: ['public research', source.content_type, 'shared knowledge', 'research source'],
+    path: `/public/source/${id}`,
+  })
+}
 
 export const dynamic = 'force-dynamic'
 

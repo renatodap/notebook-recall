@@ -157,7 +157,11 @@ export default function AddPage() {
           word_count: summaryData.summary.split(' ').length,
         }),
       })
-      if (!saveRes.ok) throw new Error('Failed to save source')
+      const saveData = await saveRes.json()
+      if (!saveRes.ok) {
+        console.error('Save source error:', saveData)
+        throw new Error(saveData.error || 'Failed to save source')
+      }
 
       setInput('')
       setFile(null)
@@ -314,15 +318,16 @@ export default function AddPage() {
             loading={loading}
             className="w-full h-14 text-lg font-semibold"
             disabled={!input.trim() && !file}
+            aria-label={loading ? 'Processing content' : 'Add content to library'}
           >
             {loading ? (
               <>
-                <span className="inline-block animate-spin mr-2">⚙️</span>
+                <span className="inline-block animate-spin mr-2" aria-hidden="true">⚙️</span>
                 Processing...
               </>
             ) : (
               <>
-                <span className="mr-2">⚡</span>
+                <span className="mr-2" aria-hidden="true">⚡</span>
                 Add to Library
               </>
             )}

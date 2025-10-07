@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Card, CardBody, CardHeader } from '../ui/Card'
 import Button from '../ui/Button'
 import Link from 'next/link'
+import AIDisclaimer from '@/components/AIDisclaimer'
 
 interface Methodology {
   id: string
@@ -76,6 +77,7 @@ export default function MethodologyComparisonClient() {
 
   return (
     <div className="space-y-8">
+      <AIDisclaimer variant="compact" className="mb-4" />
       <Card className="shadow-lg">
         <CardHeader>
           <h2 className="text-lg sm:text-xl font-bold text-gray-900">Select Sources to Compare</h2>

@@ -1,23 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
+import { ExtractConceptsSchema } from '@/lib/validation/schemas'
+import {
+  AuthenticationError,
+  NotFoundError,
+  ValidationError,
+  RateLimitError,
+  handleAPIError,
+} from '@/lib/errors/custom-errors'
+import type { TypedSupabaseClient } from '@/types/supabase-helpers'
 import { extractConcepts, normalizeConcept, generateConceptEmbedding } from '@/lib/concepts/extractor'
-import type { ExtractConceptsRequest } from '@/types'
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limiter'
 
-export async function POST(request: NextRequest) {
+// POST: Extract concepts from a source
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = await createRouteHandlerClient()
+    const supabase = await createRouteHandlerClient() as TypedSupabaseClient
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      throw new AuthenticationError('Please sign in to extract concepts')
     }
 
-    const body: ExtractConceptsRequest = await request.json()
-    const { source_id, min_relevance = 0.5 } = body
-
-    if (!source_id) {
-      return NextResponse.json({ error: 'source_id required' }, { status: 400 })
+    const rateLimit = await checkRateLimit(user.id, RATE_LIMITS.AI_ANALYSIS)
+    if (rateLimit.isLimited) {
+      throw new RateLimitError(
+        `Too many requests. Please try again in ${rateLimit.retryAfter} seconds`,
+        rateLimit.retryAfter
+      )
     }
+
+    // Validate request body
+    const body = await request.json()
+    const validation = ExtractConceptsSchema.safeParse(body)
+    if (!validation.success) {
+      throw new ValidationError(validation.error.issues[0].message)
+    }
+
+    const { source_id, min_relevance } = validation.data
 
     // Verify user owns this source
     const { data: source, error: sourceError } = await supabase
@@ -30,15 +50,12 @@ export async function POST(request: NextRequest) {
           key_topics
         )
       `)
-      .eq('id', source_id as never)
-      .eq('user_id', user.id as never)
+      .eq('id', source_id)
+      .eq('user_id', user.id)
       .single()
 
     if (sourceError || !source) {
-      return NextResponse.json(
-        { error: 'Source not found or access denied' },
-        { status: 404 }
-      )
+      throw new NotFoundError('Source not found or access denied')
     }
 
     // Combine content for concept extraction
@@ -49,13 +66,13 @@ export async function POST(request: NextRequest) {
     ].join('\n\n')
 
     if (!textToAnalyze.trim()) {
-      return NextResponse.json({ error: 'No content to analyze' }, { status: 400 })
+      throw new ValidationError('No content available to analyze. Please ensure the source has a summary.')
     }
 
     // Extract concepts using AI
     const anthropicKey = process.env.ANTHROPIC_API_KEY
     if (!anthropicKey) {
-      return NextResponse.json({ error: 'AI service not configured' }, { status: 500 })
+      throw new Error('AI service not configured')
     }
 
     const extractedConcepts = await extractConcepts(textToAnalyze, anthropicKey, 15)
@@ -77,7 +94,7 @@ export async function POST(request: NextRequest) {
       let { data: existingConcept } = await supabase
         .from('concepts')
         .select('*')
-        .eq('normalized_name', normalizedName as never)
+        .eq('normalized_name', normalizedName)
         .maybeSingle()
 
       if (!existingConcept) {
@@ -103,7 +120,7 @@ export async function POST(request: NextRequest) {
         await supabase
           .from('concepts')
           .update({ frequency: (existingConcept as any).frequency + 1 } as never)
-          .eq('id', (existingConcept as any).id as never)
+          .eq('id', (existingConcept as any).id)
       }
 
       if (existingConcept) {
@@ -117,8 +134,8 @@ export async function POST(request: NextRequest) {
         const { data: existingLink } = await supabase
           .from('source_concepts')
           .select('*')
-          .eq('source_id', source_id as never)
-          .eq('concept_id', (existingConcept as any).id as never)
+          .eq('source_id', source_id)
+          .eq('concept_id', (existingConcept as any).id)
           .maybeSingle()
 
         if (!existingLink) {
@@ -141,9 +158,6 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('Concept extraction error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return handleAPIError(error)
   }
 }

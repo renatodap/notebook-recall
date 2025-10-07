@@ -2,6 +2,16 @@ import { redirect } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import MobileNav from '@/components/MobileNav'
+import { generateMetadata as generateMeta } from '@/lib/metadata'
+
+
+export const metadata = generateMeta({
+  title: 'Publishing',
+  description: 'Transform your knowledge into polished content. Generate blog posts, articles, and documents from your sources.',
+  keywords: ['publish content', 'generate blog post', 'content creation', 'AI writing'],
+  path: '/publishing',
+  noIndex: true,
+})
 
 export const dynamic = 'force-dynamic'
 

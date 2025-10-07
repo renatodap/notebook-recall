@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Card, CardBody, CardHeader } from '../ui/Card'
 import Button from '../ui/Button'
 import Input from '../ui/Input'
+import { showInfo } from '@/lib/toast'
 
 interface Workspace {
   id: string
@@ -38,7 +39,7 @@ export default function WorkspaceDetailClient({
     setAddingMember(true)
     try {
       // In a real implementation, you'd lookup user by email first
-      alert('Member invitation feature coming soon!')
+      showInfo('Member invitation feature coming soon!')
     } catch (error) {
       console.error('Failed to add member:', error)
     } finally {

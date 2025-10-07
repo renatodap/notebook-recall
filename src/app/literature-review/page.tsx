@@ -3,6 +3,16 @@ import { redirect } from 'next/navigation'
 import LiteratureReviewClient from '@/components/academic/LiteratureReviewClient'
 import Link from 'next/link'
 import Button from '@/components/ui/Button'
+import { generateMetadata as generateMeta } from '@/lib/metadata'
+
+
+export const metadata = generateMeta({
+  title: 'Literature Review',
+  description: 'Generate comprehensive literature reviews from your sources. Identify themes, gaps, and key findings.',
+  keywords: ['literature review', 'academic review', 'research review', 'synthesis'],
+  path: '/literature-review',
+  noIndex: true,
+})
 
 export const dynamic = 'force-dynamic'
 

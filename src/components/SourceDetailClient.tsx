@@ -8,7 +8,9 @@ import CitationManager from './academic/CitationManager'
 import ConnectionsPanel from './ai/ConnectionsPanel'
 import ContradictionsPanel from './ai/ContradictionsPanel'
 import ShareButton from './ShareButton'
+import AIDisclaimer from './AIDisclaimer'
 import type { Source, Summary, Tag } from '@/types'
+import { showSuccess, showError } from '@/lib/toast'
 
 // Lazy load PDFViewer (PDF.js is heavy - 500KB+)
 const PDFViewer = dynamic(() => import('./pdf/PDFViewer'), {
@@ -119,6 +121,7 @@ export default function SourceDetailClient({ source, onDelete }: SourceDetailCli
 
                 {summary && (
                   <>
+                    <AIDisclaimer variant="compact" className="mb-4" />
                     <div className="mb-6">
                       <h2 className="text-lg font-semibold text-gray-900 mb-2">Summary</h2>
                       <p className="text-gray-700 whitespace-pre-wrap">{summary.summary_text}</p>
@@ -157,10 +160,13 @@ export default function SourceDetailClient({ source, onDelete }: SourceDetailCli
                                 body: JSON.stringify({ source_id: source.id })
                               })
                               if (res.ok) {
-                                alert('Concepts extracted! Refresh to see.')
+                                showSuccess('Concepts extracted! Refresh to see.')
+                              } else {
+                                showError('Failed to extract concepts')
                               }
                             } catch (e) {
                               console.error(e)
+                              showError('Failed to extract concepts')
                             }
                           }}
                           className="mt-2 text-xs text-blue-600 hover:text-blue-700"

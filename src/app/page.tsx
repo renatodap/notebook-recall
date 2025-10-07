@@ -1,6 +1,15 @@
 import Link from 'next/link'
 import Button from '@/components/ui/Button'
 import { Sparkles } from 'lucide-react'
+import { generateMetadata as generateMeta } from '@/lib/metadata'
+
+
+export const metadata = generateMeta({
+  title: 'Recall Notebook',
+  description: 'AI-powered knowledge management that works the way you think. Save articles, PDFs, and notes—then search across everything with natural language. Remember everything, find anything instantly.',
+  keywords: ['AI knowledge base', 'smart notes', 'digital memory', 'research assistant', 'knowledge graph'],
+  path: '/',
+})
 
 export default function Home() {
   return (

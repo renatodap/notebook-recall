@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
+import { retryAICall } from '@/lib/retry'
 
 export interface ParsedQuery {
   keywords: string[]
@@ -26,12 +27,13 @@ export async function parseConversationalQuery(query: string): Promise<ParsedQue
       apiKey: process.env.ANTHROPIC_API_KEY
     })
 
-    const message = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 500,
-      messages: [{
-        role: 'user',
-        content: `Parse this conversational search query into structured parameters:
+    const message = await retryAICall(async () => {
+      return anthropic.messages.create({
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 500,
+        messages: [{
+          role: 'user',
+          content: `Parse this conversational search query into structured parameters:
 
 Query: "${query}"
 
@@ -58,7 +60,8 @@ Important:
 - Time ranges should be natural language like "last week", "yesterday", "last month"
 - Intent: "recall" = remembering something, "search" = finding something, "summarize" = wanting summary, "filter" = narrowing down
 - Be concise and only include relevant terms`
-      }]
+        }]
+      })
     })
 
     const text = message.content[0].type === 'text' ? message.content[0].text : '{}'

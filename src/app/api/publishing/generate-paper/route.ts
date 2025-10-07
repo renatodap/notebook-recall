@@ -1,31 +1,56 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limiter'
+import { GeneratePaperRequestSchema } from '@/lib/validation/schemas'
+import {
+  RateLimitError,
+  AuthenticationError,
+  ValidationError,
+  NotFoundError,
+  handleAPIError,
+} from '@/lib/errors/custom-errors'
+import type { TypedSupabaseClient } from '@/types/supabase-helpers'
+import type { DatabaseSource } from '@/types/api'
+import { unifiedChatCompletion } from '@/lib/ai-router/unified-client'
+import { TaskType } from '@/lib/ai-router'
 
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = await createRouteHandlerClient()
+    const supabase = await createRouteHandlerClient() as TypedSupabaseClient
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      throw new AuthenticationError('Please sign in to generate academic papers')
     }
 
+    // Rate limiting check
+    const rateLimit = await checkRateLimit(user.id, RATE_LIMITS.AI_PUBLISHING)
+    if (rateLimit.isLimited) {
+      throw new RateLimitError(
+        `You have reached your daily limit of ${RATE_LIMITS.AI_PUBLISHING.maxRequests} publishing requests. Please try again in ${rateLimit.retryAfter} seconds`,
+        rateLimit.retryAfter
+      )
+    }
+
+    // Validate request body
     const body = await request.json()
-    const { source_ids, title, research_question, paper_type = 'research_paper' } = body
+    const validation = GeneratePaperRequestSchema.safeParse(body)
 
-    if (!source_ids || source_ids.length === 0) {
-      return NextResponse.json({ error: 'source_ids required' }, { status: 400 })
+    if (!validation.success) {
+      throw new ValidationError(validation.error.issues[0].message)
     }
+
+    const { source_ids, title, research_question, paper_type, citation_style } = validation.data
 
     // Verify user owns all sources
     const { data: sources } = await supabase
       .from('sources')
       .select(`id, title, summaries (summary_text, key_topics)`)
-      .in('id', source_ids as any)
-      .eq('user_id', user.id as never)
+      .in('id', source_ids)
+      .eq('user_id', user.id)
 
     if (!sources || sources.length === 0) {
-      return NextResponse.json({ error: 'Sources not found' }, { status: 404 })
+      throw new NotFoundError('Sources not found or access denied')
     }
 
     // Build context
@@ -33,12 +58,7 @@ export async function POST(request: NextRequest) {
       `[${idx + 1}] ${s.title}\n${s.summaries?.[0]?.summary_text || ''}`
     ).join('\n\n')
 
-    const anthropicKey = process.env.ANTHROPIC_API_KEY
-    if (!anthropicKey) {
-      return NextResponse.json({ error: 'AI service not configured' }, { status: 500 })
-    }
-
-    // Generate paper structure using AI
+    // Generate paper structure using cost-optimized AI router
     const prompt = `You are an academic writing assistant. Generate an academic paper structure from these sources.
 
 ${research_question ? `Research Question: ${research_question}\n\n` : ''}Paper Type: ${paper_type}
@@ -65,22 +85,16 @@ Return JSON:
   ]
 }`
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': anthropicKey,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 8000,
-        messages: [{ role: 'user', content: prompt }],
-      }),
+    const result = await unifiedChatCompletion({
+      messages: [{ role: 'user', content: prompt }],
+      taskType: TaskType.CREATIVE_WRITING,
+      needsHighAccuracy: true,
+      budget: 'medium',
+      max_tokens: 8000
     })
 
-    const data = await response.json()
-    const content = data.content[0].text
+    console.log(`💰 Paper generation cost: $${result.estimatedCost.toFixed(6)} (${result.provider}/${result.model})`)
+    const content = result.content
 
     let paper: any
     try {
@@ -101,19 +115,26 @@ Return JSON:
         output_type: 'academic_paper',
         title: title || paper.title,
         content: fullContent,
-        metadata: { paper_type, research_question, source_count: sources.length },
+        metadata: { paper_type, research_question, citation_style, source_count: sources.length },
         status: 'draft',
-      } as any)
+      } as never)
       .select()
       .single()
 
     // Link sources
     const links = source_ids.map((sid: string) => ({ output_id: (output as any).id, source_id: sid }))
-    await supabase.from('output_sources').insert(links as any)
+    await supabase.from('output_sources').insert(links as never)
 
-    return NextResponse.json({ output, paper }, { status: 201 })
+    return NextResponse.json({ output, paper }, {
+      status: 201,
+      headers: {
+        'X-RateLimit-Limit': RATE_LIMITS.AI_PUBLISHING.maxRequests.toString(),
+        'X-RateLimit-Remaining': rateLimit.remaining.toString(),
+        'X-RateLimit-Reset': new Date(rateLimit.resetTime).toISOString(),
+      }
+    })
   } catch (error) {
     console.error('Paper generation error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return handleAPIError(error)
   }
 }

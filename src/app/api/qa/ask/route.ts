@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limiter'
+import { RateLimitError } from '@/lib/errors/custom-errors'
+import { DatabaseSource } from '@/types/api'
+import { unifiedChatCompletion } from '@/lib/ai-router/unified-client'
+import { TaskType } from '@/lib/ai-router'
 
 export async function POST(request: NextRequest) {
   try {
@@ -8,6 +13,15 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Rate limiting check
+    const rateLimit = await checkRateLimit(user.id, RATE_LIMITS.AI_CHAT)
+    if (rateLimit.isLimited) {
+      throw new RateLimitError(
+        `You have reached your daily limit of ${RATE_LIMITS.AI_CHAT.maxRequests} chat messages. Please try again in ${rateLimit.retryAfter} seconds`,
+        rateLimit.retryAfter
+      )
     }
 
     const body = await request.json()
@@ -22,7 +36,7 @@ export async function POST(request: NextRequest) {
       .from('sources')
       .select('id, title, summaries (summary_text)')
       .in('id', (source_ids || []) as any)
-      .eq('user_id', user.id as never)
+      .eq('user_id', user.id)
       .limit(10)
 
     if (!sources || sources.length === 0) {
@@ -33,11 +47,6 @@ export async function POST(request: NextRequest) {
     const context = sources.map((s: any, idx: number) =>
       `[Source ${idx + 1}: ${s.title}]\n${s.summaries?.[0]?.summary_text || ''}`
     ).join('\n\n---\n\n')
-
-    const anthropicKey = process.env.ANTHROPIC_API_KEY
-    if (!anthropicKey) {
-      return NextResponse.json({ error: 'AI service not configured' }, { status: 500 })
-    }
 
     const prompt = `Answer this question based on the following research sources. Cite sources by number.
 
@@ -62,22 +71,16 @@ Return JSON:
   "limitations": "What the sources don't cover"
 }`
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': anthropicKey,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 3000,
-        messages: [{ role: 'user', content: prompt }],
-      }),
+    const aiResult = await unifiedChatCompletion({
+      messages: [{ role: 'user', content: prompt }],
+      taskType: TaskType.COMPLEX_REASONING,
+      needsHighAccuracy: true,
+      budget: 'medium',
+      max_tokens: 3000
     })
 
-    const data = await response.json()
-    const content = data.content[0].text
+    console.log(`💰 Q&A cost: $${aiResult.estimatedCost.toFixed(6)} (${aiResult.provider}/${aiResult.model})`)
+    const content = aiResult.content
 
     let result: any
     try {
@@ -99,9 +102,26 @@ Return JSON:
         metadata: { key_points: result.key_points, limitations: result.limitations },
       } as any)
 
-    return NextResponse.json({ ...result, source_count: sources.length })
+    return NextResponse.json({ ...result, source_count: sources.length }, {
+      headers: {
+        'X-RateLimit-Limit': RATE_LIMITS.AI_CHAT.maxRequests.toString(),
+        'X-RateLimit-Remaining': rateLimit.remaining.toString(),
+        'X-RateLimit-Reset': new Date(rateLimit.resetTime).toISOString(),
+      }
+    })
   } catch (error) {
     console.error('Q&A error:', error)
+
+    if (error instanceof RateLimitError) {
+      return NextResponse.json(
+        {
+          error: error.message,
+          retryAfter: error.retryAfter
+        },
+        { status: 429 }
+      )
+    }
+
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

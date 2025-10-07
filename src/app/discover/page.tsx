@@ -3,6 +3,16 @@ import { redirect } from 'next/navigation'
 import DiscoverClient from '@/components/social/DiscoverClient'
 import Link from 'next/link'
 import Button from '@/components/ui/Button'
+import { generateMetadata as generateMeta } from '@/lib/metadata'
+
+
+export const metadata = generateMeta({
+  title: 'Discover',
+  description: 'Discover new insights and connections in your knowledge base. Explore trending topics and related content.',
+  keywords: ['discover', 'explore', 'trending', 'recommendations'],
+  path: '/discover',
+  noIndex: true,
+})
 
 export const dynamic = 'force-dynamic'
 

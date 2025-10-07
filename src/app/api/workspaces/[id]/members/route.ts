@@ -1,43 +1,60 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
+import {
+  AuthenticationError,
+  AuthorizationError,
+  ValidationError,
+  handleAPIError,
+} from '@/lib/errors/custom-errors'
+import type { TypedSupabaseClient } from '@/types/supabase-helpers'
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) {
+): Promise<NextResponse> {
   try {
     const { id } = await params
-    const supabase = await createRouteHandlerClient()
+    const supabase = await createRouteHandlerClient() as TypedSupabaseClient
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      throw new AuthenticationError('Please sign in to add workspace members')
+    }
+
+    const { checkRateLimit, RATE_LIMITS } = await import('@/lib/rate-limiter')
+    const { RateLimitError } = await import('@/lib/errors/custom-errors')
+    const rateLimit = await checkRateLimit(user.id, RATE_LIMITS.DATA_MODIFICATION)
+    if (rateLimit.isLimited) {
+      throw new RateLimitError(
+        `Too many requests. Please try again in ${rateLimit.retryAfter} seconds`,
+        rateLimit.retryAfter
+      )
     }
 
     const body = await request.json()
     const { user_id, role = 'member' } = body
 
     if (!user_id) {
-      return NextResponse.json({ error: 'user_id required' }, { status: 400 })
+      throw new ValidationError('user_id is required')
     }
 
-    const { data: workspace } = await (supabase as any)
+    const { data: workspace } = await supabase
       .from('workspaces')
       .select('owner_id')
       .eq('id', id)
       .single()
 
-    if (!workspace || workspace.owner_id !== user.id) {
-      return NextResponse.json({ error: 'Only workspace owner can add members' }, { status: 403 })
+    if (!workspace || (workspace as any).owner_id !== user.id) {
+      throw new AuthorizationError('Only workspace owner can add members')
     }
 
-    const { data: member, error } = await (supabase as any)
+    const { data: member, error } = await supabase
       .from('workspace_members')
       .insert({
         workspace_id: id,
         user_id,
         role
-      })
+      } as never)
       .select()
       .single()
 
@@ -46,31 +63,41 @@ export async function POST(
     return NextResponse.json({ member }, { status: 201 })
   } catch (error) {
     console.error('Add member error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return handleAPIError(error)
   }
 }
 
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) {
+): Promise<NextResponse> {
   try {
     const { id } = await params
-    const supabase = await createRouteHandlerClient()
+    const supabase = await createRouteHandlerClient() as TypedSupabaseClient
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      throw new AuthenticationError('Please sign in to remove workspace members')
+    }
+
+    const { checkRateLimit, RATE_LIMITS } = await import('@/lib/rate-limiter')
+    const { RateLimitError } = await import('@/lib/errors/custom-errors')
+    const rateLimit = await checkRateLimit(user.id, RATE_LIMITS.DATA_MODIFICATION)
+    if (rateLimit.isLimited) {
+      throw new RateLimitError(
+        `Too many requests. Please try again in ${rateLimit.retryAfter} seconds`,
+        rateLimit.retryAfter
+      )
     }
 
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('user_id')
 
     if (!userId) {
-      return NextResponse.json({ error: 'user_id required' }, { status: 400 })
+      throw new ValidationError('user_id query parameter is required')
     }
 
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from('workspace_members')
       .delete()
       .eq('workspace_id', id)
@@ -81,6 +108,6 @@ export async function DELETE(
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Remove member error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return handleAPIError(error)
   }
 }

@@ -8,15 +8,29 @@ import {
   estimateTokenCount,
   chunkContent,
 } from './utils'
+import { retryAICall } from '@/lib/retry'
 
+/**
+ * Result of content summarization operation
+ */
 export interface SummarizationResult {
+  /** Main summary text extracted from content */
   summary: string
+  /** List of actionable items identified in content */
   actions: string[]
+  /** Key topics or themes identified in content */
   topics: string[]
 }
 
 /**
- * Creates a Claude API client
+ * Creates and configures a Claude API client instance
+ *
+ * @returns Configured Anthropic client
+ * @throws {Error} If ANTHROPIC_API_KEY environment variable is missing
+ *
+ * @example
+ * const client = createClaudeClient()
+ * const response = await client.messages.create({...})
  */
 function createClaudeClient(): Anthropic {
   const apiKey = process.env.ANTHROPIC_API_KEY
@@ -29,7 +43,24 @@ function createClaudeClient(): Anthropic {
 }
 
 /**
- * Summarizes content using Claude API
+ * Summarizes content using Claude API with automatic chunking for large documents
+ *
+ * NOTE: This uses Claude 3.5 Sonnet directly ($3/M tokens). Consider using the
+ * unified AI router for cheaper alternatives on simple content.
+ *
+ * @param content - Text content to summarize (up to 500K characters)
+ * @param contentType - Type of content (text, url, pdf, note, image)
+ * @returns Promise resolving to summarization result with summary, actions, and topics
+ * @throws {Error} Various errors for API failures, rate limits, or invalid content
+ *
+ * @example
+ * const result = await summarizeContent(
+ *   'Long article text...',
+ *   'text'
+ * )
+ * console.log(result.summary) // Main summary
+ * console.log(result.actions) // Action items
+ * console.log(result.topics)  // Key topics
  */
 export async function summarizeContent(
   content: string,
@@ -78,7 +109,15 @@ export async function summarizeContent(
 }
 
 /**
- * Summarizes content with retry logic
+ * Summarizes content with automatic retry logic on failures
+ *
+ * Uses exponential backoff retry strategy to handle temporary API failures.
+ * Internal helper function for summarizeContent.
+ *
+ * @param content - Sanitized content to summarize
+ * @param contentType - Type of content
+ * @returns Promise resolving to summarization result
+ * @throws {Error} If all retry attempts fail or response is invalid
  */
 async function summarizeWithRetry(
   content: string,
@@ -138,7 +177,17 @@ async function summarizeWithRetry(
 }
 
 /**
- * Handles summarization of large content by chunking
+ * Handles summarization of large content by chunking and combining results
+ *
+ * Automatically splits content exceeding token limits into chunks, summarizes
+ * each chunk, then combines the results. If combined summary is still too large,
+ * creates a meta-summary.
+ *
+ * @param content - Large content to summarize
+ * @param contentType - Type of content
+ * @param maxTokens - Maximum tokens per chunk
+ * @returns Promise resolving to combined summarization result
+ * @throws {Error} If any chunk summarization fails
  */
 async function summarizeLargeContent(
   content: string,
@@ -180,41 +229,54 @@ async function summarizeLargeContent(
 }
 
 /**
- * Generates a title for content using Claude API
+ * Generates a concise, descriptive title for content using Claude API
+ *
+ * NOTE: This uses Claude 3.5 Sonnet ($3/M tokens). Consider using Groq for
+ * simple title generation to reduce costs to $0.05/M tokens.
+ *
+ * @param content - Text content to generate title for (automatically truncated to 1000 chars)
+ * @param contentType - Type of content
+ * @returns Promise resolving to generated title (5-10 words max)
+ *
+ * @example
+ * const title = await generateTitle('Article about AI...', 'text')
+ * // Returns: "Understanding Modern AI Applications"
  */
 export async function generateTitle(
   content: string,
   contentType: ContentType
 ): Promise<string> {
   try {
-    const client = createClaudeClient()
+    return await retryAICall(async () => {
+      const client = createClaudeClient()
 
-    // Truncate content for title generation
-    const truncatedContent = content.substring(0, 1000)
+      // Truncate content for title generation
+      const truncatedContent = content.substring(0, 1000)
 
-    const prompt = `Generate a brief, descriptive title (5-10 words max) for this ${contentType} content. The title should capture the main topic or theme. Return only the title with no additional text or punctuation.
+      const prompt = `Generate a brief, descriptive title (5-10 words max) for this ${contentType} content. The title should capture the main topic or theme. Return only the title with no additional text or punctuation.
 
 Content:
 ${truncatedContent}${content.length > 1000 ? '...' : ''}`
 
-    const response = await client.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 100,
-      temperature: 0.5,
-      messages: [
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
+      const response = await client.messages.create({
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 100,
+        temperature: 0.5,
+        messages: [
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+      })
+
+      const textContent = response.content.find((c) => c.type === 'text')
+      if (!textContent || textContent.type !== 'text') {
+        throw new Error('No text content in response')
+      }
+
+      return textContent.text.trim()
     })
-
-    const textContent = response.content.find((c) => c.type === 'text')
-    if (!textContent || textContent.type !== 'text') {
-      throw new Error('No text content in response')
-    }
-
-    return textContent.text.trim()
   } catch (error) {
     console.error('Title generation error:', error)
     // Return a fallback title
@@ -223,7 +285,21 @@ ${truncatedContent}${content.length > 1000 ? '...' : ''}`
 }
 
 /**
- * Gets Claude API client for direct use
+ * Gets Claude API client for direct use in custom implementations
+ *
+ * Use this when you need direct access to the Anthropic SDK for advanced
+ * use cases not covered by the summarizeContent or generateTitle functions.
+ *
+ * @returns Configured Anthropic client instance
+ * @throws {Error} If ANTHROPIC_API_KEY environment variable is missing
+ *
+ * @example
+ * const client = getClaudeClient()
+ * const stream = await client.messages.stream({
+ *   model: 'claude-3-5-sonnet-20241022',
+ *   messages: [{ role: 'user', content: 'Hello!' }],
+ *   max_tokens: 1024
+ * })
  */
 export function getClaudeClient(): Anthropic {
   return createClaudeClient()

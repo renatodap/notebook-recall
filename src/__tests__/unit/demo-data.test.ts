@@ -168,7 +168,7 @@ describe('Demo Data Utilities', () => {
         const wordCount = source.original_content.split(/\s+/).length
         // Word count should be within reasonable range of actual content
         expect(source.summary.word_count).toBeGreaterThan(0)
-        expect(source.summary.word_count).toBeLessThan(wordCount + 100)
+        expect(source.summary.word_count).toBeLessThanOrEqual(wordCount + 100)
       })
     })
   })

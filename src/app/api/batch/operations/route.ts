@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
+import { DatabaseSource } from '@/types/api'
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limiter'
+import { RateLimitError } from '@/lib/errors/custom-errors'
 
 /**
  * Feature 31: Advanced Batch Operations
@@ -13,6 +16,15 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Check rate limit
+    const rateLimit = await checkRateLimit(user.id, RATE_LIMITS.DATA_MODIFICATION)
+    if (rateLimit.isLimited) {
+      throw new RateLimitError(
+        `Too many requests. Please try again in ${rateLimit.retryAfter} seconds`,
+        rateLimit.retryAfter
+      )
     }
 
     const body = await request.json()
@@ -47,7 +59,7 @@ export async function POST(request: NextRequest) {
               .from('sources')
               .select('tags')
               .eq('id', id)
-              .eq('user_id', user.id as never)
+              .eq('user_id', user.id)
               .single()
 
             if (source) {
@@ -56,7 +68,7 @@ export async function POST(request: NextRequest) {
                 .from('sources')
                 .update({ tags: updatedTags })
                 .eq('id', id)
-                .eq('user_id', user.id as never)
+                .eq('user_id', user.id)
 
               results.successful++
               results.results.push({ id, status: 'success', tags: updatedTags })
@@ -154,7 +166,7 @@ export async function POST(request: NextRequest) {
           .from('sources')
           .select('*')
           .in('id', target_ids)
-          .eq('user_id', user.id as never)
+          .eq('user_id', user.id)
 
         if (error) throw error
 
@@ -182,7 +194,7 @@ export async function POST(request: NextRequest) {
           .from('sources')
           .delete()
           .in('id', target_ids)
-          .eq('user_id', user.id as never)
+          .eq('user_id', user.id)
           .select()
 
         if (deleteError) throw deleteError

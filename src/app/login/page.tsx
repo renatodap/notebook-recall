@@ -1,6 +1,15 @@
 import { Suspense } from 'react'
 import LoginForm from '@/components/auth/LoginForm'
 import { Card, CardBody } from '@/components/ui/Card'
+import { generateMetadata as generateMeta } from '@/lib/metadata'
+
+
+export const metadata = generateMeta({
+  title: 'Sign In',
+  description: 'Sign in to your Recall Notebook account. Access your knowledge base and AI-powered tools.',
+  keywords: ['login', 'sign in', 'authentication'],
+  path: '/login',
+})
 
 export default function LoginPage() {
   return (

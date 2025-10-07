@@ -3,6 +3,8 @@
  * Combines multiple sources into cohesive literature reviews
  */
 
+import { retryAICall } from '@/lib/retry'
+
 export interface SynthesisInput {
   sources: Array<{
     id: string
@@ -124,32 +126,35 @@ Return a JSON analysis showing how ideas have developed over time.`
       break
   }
 
-  // Call Claude API
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 8000,
-      messages: [
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-    }),
+  // Call Claude API with retry
+  const data = await retryAICall(async () => {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 8000,
+        messages: [
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+      }),
+    })
+
+    if (!response.ok) {
+      const error = await response.text()
+      throw new Error(`Claude API error: ${error}`)
+    }
+
+    return response.json()
   })
 
-  if (!response.ok) {
-    const error = await response.text()
-    throw new Error(`Claude API error: ${error}`)
-  }
-
-  const data = await response.json()
   const content = data.content[0].text
 
   // Parse JSON response
@@ -225,21 +230,24 @@ Return a JSON array of themes:
   }
 ]`
 
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'claude-3-haiku-20240307',
-      max_tokens: 2000,
-      messages: [{ role: 'user', content: prompt }],
-    }),
+  const data = await retryAICall(async () => {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'claude-3-haiku-20240307',
+        max_tokens: 2000,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    })
+
+    return response.json()
   })
 
-  const data = await response.json()
   const content = data.content[0].text
 
   try {

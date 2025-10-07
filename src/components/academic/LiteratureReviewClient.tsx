@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { Card, CardBody, CardHeader } from '../ui/Card'
 import Button from '../ui/Button'
 import Textarea from '../ui/Textarea'
+import { showSuccess } from '@/lib/toast'
+import AIDisclaimer from '../AIDisclaimer'
 
 interface Template {
   id: string
@@ -196,15 +198,17 @@ export default function LiteratureReviewClient() {
                     size="sm"
                     onClick={() => {
                       navigator.clipboard.writeText(generatedReview)
-                      alert('Copied to clipboard!')
+                      showSuccess('Copied to clipboard!')
                     }}
                     className="self-end sm:self-auto"
+                    aria-label="Copy literature review to clipboard"
                   >
                     📋 Copy
                   </Button>
                 </div>
               </CardHeader>
               <CardBody>
+                <AIDisclaimer variant="warning" className="mb-4" />
                 <Textarea
                   value={generatedReview}
                   readOnly

@@ -3,6 +3,16 @@ import { redirect } from 'next/navigation'
 import MethodologyComparisonClient from '@/components/academic/MethodologyComparisonClient'
 import Link from 'next/link'
 import Button from '@/components/ui/Button'
+import { generateMetadata as generateMeta } from '@/lib/metadata'
+
+
+export const metadata = generateMeta({
+  title: 'Research Methodology',
+  description: 'Document and organize your research methodology. Track your research approach and methods.',
+  keywords: ['research methodology', 'research methods', 'academic research'],
+  path: '/methodology',
+  noIndex: true,
+})
 
 export const dynamic = 'force-dynamic'
 

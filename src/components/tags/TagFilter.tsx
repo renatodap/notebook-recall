@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import TagPill from './TagPill'
 import type { TagWithCount } from '@/types'
+import { TagFilterSkeleton } from '../ui/Skeleton'
 
 interface TagFilterProps {
   onFilterChange: (tags: string[], logic: 'OR' | 'AND') => void
@@ -51,11 +52,7 @@ export default function TagFilter({ onFilterChange }: TagFilterProps) {
   }
 
   if (isLoading) {
-    return (
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <div className="text-gray-500 text-sm">Loading tags...</div>
-      </div>
-    )
+    return <TagFilterSkeleton />
   }
 
   if (availableTags.length === 0) {

@@ -1,23 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
+import { ResourceIdParamSchema, UpdatePublishedOutputSchema } from '@/lib/validation/schemas'
+import {
+  AuthenticationError,
+  AuthorizationError,
+  NotFoundError,
+  ValidationError,
+  handleAPIError,
+} from '@/lib/errors/custom-errors'
+import type { TypedSupabaseClient } from '@/types/supabase-helpers'
 
 // GET: Get published output details
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) {
+): Promise<NextResponse> {
   try {
-    const supabase = await createRouteHandlerClient()
+    const supabase = await createRouteHandlerClient() as TypedSupabaseClient
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      throw new AuthenticationError('Please sign in to view published outputs')
     }
 
-    const { id: outputId } = await params
+    const resolvedParams = await params
+    const validation = ResourceIdParamSchema.safeParse(resolvedParams)
+    if (!validation.success) {
+      throw new ValidationError('Invalid output ID format')
+    }
+
+    const { id: outputId } = validation.data
 
     // Fetch output with linked sources
-    const { data: output, error } = await (supabase as any)
+    const { data: output, error } = await supabase
       .from('published_outputs')
       .select(`
         *,
@@ -35,30 +50,31 @@ export async function GET(
 
     if (error) {
       console.error('Fetch output error:', error)
-      return NextResponse.json({ error: 'Output not found' }, { status: 404 })
+      throw new NotFoundError('Output not found')
+    }
+
+    if (!output) {
+      throw new NotFoundError('Output not found')
     }
 
     // Check ownership
-    if (output.user_id !== user.id) {
-      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+    if ((output as any).user_id !== user.id) {
+      throw new AuthorizationError('You do not have permission to view this output')
     }
 
     // Transform sources
-    const sources = output.output_sources?.map((os: any) => os.source) || []
+    const sources = (output as any).output_sources?.map((os: any) => os.source) || []
 
     return NextResponse.json({
       output: {
-        ...output,
+        ...(output as any),
         sources,
         output_sources: undefined,
       },
     })
   } catch (error) {
     console.error('GET output error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return handleAPIError(error)
   }
 }
 
@@ -66,56 +82,70 @@ export async function GET(
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) {
+): Promise<NextResponse> {
   try {
-    const supabase = await createRouteHandlerClient()
+    const supabase = await createRouteHandlerClient() as TypedSupabaseClient
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      throw new AuthenticationError('Please sign in to update outputs')
     }
 
-    const { id: outputId } = await params
+    const resolvedParams = await params
+    const validation = ResourceIdParamSchema.safeParse(resolvedParams)
+    if (!validation.success) {
+      throw new ValidationError('Invalid output ID format')
+    }
+
+    const { id: outputId } = validation.data
+
+    // Validate request body
     const body = await request.json()
-    const { title, content, status, metadata } = body
+    const bodyValidation = UpdatePublishedOutputSchema.safeParse(body)
+    if (!bodyValidation.success) {
+      throw new ValidationError(bodyValidation.error.issues[0].message)
+    }
+
+    const validatedData = bodyValidation.data
 
     // Verify ownership
-    const { data: output } = await (supabase as any)
+    const { data: output } = await supabase
       .from('published_outputs')
       .select('user_id')
       .eq('id', outputId)
       .single()
 
-    if (!output || output.user_id !== user.id) {
-      return NextResponse.json({ error: 'Output not found or access denied' }, { status: 404 })
+    if (!output) {
+      throw new NotFoundError('Output not found')
     }
 
-    // Update
-    const updates: any = {}
-    if (title !== undefined) updates.title = title
-    if (content !== undefined) updates.content = content
-    if (status !== undefined) updates.status = status
-    if (metadata !== undefined) updates.metadata = metadata
+    if ((output as any).user_id !== user.id) {
+      throw new AuthorizationError('You do not have permission to update this output')
+    }
 
-    const { data: updated, error } = await (supabase as any)
+    // Build updates
+    const updates: Record<string, unknown> = {}
+    if (validatedData.title !== undefined) updates.title = validatedData.title
+    if (validatedData.content !== undefined) updates.content = validatedData.content
+    if (validatedData.status !== undefined) updates.status = validatedData.status
+    if (validatedData.metadata !== undefined) updates.metadata = validatedData.metadata
+
+    const { data: updated, error } = await supabase
       .from('published_outputs')
-      .update(updates)
+      .update(updates as never)
       .eq('id', outputId)
       .select()
       .single()
 
     if (error) {
       console.error('Update output error:', error)
-      return NextResponse.json({ error: 'Failed to update output' }, { status: 500 })
+      throw new Error('Failed to update output')
     }
 
     return NextResponse.json({ output: updated })
   } catch (error) {
     console.error('PUT output error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return handleAPIError(error)
   }
 }
 
@@ -123,45 +153,52 @@ export async function PUT(
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) {
+): Promise<NextResponse> {
   try {
-    const supabase = await createRouteHandlerClient()
+    const supabase = await createRouteHandlerClient() as TypedSupabaseClient
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      throw new AuthenticationError('Please sign in to delete outputs')
     }
 
-    const { id: outputId } = await params
+    const resolvedParams = await params
+    const validation = ResourceIdParamSchema.safeParse(resolvedParams)
+    if (!validation.success) {
+      throw new ValidationError('Invalid output ID format')
+    }
+
+    const { id: outputId } = validation.data
 
     // Verify ownership
-    const { data: output } = await (supabase as any)
+    const { data: output } = await supabase
       .from('published_outputs')
       .select('user_id')
       .eq('id', outputId)
       .single()
 
-    if (!output || output.user_id !== user.id) {
-      return NextResponse.json({ error: 'Output not found or access denied' }, { status: 404 })
+    if (!output) {
+      throw new NotFoundError('Output not found')
+    }
+
+    if ((output as any).user_id !== user.id) {
+      throw new AuthorizationError('You do not have permission to delete this output')
     }
 
     // Delete (will cascade to output_sources)
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from('published_outputs')
       .delete()
       .eq('id', outputId)
 
     if (error) {
       console.error('Delete output error:', error)
-      return NextResponse.json({ error: 'Failed to delete output' }, { status: 500 })
+      throw new Error('Failed to delete output')
     }
 
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('DELETE output error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return handleAPIError(error)
   }
 }

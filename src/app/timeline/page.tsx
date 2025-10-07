@@ -3,6 +3,16 @@ import { redirect } from 'next/navigation'
 import TimelineClient from '@/components/visualization/TimelineClient'
 import Link from 'next/link'
 import Button from '@/components/ui/Button'
+import { generateMetadata as generateMeta } from '@/lib/metadata'
+
+
+export const metadata = generateMeta({
+  title: 'Timeline',
+  description: 'View your knowledge chronologically. Track your learning journey and see how your ideas evolved over time.',
+  keywords: ['timeline', 'chronological view', 'history', 'learning journey'],
+  path: '/timeline',
+  noIndex: true,
+})
 
 export const dynamic = 'force-dynamic'
 

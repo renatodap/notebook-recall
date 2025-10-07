@@ -2,6 +2,16 @@ import { redirect } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import MobileNav from '@/components/MobileNav'
+import { generateMetadata as generateMeta } from '@/lib/metadata'
+
+
+export const metadata = generateMeta({
+  title: 'Synthesis Reports',
+  description: 'Generate comprehensive AI reports that connect ideas across all your sources. Discover patterns and insights.',
+  keywords: ['synthesis report', 'AI analysis', 'knowledge synthesis', 'connect ideas'],
+  path: '/synthesis',
+  noIndex: true,
+})
 
 export const dynamic = 'force-dynamic'
 

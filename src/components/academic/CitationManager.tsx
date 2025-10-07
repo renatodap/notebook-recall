@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import Button from '../ui/Button'
 import Input from '../ui/Input'
 import type { Citation, CitationFormat } from '@/types'
+import { showSuccess, showError, showInfo } from '@/lib/toast'
 
 interface CitationManagerProps {
   sourceId: string
@@ -42,7 +43,7 @@ export default function CitationManager({ sourceId, onClose }: CitationManagerPr
 
   const handleFetchMetadata = async () => {
     if (!doi && !url) {
-      alert('Enter DOI or URL')
+      showInfo('Enter DOI or URL')
       return
     }
 
@@ -61,10 +62,10 @@ export default function CitationManager({ sourceId, onClose }: CitationManagerPr
       const data = await response.json()
       setCitation(data.citation)
       setActiveTab('formats')
-      alert('Citation metadata fetched successfully!')
+      showSuccess('Citation metadata fetched successfully!')
     } catch (error) {
       console.error('Fetch error:', error)
-      alert('Failed to fetch citation metadata. Try manual entry.')
+      showError('Failed to fetch citation metadata. Try manual entry.')
     } finally {
       setFetching(false)
     }

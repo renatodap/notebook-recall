@@ -12,6 +12,60 @@ interface ErrorFallbackProps {
 function ErrorFallback({ error, resetErrorBoundary }: ErrorFallbackProps) {
   const router = useRouter();
 
+  // Determine error type and provide user-friendly message
+  const getErrorMessage = (error: Error): { title: string; message: string; action: string } => {
+    const errorMsg = error.message.toLowerCase();
+
+    if (errorMsg.includes('429') || errorMsg.includes('rate limit')) {
+      return {
+        title: 'Too Many Requests',
+        message: 'The service is experiencing high demand. Please wait a moment and try again.',
+        action: 'Retry in a moment'
+      };
+    }
+
+    if (errorMsg.includes('503') || errorMsg.includes('service unavailable')) {
+      return {
+        title: 'Service Temporarily Unavailable',
+        message: 'The AI service is temporarily unavailable. This is usually brief. Please try again in a few seconds.',
+        action: 'Retry now'
+      };
+    }
+
+    if (errorMsg.includes('network') || errorMsg.includes('fetch failed')) {
+      return {
+        title: 'Network Error',
+        message: 'Unable to connect to the server. Please check your internet connection and try again.',
+        action: 'Retry connection'
+      };
+    }
+
+    if (errorMsg.includes('401') || errorMsg.includes('unauthorized')) {
+      return {
+        title: 'Authentication Error',
+        message: 'Your session may have expired. Please sign in again.',
+        action: 'Go to login'
+      };
+    }
+
+    if (errorMsg.includes('400') || errorMsg.includes('validation')) {
+      return {
+        title: 'Invalid Input',
+        message: 'The data provided could not be processed. Please check your input and try again.',
+        action: 'Try again'
+      };
+    }
+
+    // Default generic error
+    return {
+      title: 'Something Went Wrong',
+      message: 'An unexpected error occurred. This has been logged and we\'ll look into it.',
+      action: 'Try again'
+    };
+  };
+
+  const errorInfo = getErrorMessage(error);
+
   return (
     <div
       role="alert"
@@ -34,12 +88,12 @@ function ErrorFallback({ error, resetErrorBoundary }: ErrorFallbackProps) {
             />
           </svg>
           <h2 className="text-xl font-semibold text-gray-900">
-            Something went wrong
+            {errorInfo.title}
           </h2>
         </div>
 
         <p className="text-sm text-gray-600">
-          An unexpected error occurred. This has been logged and we&apos;ll look into it.
+          {errorInfo.message}
         </p>
 
         {process.env.NODE_ENV === 'development' && (
@@ -59,16 +113,16 @@ function ErrorFallback({ error, resetErrorBoundary }: ErrorFallbackProps) {
           <button
             onClick={resetErrorBoundary}
             className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
-            aria-label="Try again"
+            aria-label={errorInfo.action}
           >
-            Try again
+            {errorInfo.action}
           </button>
           <button
             onClick={() => router.push('/dashboard')}
             className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
             aria-label="Go to dashboard"
           >
-            Go to dashboard
+            Dashboard
           </button>
         </div>
       </div>

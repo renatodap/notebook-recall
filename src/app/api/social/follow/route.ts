@@ -1,29 +1,49 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@/lib/supabase/server'
+import {
+  AuthenticationError,
+  ValidationError,
+  RateLimitError,
+  handleAPIError,
+} from '@/lib/errors/custom-errors'
+import type { TypedSupabaseClient } from '@/types/supabase-helpers'
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limiter'
 
 /**
  * Feature 26: Follow Researchers
  * Follow other users to see their public sources and activity
  */
 
-export async function POST(request: NextRequest) {
+/**
+ * POST /api/social/follow - Follow a user
+ * Body: { user_id_to_follow: string }
+ */
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = await createRouteHandlerClient()
+    const supabase = await createRouteHandlerClient() as TypedSupabaseClient
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      throw new AuthenticationError('Please sign in to follow users')
+    }
+
+    const rateLimit = await checkRateLimit(user.id, RATE_LIMITS.DATA_MODIFICATION)
+    if (rateLimit.isLimited) {
+      throw new RateLimitError(
+        `Too many requests. Please try again in ${rateLimit.retryAfter} seconds`,
+        rateLimit.retryAfter
+      )
     }
 
     const body = await request.json()
     const { user_id_to_follow } = body
 
     if (!user_id_to_follow) {
-      return NextResponse.json({ error: 'user_id_to_follow required' }, { status: 400 })
+      throw new ValidationError('user_id_to_follow is required')
     }
 
     if (user_id_to_follow === user.id) {
-      return NextResponse.json({ error: 'Cannot follow yourself' }, { status: 400 })
+      throw new ValidationError('You cannot follow yourself')
     }
 
     // Create follow relationship
@@ -38,56 +58,84 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       if (error.code === '23505') { // Unique constraint violation
-        return NextResponse.json({ error: 'Already following this user' }, { status: 400 })
+        throw new ValidationError('You are already following this user')
       }
-      throw error
+      console.error('Follow user error:', error)
+      throw new Error('Failed to follow user')
     }
 
     return NextResponse.json({ follow }, { status: 201 })
   } catch (error) {
     console.error('Follow user error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return handleAPIError(error)
   }
 }
 
-export async function DELETE(request: NextRequest) {
+/**
+ * DELETE /api/social/follow - Unfollow a user
+ * Query params: user_id
+ */
+export async function DELETE(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = await createRouteHandlerClient()
+    const supabase = await createRouteHandlerClient() as TypedSupabaseClient
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      throw new AuthenticationError('Please sign in to unfollow users')
+    }
+
+    const rateLimit = await checkRateLimit(user.id, RATE_LIMITS.DATA_MODIFICATION)
+    if (rateLimit.isLimited) {
+      throw new RateLimitError(
+        `Too many requests. Please try again in ${rateLimit.retryAfter} seconds`,
+        rateLimit.retryAfter
+      )
     }
 
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('user_id')
 
     if (!userId) {
-      return NextResponse.json({ error: 'user_id required' }, { status: 400 })
+      throw new ValidationError('user_id is required')
     }
 
     const { error } = await supabase
       .from('user_follows')
       .delete()
-      .eq('follower_id' as never, user.id)
-      .eq('following_id' as never, userId)
+      .eq('follower_id', user.id)
+      .eq('following_id', userId)
 
-    if (error) throw error
+    if (error) {
+      console.error('Unfollow user error:', error)
+      throw new Error('Failed to unfollow user')
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Unfollow user error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return handleAPIError(error)
   }
 }
 
-export async function GET(request: NextRequest) {
+/**
+ * GET /api/social/follow - Get following/followers list
+ * Query params: type ('following' | 'followers')
+ */
+export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = await createRouteHandlerClient()
+    const supabase = await createRouteHandlerClient() as TypedSupabaseClient
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      throw new AuthenticationError('Please sign in to view follows')
+    }
+
+    const rateLimit = await checkRateLimit(user.id, RATE_LIMITS.SEARCH)
+    if (rateLimit.isLimited) {
+      throw new RateLimitError(
+        `Too many requests. Please try again in ${rateLimit.retryAfter} seconds`,
+        rateLimit.retryAfter
+      )
     }
 
     const { searchParams } = new URL(request.url)
@@ -98,24 +146,30 @@ export async function GET(request: NextRequest) {
       const { data: following, error } = await supabase
         .from('user_follows')
         .select('following_id, created_at')
-        .eq('follower_id', user.id as never)
+        .eq('follower_id', user.id)
 
-      if (error) throw error
-      return NextResponse.json({ following })
+      if (error) {
+        console.error('Fetch following error:', error)
+        throw new Error('Failed to fetch following list')
+      }
+      return NextResponse.json({ following: following || [] })
     } else if (type === 'followers') {
       // Get my followers
       const { data: followers, error } = await supabase
         .from('user_follows')
         .select('follower_id, created_at')
-        .eq('following_id', user.id as never)
+        .eq('following_id', user.id)
 
-      if (error) throw error
-      return NextResponse.json({ followers })
+      if (error) {
+        console.error('Fetch followers error:', error)
+        throw new Error('Failed to fetch followers list')
+      }
+      return NextResponse.json({ followers: followers || [] })
     }
 
     return NextResponse.json({ users: [] })
   } catch (error) {
     console.error('Get follows error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return handleAPIError(error)
   }
 }

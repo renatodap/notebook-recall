@@ -1,19 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase/server'
+import { createRouteHandlerClient } from '@/lib/supabase/server'
+import {
+  AuthenticationError,
+  ValidationError,
+  RateLimitError,
+  handleAPIError,
+} from '@/lib/errors/custom-errors'
+import type { TypedSupabaseClient } from '@/types/supabase-helpers'
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limiter'
 
-export async function POST(request: NextRequest) {
+/**
+ * POST /api/youtube/transcript - Fetch YouTube video transcript and create source
+ * Body: { url?: string, youtube_id?: string }
+ */
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = await createServerClient()
+    const supabase = await createRouteHandlerClient() as TypedSupabaseClient
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      throw new AuthenticationError('Please sign in to add YouTube videos')
+    }
+
+    // Check rate limit
+    const rateLimit = await checkRateLimit(user.id, RATE_LIMITS.IMPORT)
+    if (rateLimit.isLimited) {
+      throw new RateLimitError(
+        `Too many requests. Please try again in ${rateLimit.retryAfter} seconds`,
+        rateLimit.retryAfter
+      )
     }
 
     const { url, youtube_id } = await request.json()
 
     if (!url && !youtube_id) {
-      return NextResponse.json({ error: 'URL or video ID required' }, { status: 400 })
+      throw new ValidationError('URL or video ID is required')
     }
 
     // Extract video ID if not provided
@@ -24,7 +45,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (!videoId) {
-      return NextResponse.json({ error: 'Invalid YouTube URL' }, { status: 400 })
+      throw new ValidationError('Invalid YouTube URL. Please provide a valid YouTube video link.')
     }
 
     // Fetch video metadata using YouTube Data API
@@ -80,10 +101,10 @@ export async function POST(request: NextRequest) {
 
     if (sourceError || !source) {
       console.error('Source creation error:', sourceError)
-      return NextResponse.json({ error: 'Failed to create source' }, { status: 500 })
+      throw new Error('Failed to create source from YouTube video')
     }
 
-    const createdSource = source as unknown as { id: string; [key: string]: unknown }
+    const createdSource = source as any
 
     // Auto-summarize
     try {
@@ -100,6 +121,6 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('YouTube transcript error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return handleAPIError(error)
   }
 }
