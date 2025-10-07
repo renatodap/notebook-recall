@@ -1,14 +1,20 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
+import { signOut } from '@/lib/auth/actions'
 
 export default function MobileNav() {
   const pathname = usePathname()
+  const router = useRouter()
 
   const isActive = (path: string) => {
     if (path === '/dashboard') return pathname === '/dashboard'
     return pathname.startsWith(path)
+  }
+
+  const handleSignOut = async () => {
+    await signOut()
   }
 
   // Simplified navigation - 5 primary items (2026 UX standards)
@@ -108,14 +114,12 @@ export default function MobileNav() {
         </div>
 
         <div className="p-6 border-t border-neutral-200">
-          <form action="/api/auth/signout" method="POST">
-            <button
-              type="submit"
-              className="w-full px-4 py-2 text-sm font-medium text-neutral-700 bg-neutral-100 rounded-lg hover:bg-neutral-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-            >
-              Sign Out
-            </button>
-          </form>
+          <button
+            onClick={handleSignOut}
+            className="w-full px-4 py-2 text-sm font-medium text-neutral-700 bg-neutral-100 rounded-lg hover:bg-neutral-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+          >
+            Sign Out
+          </button>
         </div>
       </nav>
 
