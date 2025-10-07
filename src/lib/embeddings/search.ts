@@ -17,7 +17,8 @@ export async function semanticSearch(
   const {
     limit = 5,
     threshold = 0.7,
-    includeMetadata = true
+    includeMetadata = true,
+    sourceIds
   } = options
 
   if (!query || query.trim().length === 0) {
@@ -32,11 +33,14 @@ export async function semanticSearch(
     const supabase = await createRouteHandlerClient()
 
     // Use pgvector's cosine distance operator (<=>)
+    // Note: We request more results than needed if filtering by sourceIds
+    const searchLimit = sourceIds && sourceIds.length > 0 ? limit * 3 : limit
+
     const { data, error } = await supabase
       .rpc('search_sources_by_embedding', {
         query_embedding: queryEmbedding,
         match_threshold: 1 - threshold, // Convert similarity to distance
-        match_count: limit,
+        match_count: searchLimit,
         user_id_filter: userId
       } as never)
 
@@ -49,7 +53,7 @@ export async function semanticSearch(
       return []
     }
 
-    const results: SemanticSearchResult[] = (data as any[]).map((row: any) => ({
+    let results: SemanticSearchResult[] = (data as any[]).map((row: any) => ({
       source_id: row.source_id,
       chunk_id: row.chunk_id,
       similarity: 1 - row.distance, // Convert distance back to similarity
@@ -60,6 +64,15 @@ export async function semanticSearch(
         created_at: row.created_at
       } : undefined
     }))
+
+    // Filter by sourceIds if provided (for collection filtering)
+    if (sourceIds && sourceIds.length > 0) {
+      const sourceIdSet = new Set(sourceIds)
+      results = results.filter(r => sourceIdSet.has(r.source_id))
+    }
+
+    // Apply limit after filtering
+    results = results.slice(0, limit)
 
     return results
   } catch (error) {

@@ -24,10 +24,27 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [collections, setCollections] = useState<any[]>([])
+  const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null)
+  const [collectionsLoading, setCollectionsLoading] = useState(true)
 
   useEffect(() => {
     fetchSessions()
+    fetchCollections()
   }, [])
+
+  const fetchCollections = async () => {
+    try {
+      setCollectionsLoading(true)
+      const res = await fetch('/api/collections')
+      const data = await res.json()
+      setCollections(data.collections || [])
+    } catch (error) {
+      console.error('Failed to fetch collections:', error)
+    } finally {
+      setCollectionsLoading(false)
+    }
+  }
 
   const fetchSessions = async () => {
     try {
@@ -66,7 +83,8 @@ export default function ChatPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: userMessage,
-          session_id: currentSession
+          session_id: currentSession,
+          collection_id: selectedCollectionId
         })
       })
 
@@ -104,6 +122,22 @@ export default function ChatPage() {
     setMessages([])
   }
 
+  const handleCollectionChange = (collectionId: string | null) => {
+    // If user changes collection mid-conversation, notify them
+    if (messages.length > 0) {
+      const collectionName = collectionId
+        ? collections.find(c => c.id === collectionId)?.name
+        : 'All Sources'
+
+      if (confirm(`Switching to "${collectionName}" will start a new conversation. Continue?`)) {
+        setSelectedCollectionId(collectionId)
+        startNewSession()
+      }
+    } else {
+      setSelectedCollectionId(collectionId)
+    }
+  }
+
   const handleFeedback = async (messageIndex: number, wasHelpful: boolean) => {
     try {
       await fetch('/api/feedback', {
@@ -128,14 +162,45 @@ export default function ChatPage() {
       <MobileNav />
 
       <div className="container mx-auto px-4 py-8 max-w-6xl">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex justify-between items-center mb-4">
           <h1 className="text-3xl font-bold">Research Assistant Chat</h1>
           <Link href="/dashboard" className="text-blue-600 hover:underline">
             ← Dashboard
           </Link>
         </div>
 
-      <div className="grid grid-cols-4 gap-6 h-[calc(100vh-200px)]">
+        {/* Collection Selector */}
+        <div className="mb-6 bg-white rounded-lg shadow p-4">
+          <div className="flex items-center gap-4">
+            <label htmlFor="collection-select" className="text-sm font-semibold text-gray-700 whitespace-nowrap">
+              Chat Context:
+            </label>
+            <select
+              id="collection-select"
+              value={selectedCollectionId || ''}
+              onChange={(e) => handleCollectionChange(e.target.value || null)}
+              disabled={collectionsLoading}
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+            >
+              <option value="">All Sources (Default)</option>
+              {collections.map((collection) => (
+                <option key={collection.id} value={collection.id}>
+                  {collection.name} ({collection.source_count || 0} sources)
+                </option>
+              ))}
+            </select>
+            {collectionsLoading && (
+              <span className="text-sm text-gray-500">Loading...</span>
+            )}
+          </div>
+          <p className="text-xs text-gray-500 mt-2">
+            {selectedCollectionId
+              ? `🎯 AI will only search and reference sources from "${collections.find(c => c.id === selectedCollectionId)?.name || 'this collection'}"`
+              : '🌐 AI will search across all your sources'}
+          </p>
+        </div>
+
+      <div className="grid grid-cols-4 gap-6 h-[calc(100vh-280px)]">
         {/* Sidebar - Sessions */}
         <div className="col-span-1 bg-white rounded-lg shadow p-4 overflow-y-auto">
           <div className="flex justify-between items-center mb-4">
@@ -176,7 +241,22 @@ export default function ChatPage() {
             {messages.length === 0 ? (
               <div className="text-center text-gray-500 mt-12">
                 <h2 className="text-2xl font-bold mb-4">Research Assistant</h2>
-                <p className="mb-4">Ask me anything about your sources!</p>
+                {selectedCollectionId ? (
+                  <>
+                    <p className="mb-4">
+                      Ask me anything about sources in &quot;{collections.find(c => c.id === selectedCollectionId)?.name}&quot;!
+                    </p>
+                    {collections.find(c => c.id === selectedCollectionId)?.source_count === 0 && (
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 max-w-md mx-auto mb-4">
+                        <p className="text-sm text-yellow-800">
+                          ⚠️ This collection has no sources yet. Add sources to this collection to start chatting about them.
+                        </p>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <p className="mb-4">Ask me anything about your sources!</p>
+                )}
                 <div className="grid grid-cols-2 gap-3 max-w-2xl mx-auto text-sm">
                   <div className="bg-gray-50 p-3 rounded">
                     💡 &quot;Summarize my recent sources&quot;

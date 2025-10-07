@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { message, session_id, context_source_ids } = body
+    const { message, session_id, context_source_ids, collection_id } = body
 
     if (!message?.trim()) {
       return NextResponse.json({ error: 'message required' }, { status: 400 })
@@ -70,6 +70,52 @@ export async function POST(request: NextRequest) {
       conversationHistory = session?.messages || []
     }
 
+    // Get collection-specific source IDs if collection is selected
+    let collectionSourceIds: string[] | null = null
+    let collectionName = 'All Sources'
+
+    if (collection_id) {
+      try {
+        // Fetch collection to get name and verify ownership
+        const { data: collection, error: collectionError } = await supabase
+          .from('collections')
+          .select('id, name')
+          .eq('id', collection_id)
+          .eq('user_id', user.id as never)
+          .single()
+
+        if (collectionError || !collection) {
+          return NextResponse.json(
+            { error: 'Collection not found or access denied' },
+            { status: 404 }
+          )
+        }
+
+        collectionName = collection.name
+
+        // Fetch source IDs from collection
+        const { data: collectionSources, error: sourcesError } = await supabase
+          .from('collection_sources')
+          .select('source_id')
+          .eq('collection_id', collection_id)
+
+        if (sourcesError) {
+          console.error('Error fetching collection sources:', sourcesError)
+        } else if (collectionSources && collectionSources.length > 0) {
+          collectionSourceIds = collectionSources.map((cs: any) => cs.source_id)
+        } else {
+          // Collection exists but has no sources
+          collectionSourceIds = []
+        }
+      } catch (error) {
+        console.error('Error processing collection:', error)
+        return NextResponse.json(
+          { error: 'Failed to process collection' },
+          { status: 500 }
+        )
+      }
+    }
+
     // Feature 1: SEMANTIC SEARCH RAG
     let sourceContext = ''
     let sourcesUsed: string[] = []
@@ -78,10 +124,31 @@ export async function POST(request: NextRequest) {
     if (!sourceIds) {
       try {
         const { semanticSearch } = await import('@/lib/embeddings/search')
-        const searchResults = await semanticSearch(user.id, message, { limit: 5, threshold: 0.7 })
 
-        if (searchResults.length > 0) {
-          sourceIds = searchResults.map(r => r.source_id)
+        // If collection is selected, limit search to collection sources
+        const searchOptions: any = {
+          limit: 5,
+          threshold: 0.7
+        }
+
+        if (collectionSourceIds !== null) {
+          if (collectionSourceIds.length === 0) {
+            // Collection has no sources - skip search
+            sourceIds = []
+          } else {
+            // Search only within collection sources
+            searchOptions.sourceIds = collectionSourceIds
+            const searchResults = await semanticSearch(user.id, message, searchOptions)
+            if (searchResults.length > 0) {
+              sourceIds = searchResults.map(r => r.source_id)
+            }
+          }
+        } else {
+          // No collection selected - search all user sources
+          const searchResults = await semanticSearch(user.id, message, searchOptions)
+          if (searchResults.length > 0) {
+            sourceIds = searchResults.map(r => r.source_id)
+          }
         }
       } catch {
         console.log('Semantic search failed, using fallback')

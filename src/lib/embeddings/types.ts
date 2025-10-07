@@ -22,6 +22,7 @@ export interface SemanticSearchOptions {
   limit?: number
   threshold?: number
   includeMetadata?: boolean
+  sourceIds?: string[] // Filter results to specific source IDs (for collection filtering)
 }
 
 export interface SemanticSearchResult {
