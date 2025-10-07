@@ -163,3 +163,82 @@ export async function isAuthenticated(): Promise<boolean> {
   const session = await getSession()
   return !!session
 }
+
+/**
+ * Request password reset email
+ */
+export async function requestPasswordReset(
+  email: string
+): Promise<AuthResult> {
+  try {
+    if (!validateEmail(email)) {
+      return {
+        success: false,
+        error: 'Invalid email format',
+      }
+    }
+
+    const supabase = await createServerActionClient()
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/reset-password`,
+    })
+
+    if (error) {
+      return {
+        success: false,
+        error: error.message,
+      }
+    }
+
+    return {
+      success: true,
+    }
+  } catch (error) {
+    console.error('Password reset request error:', error)
+    return {
+      success: false,
+      error: 'An unexpected error occurred',
+    }
+  }
+}
+
+/**
+ * Update password (used after reset)
+ */
+export async function updatePassword(
+  newPassword: string
+): Promise<AuthResult> {
+  try {
+    const passwordValidation = validatePassword(newPassword)
+    if (!passwordValidation.valid) {
+      return {
+        success: false,
+        error: passwordValidation.errors[0],
+      }
+    }
+
+    const supabase = await createServerActionClient()
+
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword,
+    })
+
+    if (error) {
+      return {
+        success: false,
+        error: error.message,
+      }
+    }
+
+    return {
+      success: true,
+    }
+  } catch (error) {
+    console.error('Password update error:', error)
+    return {
+      success: false,
+      error: 'An unexpected error occurred',
+    }
+  }
+}

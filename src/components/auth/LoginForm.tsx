@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { signIn } from '@/lib/auth/actions'
 import { validateEmail } from '@/lib/auth/utils'
@@ -10,10 +10,21 @@ import Button from '@/components/ui/Button'
 
 export default function LoginForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [successMessage, setSuccessMessage] = useState('')
+
+  const redirectUrl = searchParams?.get('redirect') || '/dashboard'
+
+  useEffect(() => {
+    // Check for success messages
+    if (searchParams?.get('reset') === 'success') {
+      setSuccessMessage('Password reset successful! Please sign in with your new password.')
+    }
+  }, [searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -35,7 +46,7 @@ export default function LoginForm() {
       const result = await signIn(email, password)
 
       if (result.success) {
-        router.push('/dashboard')
+        router.push(redirectUrl)
         router.refresh()
       } else {
         setError(result.error || 'Failed to sign in')
@@ -59,15 +70,34 @@ export default function LoginForm() {
         disabled={loading}
       />
 
-      <Input
-        type="password"
-        label="Password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        placeholder="••••••••"
-        required
-        disabled={loading}
-      />
+      <div>
+        <div className="flex items-center justify-between mb-1">
+          <label htmlFor="password" className="text-sm font-medium text-gray-700">
+            Password
+          </label>
+          <Link
+            href="/auth/forgot-password"
+            className="text-xs text-indigo-600 hover:text-indigo-700"
+          >
+            Forgot password?
+          </Link>
+        </div>
+        <Input
+          id="password"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="••••••••"
+          required
+          disabled={loading}
+        />
+      </div>
+
+      {successMessage && (
+        <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+          <p className="text-sm text-green-600">{successMessage}</p>
+        </div>
+      )}
 
       {error && (
         <div className="p-3 bg-red-50 border border-red-200 rounded-lg">

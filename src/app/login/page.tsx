@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import LoginForm from '@/components/auth/LoginForm'
 import { Card, CardBody } from '@/components/ui/Card'
 
@@ -12,7 +13,9 @@ export default function LoginPage() {
 
         <Card>
           <CardBody>
-            <LoginForm />
+            <Suspense fallback={<div className="text-center py-4">Loading...</div>}>
+              <LoginForm />
+            </Suspense>
           </CardBody>
         </Card>
       </div>

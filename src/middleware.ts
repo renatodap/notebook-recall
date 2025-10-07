@@ -2,10 +2,35 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createMiddlewareClient } from '@/lib/supabase/middleware'
 
 // Routes that require authentication
-const protectedRoutes = ['/dashboard', '/search', '/source']
+const protectedRoutes = [
+  '/dashboard',
+  '/search',
+  '/source',
+  '/chat',
+  '/analytics',
+  '/synthesis',
+  '/collections',
+  '/add',
+  '/profile',
+  '/settings',
+  '/graph',
+  '/workspaces',
+  '/research-questions',
+  '/timeline',
+  '/methodology',
+  '/literature-review',
+  '/import',
+  '/publishing',
+  '/tools',
+  '/onboarding',
+  '/discover'
+]
 
 // Routes that should redirect to dashboard if authenticated
 const authRoutes = ['/login', '/signup']
+
+// Public routes that don't require authentication
+const publicRoutes = ['/auth/forgot-password', '/auth/reset-password', '/auth/callback']
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -25,6 +50,14 @@ export async function middleware(request: NextRequest) {
 
   // Check if route is auth route
   const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route))
+
+  // Check if route is public
+  const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route))
+
+  // Allow public routes regardless of auth status
+  if (isPublicRoute) {
+    return response
+  }
 
   // Redirect to login if accessing protected route without session
   if (isProtectedRoute && !session) {
