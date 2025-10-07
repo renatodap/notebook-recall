@@ -242,27 +242,6 @@ export default async function ToolsPage() {
           </div>
         </div>
 
-        {/* Stats Footer */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-8 border-t border-neutral-200">
-          <div className="bg-white rounded-xl p-5 border border-neutral-200 shadow-sm">
-            <div className="text-3xl font-bold text-primary-600 mb-1">
-              {coreTools.length + academicTools.length + socialTools.length}
-            </div>
-            <div className="text-sm text-neutral-600">Total Tools</div>
-          </div>
-          <div className="bg-white rounded-xl p-5 border border-neutral-200 shadow-sm">
-            <div className="text-3xl font-bold text-purple-600 mb-1">Claude</div>
-            <div className="text-sm text-neutral-600">Powered by</div>
-          </div>
-          <div className="bg-white rounded-xl p-5 border border-neutral-200 shadow-sm">
-            <div className="text-3xl font-bold text-green-600 mb-1">{sourceCount}</div>
-            <div className="text-sm text-neutral-600">Your Sources</div>
-          </div>
-          <div className="bg-white rounded-xl p-5 border border-neutral-200 shadow-sm">
-            <div className="text-3xl font-bold text-orange-600 mb-1">24/7</div>
-            <div className="text-sm text-neutral-600">Available</div>
-          </div>
-        </div>
       </div>
     </div>
   )
