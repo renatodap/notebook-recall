@@ -42,6 +42,10 @@ export interface EmbeddingGenerationResult {
   tokenCount: number
   tokens?: number
   model: string
+  provider?: 'gemini' | 'openai' | string
+  cost?: number
+  latency_ms?: number
+  fallbackUsed?: boolean
 }
 
 export class EmbeddingError extends Error {
