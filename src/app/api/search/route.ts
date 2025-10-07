@@ -8,9 +8,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@/lib/supabase/server';
 import { generateEmbedding } from '@/lib/embeddings/client';
 import { calculateHybridScore } from '@/lib/embeddings/utils';
+import {
+  AuthenticationError,
+  ValidationError,
+  RateLimitError,
+  handleAPIError,
+} from '@/lib/errors/custom-errors';
 import { z } from 'zod';
 import type { SearchRequest, SearchResponse, SearchMode, SearchResult } from '@/types';
-import type { TypedSupabaseClient } from '@/types/supabase-helpers'
+import type { TypedSupabaseClient } from '@/types/supabase-helpers';
+import { DatabaseSource } from '@/types/api';
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limiter';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,9 +30,9 @@ const SearchRequestSchema = z.object({
   collection_id: z.string().uuid().optional(),
 });
 
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = await createRouteHandlerClient();
+    const supabase = await createRouteHandlerClient() as TypedSupabaseClient;
 
     // Check authentication
     const {
@@ -32,7 +40,16 @@ export async function POST(request: NextRequest) {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      throw new AuthenticationError('Please sign in to search sources');
+    }
+
+    // Check rate limit
+    const rateLimit = await checkRateLimit(user.id, RATE_LIMITS.SEARCH);
+    if (rateLimit.isLimited) {
+      throw new RateLimitError(
+        `Too many requests. Please try again in ${rateLimit.retryAfter} seconds`,
+        rateLimit.retryAfter
+      );
     }
 
     const body = await request.json();
@@ -40,10 +57,7 @@ export async function POST(request: NextRequest) {
     // Validate request
     const validation = SearchRequestSchema.safeParse(body);
     if (!validation.success) {
-      return NextResponse.json(
-        { error: validation.error.issues[0].message },
-        { status: 400 }
-      );
+      throw new ValidationError(validation.error.issues[0].message);
     }
 
     const {
@@ -61,13 +75,22 @@ export async function POST(request: NextRequest) {
     if (mode === 'semantic' || mode === 'hybrid') {
       try {
         // Generate query embedding
+        console.log(`[Search] Generating embedding for query: "${query}"`);
         const queryEmbedding = await generateEmbedding({
           text: query,
           type: 'query',
           normalize: true,
         });
 
+        console.log(`[Search] Query embedding generated:`, {
+          provider: queryEmbedding.provider,
+          model: queryEmbedding.model,
+          dimension: queryEmbedding.embedding.length,
+          cost: queryEmbedding.cost,
+        });
+
         // Use database function for vector similarity search
+        console.log(`[Search] Calling match_summaries with threshold: ${threshold}`);
         const { data: semanticData, error: semanticError } = await supabase.rpc(
           'match_summaries',
           {
@@ -78,6 +101,12 @@ export async function POST(request: NextRequest) {
             p_collection_id: collection_id || null,
           } as never
         );
+
+        console.log(`[Search] match_summaries result:`, {
+          success: !semanticError,
+          results_count: semanticData ? (semanticData as any[]).length : 0,
+          error: semanticError?.message,
+        });
 
         if (semanticError) {
           console.error('Semantic search error:', semanticError);
@@ -157,10 +186,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(response);
   } catch (error) {
     console.error('Search API error:', error);
-    return NextResponse.json(
-      { error: 'Failed to search sources' },
-      { status: 500 }
-    );
+    return handleAPIError(error);
   }
 }
 

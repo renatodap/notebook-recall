@@ -3,23 +3,27 @@ import { createRouteHandlerClient } from '@/lib/supabase/server'
 import { generateEmbedding } from '@/lib/embeddings/client'
 import { backfillEmbeddings } from '@/lib/embeddings/backfill'
 import { generateTitle } from '@/lib/claude/client'
-import { z } from 'zod'
-
-const CreateSourceSchema = z.object({
-  title: z.string().optional(),
-  content_type: z.enum(['text', 'url', 'pdf', 'note', 'image']),
-  original_content: z.string().min(1, 'Content is required'),
-  url: z.string().url().optional().nullable(),
-  summary_text: z.string().min(1, 'Summary is required'),
-  key_actions: z.array(z.string()),
-  key_topics: z.array(z.string()),
-  word_count: z.number().int().positive(),
-})
+import {
+  createSourceSchema,
+  GetSourcesQuerySchema,
+  validateRequestBody,
+  validateQueryParams,
+} from '@/lib/validation'
+import {
+  ValidationError,
+  AuthenticationError,
+  DatabaseError,
+  RateLimitError,
+  handleAPIError,
+} from '@/lib/errors/custom-errors'
+import { DatabaseSource } from '@/types/api'
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limiter'
 
 /**
  * GET /api/sources - List all sources for the authenticated user
+ * @returns Promise<NextResponse> - Paginated list of sources with summaries and tags
  */
-export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
     const supabase = await createRouteHandlerClient()
 
@@ -29,18 +33,28 @@ export async function GET(request: NextRequest) {
     } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      throw new AuthenticationError('Please sign in to view your sources')
     }
 
-    // Get query parameters
-    const { searchParams } = new URL(request.url)
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100)
-    const contentType = searchParams.get('contentType')
-    const sortBy = searchParams.get('sort') || 'newest'
-    const tagsParam = searchParams.get('tags')
-    const tagLogic = searchParams.get('tagLogic') || 'OR'
-    const collectionId = searchParams.get('collection_id')
+    // Rate limiting - SEARCH limit for GET
+    const rateLimit = await checkRateLimit(user.id, RATE_LIMITS.SEARCH)
+    if (rateLimit.isLimited) {
+      throw new RateLimitError(
+        `Too many requests. Please try again in ${rateLimit.retryAfter} seconds`,
+        rateLimit.retryAfter
+      )
+    }
+
+    // Validate and parse query parameters
+    const {
+      page,
+      limit,
+      contentType,
+      sort: sortBy,
+      tags: tagsParam,
+      tagLogic,
+      collection_id: collectionId,
+    } = validateQueryParams(request, GetSourcesQuerySchema)
 
     // Parse tag filter
     const filterTags = tagsParam
@@ -152,7 +166,7 @@ export async function GET(request: NextRequest) {
       `,
         { count: 'exact' }
       )
-      .eq('user_id', user.id as never)
+      .eq('user_id', user.id)
 
     // Apply content type filter
     if (contentType) {
@@ -189,17 +203,15 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('GET sources error:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch sources' },
-      { status: 500 }
-    )
+    return handleAPIError(error)
   }
 }
 
 /**
  * POST /api/sources - Create a new source with summary
+ * @returns Promise<NextResponse> - Created source with summary and embedding
  */
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     const supabase = await createRouteHandlerClient()
 
@@ -209,21 +221,21 @@ export async function POST(request: NextRequest) {
     } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      throw new AuthenticationError('Please sign in to create sources')
     }
 
-    const body = await request.json()
-
-    // Validate request
-    const validation = CreateSourceSchema.safeParse(body)
-    if (!validation.success) {
-      return NextResponse.json(
-        { error: validation.error.issues[0].message },
-        { status: 400 }
+    // Rate limiting - SOURCE_CREATION limit for POST
+    const rateLimit = await checkRateLimit(user.id, RATE_LIMITS.SOURCE_CREATION)
+    if (rateLimit.isLimited) {
+      throw new RateLimitError(
+        `Too many source creations. Please try again in ${rateLimit.retryAfter} seconds`,
+        rateLimit.retryAfter
       )
     }
 
+    // Validate request body
     const {
+      title: providedTitle,
       content_type,
       original_content,
       url,
@@ -231,10 +243,10 @@ export async function POST(request: NextRequest) {
       key_actions,
       key_topics,
       word_count,
-    } = validation.data
+    } = await validateRequestBody(request, createSourceSchema)
 
     // Generate title if not provided
-    let title = validation.data.title
+    let title = providedTitle
     if (!title || title.trim() === '' || title === 'Untitled') {
       try {
         title = await generateTitle(original_content, content_type)
@@ -258,19 +270,40 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (sourceError || !source) {
-      throw sourceError
+      console.error('Source creation error:', {
+        error: sourceError,
+        message: sourceError?.message,
+        details: sourceError?.details,
+        hint: sourceError?.hint,
+        code: sourceError?.code,
+      })
+      throw new DatabaseError(
+        'Failed to save source. Please try again.'
+      )
     }
 
     const createdSource = source as unknown as { id: string; [key: string]: unknown }
 
     // Generate embedding for summary (MANDATORY)
     const textToEmbed = [summary_text, ...key_topics].join(' ');
+    console.log(`[Embeddings] Generating embedding for source "${title}"...`);
+
     const embeddingResult = await generateEmbedding({
       text: textToEmbed,
       type: 'summary',
       normalize: true,
     });
     const embedding = embeddingResult.embedding;
+
+    // Log embedding generation success
+    console.log(`[Embeddings] ✅ Generated embedding:`, {
+      provider: embeddingResult.provider || 'unknown',
+      model: embeddingResult.model,
+      dimension: embedding.length,
+      cost: embeddingResult.cost || 0,
+      latency_ms: embeddingResult.latency_ms,
+      fallback_used: embeddingResult.fallbackUsed,
+    });
 
     // Create summary
     const { data: summary, error: summaryError } = await supabase
@@ -287,7 +320,22 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (summaryError) {
-      throw summaryError
+      console.error('[Embeddings] ❌ Summary creation error:', {
+        error: summaryError,
+        message: summaryError?.message,
+        details: summaryError?.details,
+        hint: summaryError?.hint,
+        code: summaryError?.code,
+      })
+      throw new DatabaseError('Failed to save summary. Please try again.')
+    }
+
+    // Verify embedding was saved
+    const savedSummary = summary as any;
+    if (!savedSummary.embedding) {
+      console.error('[Embeddings] ⚠️ WARNING: Summary created but embedding was NOT saved!');
+    } else {
+      console.log('[Embeddings] ✅ Embedding saved successfully to database');
     }
 
     // Create tags
@@ -320,9 +368,6 @@ export async function POST(request: NextRequest) {
     }, { status: 201 })
   } catch (error) {
     console.error('POST sources error:', error)
-    return NextResponse.json(
-      { error: 'Failed to create source' },
-      { status: 500 }
-    )
+    return handleAPIError(error)
   }
 }
