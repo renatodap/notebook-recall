@@ -61,7 +61,10 @@ export const GetSourcesQuerySchema = z.object({
  * POST /api/sources - Create source (backward compatible name)
  */
 export const createSourceSchema = z.object({
-  title: z.string().min(1, 'Title is required').max(500, 'Title too long').trim().optional(),
+  title: z.preprocess(
+    (val) => (typeof val === 'string' && val.trim() === '' ? undefined : val),
+    z.string().max(500, 'Title too long').optional()
+  ),
   content_type: ContentTypeSchema,
   original_content: z.string().min(1, 'Content is required').max(1000000),
   url: z.union([URLSchema, z.literal(''), z.null()]).optional(),
