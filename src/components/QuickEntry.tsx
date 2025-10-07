@@ -165,6 +165,9 @@ export default function QuickEntry() {
       const summaryData = await summarizeRes.json()
       if (!summarizeRes.ok) throw new Error(summaryData.error)
 
+      // Calculate word count from original content
+      const wordCount = content.split(/\s+/).filter(w => w.length > 0).length
+
       // Save source (title will be auto-generated)
       const saveRes = await fetch('/api/sources', {
         method: 'POST',
@@ -175,12 +178,16 @@ export default function QuickEntry() {
           original_content: content,
           url,
           summary_text: summaryData.summary,
-          key_actions: summaryData.actions,
-          key_topics: summaryData.topics,
-          word_count: summaryData.summary.split(' ').length,
+          key_actions: summaryData.actions || [],
+          key_topics: summaryData.topics || [],
+          word_count: wordCount,
         }),
       })
-      if (!saveRes.ok) throw new Error('Failed to save source')
+
+      if (!saveRes.ok) {
+        const errorData = await saveRes.json().catch(() => ({ error: 'Failed to save source' }))
+        throw new Error(errorData.error || 'Failed to save source')
+      }
 
       // Reset form
       setInput('')

@@ -143,6 +143,9 @@ export default function AddPage() {
       const summaryData = await summarizeRes.json()
       if (!summarizeRes.ok) throw new Error(summaryData.error)
 
+      // Calculate word count from original content
+      const wordCount = content.split(/\s+/).filter(w => w.length > 0).length
+
       const saveRes = await fetch('/api/sources', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -152,9 +155,9 @@ export default function AddPage() {
           original_content: content,
           url,
           summary_text: summaryData.summary,
-          key_actions: summaryData.actions,
-          key_topics: summaryData.topics,
-          word_count: summaryData.summary.split(' ').length,
+          key_actions: summaryData.actions || [],
+          key_topics: summaryData.topics || [],
+          word_count: wordCount,
         }),
       })
       const saveData = await saveRes.json()

@@ -102,6 +102,9 @@ export default function UnifiedDropZone({ onCapture }: UnifiedDropZoneProps) {
 
         const summaryData = await summarizeRes.json()
 
+        // Calculate word count from original content
+        const wordCount = content.split(/\s+/).filter(w => w.length > 0).length
+
         // Save source
         const saveRes = await fetch('/api/sources', {
           method: 'POST',
@@ -111,13 +114,16 @@ export default function UnifiedDropZone({ onCapture }: UnifiedDropZoneProps) {
             content_type: contentType,
             original_content: content,
             summary_text: summaryData.summary,
-            key_actions: summaryData.actions,
-            key_topics: summaryData.topics,
-            word_count: content.split(/\s+/).length
+            key_actions: summaryData.actions || [],
+            key_topics: summaryData.topics || [],
+            word_count: wordCount
           })
         })
 
-        if (!saveRes.ok) throw new Error('Failed to save source')
+        if (!saveRes.ok) {
+          const errorData = await saveRes.json().catch(() => ({ error: 'Failed to save source' }))
+          throw new Error(errorData.error || 'Failed to save source')
+        }
 
         const data = await saveRes.json()
         if (onCapture) onCapture(data.source.id)
@@ -195,6 +201,9 @@ export default function UnifiedDropZone({ onCapture }: UnifiedDropZoneProps) {
 
       const summaryData = await summarizeRes.json()
 
+      // Calculate word count from original content
+      const wordCount = content.split(/\s+/).filter(w => w.length > 0).length
+
       // Create source with summary
       const saveRes = await fetch('/api/sources', {
         method: 'POST',
@@ -205,14 +214,15 @@ export default function UnifiedDropZone({ onCapture }: UnifiedDropZoneProps) {
           original_content: content,
           url,
           summary_text: summaryData.summary,
-          key_actions: summaryData.actions,
-          key_topics: summaryData.topics,
-          word_count: content.split(/\s+/).length
+          key_actions: summaryData.actions || [],
+          key_topics: summaryData.topics || [],
+          word_count: wordCount
         })
       })
 
       if (!saveRes.ok) {
-        throw new Error('Failed to save source')
+        const errorData = await saveRes.json().catch(() => ({ error: 'Failed to save source' }))
+        throw new Error(errorData.error || 'Failed to save source')
       }
 
       const data = await saveRes.json()

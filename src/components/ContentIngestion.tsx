@@ -83,6 +83,9 @@ export default function ContentIngestion() {
       const summaryData = await summarizeRes.json()
       if (!summarizeRes.ok) throw new Error(summaryData.error)
 
+      // Calculate word count from original content
+      const wordCount = content.split(/\s+/).filter(w => w.length > 0).length
+
       // Save source
       const saveRes = await fetch('/api/sources', {
         method: 'POST',
@@ -93,12 +96,16 @@ export default function ContentIngestion() {
           original_content: content,
           url: finalUrl,
           summary_text: summaryData.summary,
-          key_actions: summaryData.actions,
-          key_topics: summaryData.topics,
-          word_count: summaryData.summary.split(' ').length,
+          key_actions: summaryData.actions || [],
+          key_topics: summaryData.topics || [],
+          word_count: wordCount,
         }),
       })
-      if (!saveRes.ok) throw new Error('Failed to save source')
+
+      if (!saveRes.ok) {
+        const errorData = await saveRes.json().catch(() => ({ error: 'Failed to save source' }))
+        throw new Error(errorData.error || 'Failed to save source')
+      }
 
       // Reset form
       setTitle('')
