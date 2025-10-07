@@ -105,11 +105,8 @@ export default function SearchPage() {
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <div className="flex justify-between items-center mb-4">
+          <div className="mb-4">
             <h1 className="text-3xl font-bold text-gray-900">Search Your Knowledge</h1>
-            <Link href="/dashboard" className="text-blue-600 hover:underline text-sm">
-              ← Dashboard
-            </Link>
           </div>
 
           <form onSubmit={handleSearch} className="space-y-4">
