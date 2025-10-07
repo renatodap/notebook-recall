@@ -19,7 +19,10 @@ An AI-powered knowledge management system that ingests content from multiple sou
 - **Backend**: Next.js API Routes
 - **Database**: Supabase (PostgreSQL with pgvector)
 - **Authentication**: Supabase Auth
-- **AI**: Anthropic Claude API
+- **AI**:
+  - Anthropic Claude API (Summaries, Analysis)
+  - Google Gemini (Embeddings - FREE tier, 1500/day)
+  - OpenAI (Embeddings fallback)
 - **Content Processing**: Cheerio (URLs), pdf-parse (PDFs)
 - **Deployment**: Vercel-ready
 
@@ -27,7 +30,9 @@ An AI-powered knowledge management system that ingests content from multiple sou
 
 - Node.js 18+ and npm
 - Supabase account
-- Anthropic API key
+- Google Gemini API key (FREE tier - 1500 embeddings/day)
+- Anthropic API key (for summaries)
+- OpenAI API key (optional, for embedding fallback)
 
 ## Quick Start
 

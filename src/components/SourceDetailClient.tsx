@@ -8,7 +8,6 @@ import CitationManager from './academic/CitationManager'
 import ConnectionsPanel from './ai/ConnectionsPanel'
 import ContradictionsPanel from './ai/ContradictionsPanel'
 import ShareButton from './ShareButton'
-import PARAAssignmentModal from './para/PARAAssignmentModal'
 import type { Source, Summary, Tag } from '@/types'
 
 // Lazy load PDFViewer (PDF.js is heavy - 500KB+)
@@ -32,7 +31,6 @@ interface SourceDetailClientProps {
 export default function SourceDetailClient({ source, onDelete }: SourceDetailClientProps) {
   const [showCitationManager, setShowCitationManager] = useState(false)
   const [showPDFViewer, setShowPDFViewer] = useState(false)
-  const [showPARAModal, setShowPARAModal] = useState(false)
 
   const summary = source.summary?.[0]
   const isPDF = source.content_type === 'pdf' || source.url?.endsWith('.pdf')
@@ -80,14 +78,6 @@ export default function SourceDetailClient({ source, onDelete }: SourceDetailCli
                         📄 <span className="hidden xs:inline">Annotate PDF</span><span className="xs:hidden">PDF</span>
                       </Button>
                     )}
-                    <Button
-                      onClick={() => setShowPARAModal(true)}
-                      variant="primary"
-                      size="sm"
-                      className="bg-green-600 hover:bg-green-700 flex-1 sm:flex-none"
-                    >
-                      📂 <span className="hidden xs:inline">Organize</span>
-                    </Button>
                     <ShareButton sourceId={source.id} />
                     <Button
                       disabled
@@ -230,18 +220,6 @@ export default function SourceDetailClient({ source, onDelete }: SourceDetailCli
         <CitationManager
           sourceId={source.id}
           onClose={() => setShowCitationManager(false)}
-        />
-      )}
-
-      {/* PARA Assignment Modal */}
-      {showPARAModal && (
-        <PARAAssignmentModal
-          sourceId={source.id}
-          onClose={() => setShowPARAModal(false)}
-          onSuccess={() => {
-            setShowPARAModal(false);
-            // Optionally show success message or refresh
-          }}
         />
       )}
     </div>

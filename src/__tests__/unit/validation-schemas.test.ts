@@ -52,7 +52,7 @@ describe('Validation Schemas', () => {
         const result = quickWinsPostSchema.safeParse({ winId: 'invalid_win' })
         expect(result.success).toBe(false)
         if (!result.success) {
-          expect(result.error.errors[0].message).toContain('Invalid win ID')
+          expect(result.error.issues[0].message).toContain('Invalid win ID')
         }
       })
 

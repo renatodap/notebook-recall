@@ -103,14 +103,6 @@ export default function CommandPalette() {
       action: () => router.push('/import')
     },
     {
-      id: 'action-para',
-      label: 'PARA',
-      description: 'Projects, Areas, Resources & Archive',
-      icon: '📁',
-      category: 'Actions',
-      action: () => router.push('/para')
-    },
-    {
       id: 'action-workspaces',
       label: 'Workspaces',
       description: 'Team collaboration',
