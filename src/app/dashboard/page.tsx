@@ -58,7 +58,7 @@ export default async function DashboardPage() {
         <div className="max-w-6xl mx-auto px-6 py-8 md:py-12 w-full">
         {/* Personalized Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight mb-2" style={{ color: 'var(--chat-text-primary)' }}>
+          <h1 className="text-3xl font-bold tracking-tight mb-2" style={{ color: 'var(--chat-text-primary)' }} suppressHydrationWarning>
             {getGreeting()}, {user.user_metadata?.name || user.email?.split('@')[0] || 'there'}
           </h1>
           <p style={{ color: 'var(--chat-text-secondary)' }}>
@@ -130,7 +130,7 @@ export default async function DashboardPage() {
                 </div>
                 <div>
                   <p className="text-sm" style={{ color: 'var(--chat-text-secondary)' }}>This Week</p>
-                  <p className="text-2xl font-bold" style={{ color: 'var(--chat-text-primary)' }}>
+                  <p className="text-2xl font-bold" style={{ color: 'var(--chat-text-primary)' }} suppressHydrationWarning>
                     {sources?.filter((s: any) => {
                       const weekAgo = new Date()
                       weekAgo.setDate(weekAgo.getDate() - 7)
