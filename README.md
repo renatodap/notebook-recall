@@ -16,7 +16,7 @@ An AI-powered knowledge management system that ingests content from multiple sou
 ## Tech Stack
 
 - **Frontend**: Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS
-- **Backend**: Next.js API Routes
+- **Backend API**: Python FastAPI (see [recall-notebook-api](https://github.com/yourusername/recall-notebook-api))
 - **Database**: Supabase (PostgreSQL with pgvector)
 - **Authentication**: Supabase Auth
 - **AI** (Cost-optimized):
@@ -24,7 +24,7 @@ An AI-powered knowledge management system that ingests content from multiple sou
   - **Google Gemini** (Embeddings - **FREE tier**, 1500/day) 🎉
   - **OpenAI** (Embeddings fallback) - $0.13/M tokens
 - **Content Processing**: Cheerio (URLs), pdf-parse (PDFs)
-- **Deployment**: Vercel-ready
+- **Deployment**: Vercel (frontend), Railway (backend API)
 
 ## Prerequisites
 
@@ -55,6 +55,26 @@ An AI-powered knowledge management system that ingests content from multiple sou
 4. **Open your browser**
    Navigate to [http://localhost:3000](http://localhost:3000)
 
+## Backend API
+
+This frontend uses the [**Recall Notebook API**](https://github.com/yourusername/recall-notebook-api) - a Python FastAPI backend designed for RAG (Retrieval-Augmented Generation) agents.
+
+**Key Features:**
+- 🆓 FREE embeddings (Google Gemini)
+- 🔍 Hybrid search (semantic + keyword)
+- 📦 Batch operations (100 embeddings, 50 sources)
+- 🔔 Real-time webhooks
+
+**For Local Development:**
+1. Clone the API repository
+2. Follow setup in [recall-notebook-api README](https://github.com/yourusername/recall-notebook-api)
+3. Run backend: `poetry run uvicorn app.main:app --reload`
+4. Update frontend `.env.local`: `NEXT_PUBLIC_API_URL=http://localhost:8000`
+
+**For Production:**
+- Frontend: Deployed to Vercel automatically
+- Backend: Deployed to Railway (see [API deployment docs](https://github.com/yourusername/recall-notebook-api#deployment-to-railway))
+
 ## Setup Guide
 
 See [SETUP.md](SETUP.md) for detailed setup instructions including:
@@ -62,6 +82,7 @@ See [SETUP.md](SETUP.md) for detailed setup instructions including:
 - Running database migrations
 - Getting your Anthropic API key
 - Configuring environment variables
+- Setting up the backend API
 
 ## Project Structure
 
@@ -90,22 +111,26 @@ recall-notebook/
 
 ## API Routes
 
-### Core Features
-- `POST /api/summarize` - Generate AI summary for content
-- `POST /api/sources` - Create new source with summary
-- `GET /api/sources` - List all sources (paginated)
-- `GET /api/sources/[id]` - Get single source
-- `DELETE /api/sources/[id]` - Delete source
-- `POST /api/search` - Search sources
-- `POST /api/fetch-url` - Fetch content from URL
-- `POST /api/process-pdf` - Process PDF file
+### Backend API (recall-notebook-api)
+Core knowledge management features are provided by the [Python FastAPI backend](https://github.com/yourusername/recall-notebook-api):
 
-### Onboarding & Quick Wins (Phase 2)
+- **Sources**: Create, read, update, delete sources with AI summaries
+- **Search**: Semantic, keyword, and hybrid search with pgvector
+- **Embeddings**: Generate embeddings (FREE Gemini + OpenAI fallback)
+- **Collections**: Organize sources into collections
+- **Webhooks**: Real-time event notifications
+- **Batch Operations**: Process up to 100 embeddings or 50 sources at once
+
+See [API Documentation](https://github.com/yourusername/recall-notebook-api) for complete reference.
+
+### Frontend API Routes (Next.js)
+UI-specific features in this repository:
+
 - `POST /api/onboarding/seed-demo` - Seed demo data for new users (rate limited: 3/hour)
 - `GET /api/quick-wins` - Get user's quick wins progress
 - `POST /api/quick-wins` - Mark a quick win as completed (rate limited: 10/minute)
 
-All Phase 2 endpoints include:
+All endpoints include:
 - ✅ Zod input validation
 - ✅ Rate limiting
 - ✅ Proper error handling
