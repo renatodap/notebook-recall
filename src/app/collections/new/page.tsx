@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import MobileNav from '@/components/MobileNav'
+import ChatSidebar from '@/components/ChatSidebar'
 import Button from '@/components/ui/Button'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
@@ -55,37 +55,44 @@ export default function NewCollectionPage() {
   }
 
   return (
-    <>
-      <MobileNav />
-      <div className="min-h-screen bg-neutral-50 md:ml-64">
-        <main className="max-w-2xl mx-auto px-6 py-8">
+    <div className="flex h-screen" style={{ backgroundColor: 'var(--chat-bg-main)' }}>
+      <ChatSidebar />
+
+      <div className="flex-1 flex flex-col md:ml-64 overflow-y-auto">
+        <main className="max-w-2xl mx-auto px-6 py-8 w-full">
           {/* Header */}
           <div className="mb-8">
             <Link
               href="/collections"
-              className="inline-flex items-center gap-2 text-neutral-600 hover:text-neutral-900 transition-colors mb-4"
+              className="inline-flex items-center gap-2 transition-colors mb-4"
+              style={{ color: 'var(--chat-text-secondary)' }}
             >
               <ArrowLeft className="h-4 w-4" />
               Back to Collections
             </Link>
-            <h1 className="text-3xl font-bold text-neutral-900 tracking-tight">
+            <h1 className="text-3xl font-bold tracking-tight" style={{ color: 'var(--chat-text-primary)' }}>
               Create New Collection
             </h1>
-            <p className="text-neutral-600 mt-2">
+            <p className="mt-2" style={{ color: 'var(--chat-text-secondary)' }}>
               Organize related sources into a collection
             </p>
           </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="bg-white rounded-lg border border-neutral-200 p-6 space-y-6">
+            <div className="rounded-lg border p-6 space-y-6"
+                 style={{
+                   backgroundColor: 'var(--chat-bg-message-ai)',
+                   borderColor: 'var(--chat-border)'
+                 }}>
               {/* Name */}
               <div>
                 <label
                   htmlFor="name"
-                  className="block text-sm font-medium text-neutral-700 mb-2"
+                  className="block text-sm font-medium mb-2"
+                  style={{ color: 'var(--chat-text-primary)' }}
                 >
-                  Collection Name <span className="text-red-500">*</span>
+                  Collection Name <span className="text-red-400">*</span>
                 </label>
                 <input
                   type="text"
@@ -93,12 +100,17 @@ export default function NewCollectionPage() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g., Machine Learning Research, Book Notes, Work Projects"
-                  className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-neutral-900"
+                  className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+                  style={{
+                    backgroundColor: 'var(--chat-bg-input)',
+                    borderColor: 'var(--chat-border)',
+                    color: 'var(--chat-text-primary)'
+                  }}
                   disabled={loading}
                   maxLength={100}
                   required
                 />
-                <p className="text-xs text-neutral-500 mt-1">
+                <p className="text-xs mt-1" style={{ color: 'var(--chat-text-secondary)' }}>
                   {name.length}/100 characters
                 </p>
               </div>
@@ -107,9 +119,10 @@ export default function NewCollectionPage() {
               <div>
                 <label
                   htmlFor="description"
-                  className="block text-sm font-medium text-neutral-700 mb-2"
+                  className="block text-sm font-medium mb-2"
+                  style={{ color: 'var(--chat-text-primary)' }}
                 >
-                  Description <span className="text-neutral-400">(optional)</span>
+                  Description <span style={{ color: 'var(--chat-text-secondary)' }}>(optional)</span>
                 </label>
                 <textarea
                   id="description"
@@ -117,11 +130,16 @@ export default function NewCollectionPage() {
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="What is this collection about?"
                   rows={4}
-                  className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-neutral-900 resize-none"
+                  className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent resize-none"
+                  style={{
+                    backgroundColor: 'var(--chat-bg-input)',
+                    borderColor: 'var(--chat-border)',
+                    color: 'var(--chat-text-primary)'
+                  }}
                   disabled={loading}
                   maxLength={500}
                 />
-                <p className="text-xs text-neutral-500 mt-1">
+                <p className="text-xs mt-1" style={{ color: 'var(--chat-text-secondary)' }}>
                   {description.length}/500 characters
                 </p>
               </div>
@@ -137,14 +155,17 @@ export default function NewCollectionPage() {
                       className="sr-only peer"
                       disabled={loading}
                     />
-                    <div className="w-11 h-6 bg-neutral-300 rounded-full peer peer-checked:bg-primary-600 peer-focus:ring-2 peer-focus:ring-primary-500 peer-focus:ring-offset-2 transition-colors"></div>
+                    <div className="w-11 h-6 rounded-full peer transition-colors"
+                         style={{
+                           backgroundColor: isPublic ? 'var(--chat-accent)' : 'var(--chat-border)'
+                         }}></div>
                     <div className="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform peer-checked:translate-x-5"></div>
                   </div>
                   <div>
-                    <span className="text-sm font-medium text-neutral-700">
+                    <span className="text-sm font-medium" style={{ color: 'var(--chat-text-primary)' }}>
                       Make this collection public
                     </span>
-                    <p className="text-xs text-neutral-500">
+                    <p className="text-xs" style={{ color: 'var(--chat-text-secondary)' }}>
                       {isPublic
                         ? 'Anyone can view this collection'
                         : 'Only you can see this collection'}
@@ -156,8 +177,12 @@ export default function NewCollectionPage() {
 
             {/* Error Message */}
             {error && (
-              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-sm text-red-600 font-medium">{error}</p>
+              <div className="p-4 border rounded-lg"
+                   style={{
+                     backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                     borderColor: 'rgba(239, 68, 68, 0.3)'
+                   }}>
+                <p className="text-sm font-medium" style={{ color: '#FCA5A5' }}>{error}</p>
               </div>
             )}
 
@@ -184,14 +209,18 @@ export default function NewCollectionPage() {
           </form>
 
           {/* Info Box */}
-          <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-sm text-blue-800">
-              <strong>💡 Tip:</strong> After creating a collection, you can add sources to it from the
+          <div className="mt-6 p-4 border rounded-lg"
+               style={{
+                 backgroundColor: 'var(--chat-bg-message-ai)',
+                 borderColor: 'var(--chat-border)'
+               }}>
+            <p className="text-sm" style={{ color: 'var(--chat-text-secondary)' }}>
+              <strong style={{ color: 'var(--chat-text-primary)' }}>💡 Tip:</strong> After creating a collection, you can add sources to it from the
               source detail page or by using bulk actions on the dashboard.
             </p>
           </div>
         </main>
       </div>
-    </>
+    </div>
   )
 }

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Plus, Folder, MessageSquare, Settings, User, LogOut } from 'lucide-react'
+import { Plus, Folder, MessageSquare, Settings, User, LogOut, Home, FileText } from 'lucide-react'
 import { signOut } from '@/lib/auth/actions'
 
 interface Category {
@@ -72,8 +72,56 @@ export default function ChatSidebar({ selectedCategoryId, onCategorySelect }: Ch
         </button>
       </div>
 
-      {/* Collections Section */}
+      {/* Main Navigation */}
       <div className="flex-1 overflow-y-auto py-4">
+        {/* Dashboard & Add Links */}
+        <div className="px-3 mb-4 space-y-1">
+          <Link
+            href="/dashboard"
+            className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors ${
+              pathname === '/dashboard' ? 'bg-opacity-10' : ''
+            }`}
+            style={{
+              color: 'var(--chat-text-primary)',
+              backgroundColor: pathname === '/dashboard' ? 'var(--chat-hover)' : 'transparent'
+            }}
+            onMouseEnter={(e) => {
+              if (pathname === '/dashboard') return
+              e.currentTarget.style.backgroundColor = 'var(--chat-hover)'
+            }}
+            onMouseLeave={(e) => {
+              if (pathname === '/dashboard') return
+              e.currentTarget.style.backgroundColor = 'transparent'
+            }}
+          >
+            <Home className="h-4 w-4" />
+            <span className="text-sm">Dashboard</span>
+          </Link>
+
+          <Link
+            href="/add"
+            className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors ${
+              pathname === '/add' ? 'bg-opacity-10' : ''
+            }`}
+            style={{
+              color: 'var(--chat-text-primary)',
+              backgroundColor: pathname === '/add' ? 'var(--chat-hover)' : 'transparent'
+            }}
+            onMouseEnter={(e) => {
+              if (pathname === '/add') return
+              e.currentTarget.style.backgroundColor = 'var(--chat-hover)'
+            }}
+            onMouseLeave={(e) => {
+              if (pathname === '/add') return
+              e.currentTarget.style.backgroundColor = 'transparent'
+            }}
+          >
+            <FileText className="h-4 w-4" />
+            <span className="text-sm">Add Content</span>
+          </Link>
+        </div>
+
+        {/* Collections Section */}
         <div className="px-3 mb-2">
           <h2 className="text-xs font-semibold uppercase tracking-wider px-2"
               style={{ color: 'var(--chat-text-secondary)' }}>

@@ -5,7 +5,6 @@ import ChatSidebar from '@/components/ChatSidebar'
 import ChatMessage from '@/components/ChatMessage'
 import ChatInput from '@/components/ChatInput'
 import SourceCard from '@/components/SourceCard'
-import MobileNav from '@/components/MobileNav'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -105,7 +104,6 @@ export default function SearchPage() {
         selectedCategoryId={selectedCategoryId}
         onCategorySelect={handleCategorySelect}
       />
-      <MobileNav />
 
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col md:ml-64">
