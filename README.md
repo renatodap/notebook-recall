@@ -16,7 +16,7 @@ An AI-powered knowledge management system that ingests content from multiple sou
 ## Tech Stack
 
 - **Frontend**: Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS
-- **Backend API**: Python FastAPI (see [recall-notebook-api](https://github.com/yourusername/recall-notebook-api))
+- **Backend API**: Python FastAPI (see [persimmon-rag-api](https://github.com/renatodap/persimmon-rag-api))
 - **Database**: Supabase (PostgreSQL with pgvector)
 - **Authentication**: Supabase Auth
 - **AI** (Cost-optimized):
@@ -57,7 +57,7 @@ An AI-powered knowledge management system that ingests content from multiple sou
 
 ## Backend API
 
-This frontend uses the [**Recall Notebook API**](https://github.com/yourusername/recall-notebook-api) - a Python FastAPI backend designed for RAG (Retrieval-Augmented Generation) agents.
+This frontend uses the [**Persimmon RAG API**](https://github.com/renatodap/persimmon-rag-api) - a Python FastAPI backend designed for RAG (Retrieval-Augmented Generation) agents.
 
 **Key Features:**
 - 🆓 FREE embeddings (Google Gemini)
@@ -66,14 +66,13 @@ This frontend uses the [**Recall Notebook API**](https://github.com/yourusername
 - 🔔 Real-time webhooks
 
 **For Local Development:**
-1. Clone the API repository
-2. Follow setup in [recall-notebook-api README](https://github.com/yourusername/recall-notebook-api)
-3. Run backend: `poetry run uvicorn app.main:app --reload`
-4. Update frontend `.env.local`: `NEXT_PUBLIC_API_URL=http://localhost:8000`
+1. Clone the API repository: `git clone https://github.com/renatodap/persimmon-rag-api.git`
+2. Follow setup in [persimmon-rag-api README](https://github.com/renatodap/persimmon-rag-api)
+3. Update frontend `.env.local`: `NEXT_PUBLIC_API_URL=http://localhost:8000`
 
 **For Production:**
 - Frontend: Deployed to Vercel automatically
-- Backend: Deployed to Railway (see [API deployment docs](https://github.com/yourusername/recall-notebook-api#deployment-to-railway))
+- Backend: Deployed to Railway (see [API deployment docs](https://github.com/renatodap/persimmon-rag-api#deployment-to-railway))
 
 ## Setup Guide
 
@@ -111,8 +110,8 @@ recall-notebook/
 
 ## API Routes
 
-### Backend API (recall-notebook-api)
-Core knowledge management features are provided by the [Python FastAPI backend](https://github.com/yourusername/recall-notebook-api):
+### Backend API (Persimmon RAG API)
+Core knowledge management features are provided by the [Python FastAPI backend](https://github.com/renatodap/persimmon-rag-api):
 
 - **Sources**: Create, read, update, delete sources with AI summaries
 - **Search**: Semantic, keyword, and hybrid search with pgvector
@@ -121,7 +120,7 @@ Core knowledge management features are provided by the [Python FastAPI backend](
 - **Webhooks**: Real-time event notifications
 - **Batch Operations**: Process up to 100 embeddings or 50 sources at once
 
-See [API Documentation](https://github.com/yourusername/recall-notebook-api) for complete reference.
+See [API Documentation](https://github.com/renatodap/persimmon-rag-api) for complete reference.
 
 ### Frontend API Routes (Next.js)
 UI-specific features in this repository:
