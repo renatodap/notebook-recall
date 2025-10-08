@@ -7,11 +7,18 @@ import MobileSidebar from '@/components/MobileSidebar'
 import ChatMessage from '@/components/ChatMessage'
 import ChatInput from '@/components/ChatInput'
 import SourceCard from '@/components/SourceCard'
+import { X } from 'lucide-react'
 
 interface Message {
   role: 'user' | 'assistant'
   content: string
   sources?: string[]
+}
+
+interface Collection {
+  id: string
+  name: string
+  source_count: number
 }
 
 function SearchContent() {
@@ -21,6 +28,7 @@ function SearchContent() {
   const [messages, setMessages] = useState<Message[]>([])
   const [loading, setLoading] = useState(false)
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(collectionParam)
+  const [selectedCollection, setSelectedCollection] = useState<Collection | null>(null)
   const [results, setResults] = useState<any[]>([])
 
   // Update selectedCategoryId when URL param changes
@@ -32,6 +40,28 @@ function SearchContent() {
       setResults([])
     }
   }, [collectionParam])
+
+  // Fetch collection details when selectedCategoryId changes
+  useEffect(() => {
+    const fetchCollection = async () => {
+      if (!selectedCategoryId) {
+        setSelectedCollection(null)
+        return
+      }
+
+      try {
+        const res = await fetch(`/api/collections/${selectedCategoryId}`)
+        const data = await res.json()
+        if (data.success && data.data) {
+          setSelectedCollection(data.data)
+        }
+      } catch (error) {
+        console.error('Failed to fetch collection details:', error)
+      }
+    }
+
+    fetchCollection()
+  }, [selectedCategoryId])
 
   const handleCategorySelect = (categoryId: string | null) => {
     setSelectedCategoryId(categoryId)
@@ -123,6 +153,40 @@ function SearchContent() {
 
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col md:ml-64">
+        {/* Collection Badge */}
+        {selectedCollection && (
+          <div
+            className="sticky top-0 z-10 px-4 py-3 border-b"
+            style={{
+              backgroundColor: 'var(--chat-bg-sidebar)',
+              borderColor: 'var(--chat-border)'
+            }}
+          >
+            <div className="max-w-3xl mx-auto flex items-center gap-2">
+              <div
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium"
+                style={{
+                  backgroundColor: 'var(--chat-accent)',
+                  color: 'var(--chat-text-primary)'
+                }}
+              >
+                <span>📁</span>
+                <span>Searching in: {selectedCollection.name}</span>
+                <button
+                  onClick={() => handleCategorySelect(null)}
+                  className="ml-1 hover:opacity-70 transition-opacity"
+                  aria-label="Clear collection filter"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <span className="text-xs" style={{ color: 'var(--chat-text-secondary)' }}>
+                {selectedCollection.source_count || 0} sources
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* Messages Area */}
         <div className="flex-1 overflow-y-auto">
           {messages.length === 0 ? (
@@ -132,7 +196,7 @@ function SearchContent() {
                   className="text-4xl font-bold mb-4"
                   style={{ color: 'var(--chat-text-primary)' }}
                 >
-                  {selectedCategoryId ? 'Search in Category' : 'Search Your Knowledge'}
+                  {selectedCollection ? `Search in ${selectedCollection.name}` : 'Search Your Knowledge'}
                 </h1>
                 <p
                   className="text-lg mb-8"

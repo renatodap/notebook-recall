@@ -32,7 +32,7 @@ export default function ChatSidebar({ selectedCategoryId, onCategorySelect }: Ch
     try {
       const res = await fetch('/api/collections')
       const data = await res.json()
-      setCategories(data.collections || [])
+      setCategories(data.data || [])
     } catch (error) {
       console.error('Failed to fetch categories:', error)
     } finally {
