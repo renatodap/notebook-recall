@@ -62,18 +62,18 @@ export default function SourceCard({
                   <span className="text-2xl" role="img" aria-label={`${source.content_type} content`}>
                     {contentTypeIcons[source.content_type]}
                   </span>
-                  <h3 className="text-lg font-semibold text-gray-900 line-clamp-1">
+                  <h3 className="text-lg font-semibold line-clamp-1" style={{ color: 'var(--chat-text-primary)' }}>
                     {source.title}
                   </h3>
                 </div>
-                <time className="text-xs text-gray-500 flex-shrink-0 ml-2" dateTime={source.created_at}>
+                <time className="text-xs flex-shrink-0 ml-2" style={{ color: 'var(--chat-text-secondary)' }} dateTime={source.created_at}>
                   {new Date(source.created_at).toLocaleDateString()}
                 </time>
               </div>
 
               {summary && (
                 <div className="mb-3 space-y-2">
-                  <p className="text-sm text-gray-600 line-clamp-3">
+                  <p className="text-sm line-clamp-3" style={{ color: 'var(--chat-text-secondary)' }}>
                     {summary.summary_text}
                   </p>
                   <AIDisclaimer variant="inline" />

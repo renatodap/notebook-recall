@@ -34,7 +34,7 @@ export default function NewCollectionPage() {
           name: name.trim(),
           description: description.trim() || null,
           is_public: isPublic,
-          collection_type: 'general',
+          collection_type: 'reading_list',
         }),
       })
 

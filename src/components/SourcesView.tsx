@@ -93,22 +93,28 @@ export default function SourcesView({ initialSources }: SourcesViewProps) {
       )}
 
       {/* Search Bar */}
-      <div className="sticky top-0 z-10 bg-gray-50 pb-4 pt-2 md:pt-0">
+      <div className="sticky top-0 z-10 pb-4 pt-2 md:pt-0" style={{ backgroundColor: 'var(--chat-bg-main)' }}>
         <div className="relative">
           <input
             type="text"
             placeholder="Search sources..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 md:py-4 border border-gray-300 rounded-xl md:rounded-2xl bg-white text-base md:text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent shadow-sm"
+            className="w-full pl-12 pr-4 py-3 md:py-4 border rounded-xl md:rounded-2xl text-base md:text-lg focus:outline-none focus:ring-2 focus:border-transparent shadow-sm"
+            style={{
+              backgroundColor: 'var(--chat-bg-input)',
+              borderColor: 'var(--chat-border)',
+              color: 'var(--chat-text-primary)'
+            }}
           />
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl">
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-xl" style={{ color: 'var(--chat-text-secondary)' }}>
             🔍
           </div>
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              className="absolute right-4 top-1/2 -translate-y-1/2 transition-colors"
+              style={{ color: 'var(--chat-text-secondary)' }}
             >
               ✕
             </button>
@@ -124,11 +130,16 @@ export default function SourcesView({ initialSources }: SourcesViewProps) {
                 clearSelection()
               }
             }}
-            className={`flex-shrink-0 px-4 py-2 border rounded-full text-sm font-medium transition-colors ${
-              selectionMode
-                ? 'bg-blue-600 text-white border-blue-600'
-                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-            }`}
+            className="flex-shrink-0 px-4 py-2 border rounded-full text-sm font-medium transition-colors"
+            style={selectionMode ? {
+              backgroundColor: 'var(--chat-accent)',
+              borderColor: 'var(--chat-accent)',
+              color: 'var(--chat-text-primary)'
+            } : {
+              backgroundColor: 'var(--chat-bg-input)',
+              borderColor: 'var(--chat-border)',
+              color: 'var(--chat-text-primary)'
+            }}
           >
             {selectionMode ? '✓ Selection Mode' : '☑️ Select'}
           </button>
@@ -136,7 +147,12 @@ export default function SourcesView({ initialSources }: SourcesViewProps) {
           {selectionMode && filteredSources.length > 0 && (
             <button
               onClick={selectAll}
-              className="flex-shrink-0 px-4 py-2 bg-white border border-gray-300 rounded-full text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              className="flex-shrink-0 px-4 py-2 border rounded-full text-sm font-medium transition-colors"
+              style={{
+                backgroundColor: 'var(--chat-bg-input)',
+                borderColor: 'var(--chat-border)',
+                color: 'var(--chat-text-primary)'
+              }}
             >
               Select All ({filteredSources.length})
             </button>
@@ -144,7 +160,12 @@ export default function SourcesView({ initialSources }: SourcesViewProps) {
 
           <button
             onClick={() => setSortBy(sortBy === 'newest' ? 'oldest' : 'newest')}
-            className="flex-shrink-0 px-4 py-2 bg-white border border-gray-300 rounded-full text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            className="flex-shrink-0 px-4 py-2 border rounded-full text-sm font-medium transition-colors"
+            style={{
+              backgroundColor: 'var(--chat-bg-input)',
+              borderColor: 'var(--chat-border)',
+              color: 'var(--chat-text-primary)'
+            }}
           >
             {sortBy === 'newest' ? '⬇️ Newest' : '⬆️ Oldest'}
           </button>
@@ -152,7 +173,12 @@ export default function SourcesView({ initialSources }: SourcesViewProps) {
           {Object.entries(contentTypeCounts).map(([type, count]) => (
             <button
               key={type}
-              className="flex-shrink-0 px-4 py-2 bg-white border border-gray-200 rounded-full text-sm font-medium text-gray-600 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-700 transition-colors"
+              className="flex-shrink-0 px-4 py-2 border rounded-full text-sm font-medium transition-colors"
+              style={{
+                backgroundColor: 'var(--chat-bg-input)',
+                borderColor: 'var(--chat-border)',
+                color: 'var(--chat-text-secondary)'
+              }}
             >
               {contentTypeIcons[type as keyof typeof contentTypeIcons]} {type} ({count})
             </button>
@@ -162,14 +188,15 @@ export default function SourcesView({ initialSources }: SourcesViewProps) {
 
       {/* Results Count */}
       <div className="flex items-center justify-between px-1">
-        <p className="text-sm text-gray-600">
+        <p className="text-sm" style={{ color: 'var(--chat-text-secondary)' }}>
           {filteredSources.length} {filteredSources.length === 1 ? 'source' : 'sources'}
           {searchQuery && ` for "${searchQuery}"`}
         </p>
         {sources.length > 0 && (
           <button
             onClick={() => window.location.href = '/export'}
-            className="text-sm text-indigo-600 font-medium hover:text-indigo-700"
+            className="text-sm font-medium transition-colors"
+            style={{ color: 'var(--chat-accent)' }}
           >
             Export All
           </button>
@@ -198,65 +225,92 @@ export default function SourcesView({ initialSources }: SourcesViewProps) {
           ))}
         </div>
       ) : sources.length === 0 ? (
-        <div className="bg-white rounded-lg border border-neutral-200 p-12 text-center">
+        <div className="rounded-lg border p-12 text-center" style={{
+          backgroundColor: 'var(--chat-bg-message-ai)',
+          borderColor: 'var(--chat-border)'
+        }}>
           <div className="flex justify-center mb-6">
-            <div className="p-4 bg-neutral-100 rounded-full text-6xl">📚</div>
+            <div className="p-4 rounded-full text-6xl" style={{ backgroundColor: 'var(--chat-border)' }}>📚</div>
           </div>
-          <h3 className="text-2xl font-bold text-neutral-900 mb-3">Your knowledge base is empty</h3>
-          <p className="text-neutral-600 max-w-md mx-auto mb-8">
+          <h3 className="text-2xl font-bold mb-3" style={{ color: 'var(--chat-text-primary)' }}>Your knowledge base is empty</h3>
+          <p className="max-w-md mx-auto mb-8" style={{ color: 'var(--chat-text-secondary)' }}>
             Add your first source to get started. Try pasting a URL, uploading a PDF, or writing a note.
           </p>
           <div className="flex gap-4 justify-center">
             <a
               href="/add"
-              className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-semibold"
+              className="px-6 py-3 rounded-lg transition-colors font-semibold"
+              style={{
+                backgroundColor: 'var(--chat-accent)',
+                color: 'var(--chat-text-primary)'
+              }}
             >
               Add Your First Source
             </a>
             <a
               href="/onboarding"
-              className="px-6 py-3 bg-white text-neutral-700 border border-neutral-300 rounded-lg hover:bg-neutral-50 transition-colors font-medium"
+              className="px-6 py-3 border rounded-lg transition-colors font-medium"
+              style={{
+                backgroundColor: 'var(--chat-bg-input)',
+                borderColor: 'var(--chat-border)',
+                color: 'var(--chat-text-primary)'
+              }}
             >
               See How It Works
             </a>
           </div>
         </div>
       ) : (
-        <div className="bg-white rounded-lg border border-neutral-200 p-12 text-center">
+        <div className="rounded-lg border p-12 text-center" style={{
+          backgroundColor: 'var(--chat-bg-message-ai)',
+          borderColor: 'var(--chat-border)'
+        }}>
           <div className="flex justify-center mb-6">
-            <div className="p-4 bg-neutral-100 rounded-full text-6xl">🔍</div>
+            <div className="p-4 rounded-full text-6xl" style={{ backgroundColor: 'var(--chat-border)' }}>🔍</div>
           </div>
-          <h3 className="text-2xl font-bold text-neutral-900 mb-3">No results found</h3>
-          <p className="text-neutral-600 max-w-md mx-auto mb-8">
+          <h3 className="text-2xl font-bold mb-3" style={{ color: 'var(--chat-text-primary)' }}>No results found</h3>
+          <p className="max-w-md mx-auto mb-8" style={{ color: 'var(--chat-text-secondary)' }}>
             Try a different search term, or add more sources to your knowledge base.
           </p>
           <div className="flex gap-4 justify-center mb-6">
             <button
               onClick={() => setSearchQuery('')}
-              className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-semibold"
+              className="px-6 py-3 rounded-lg transition-colors font-semibold"
+              style={{
+                backgroundColor: 'var(--chat-accent)',
+                color: 'var(--chat-text-primary)'
+              }}
             >
               Clear Search
             </button>
             <a
               href="/add"
-              className="px-6 py-3 bg-white text-neutral-700 border border-neutral-300 rounded-lg hover:bg-neutral-50 transition-colors font-medium"
+              className="px-6 py-3 border rounded-lg transition-colors font-medium"
+              style={{
+                backgroundColor: 'var(--chat-bg-input)',
+                borderColor: 'var(--chat-border)',
+                color: 'var(--chat-text-primary)'
+              }}
             >
               Add More Sources
             </a>
           </div>
-          <div className="bg-neutral-50 rounded-lg p-4 max-w-md mx-auto">
-            <p className="text-sm font-semibold text-neutral-700 mb-3">💡 Suggestions:</p>
-            <ul className="text-sm text-neutral-600 space-y-2 text-left">
+          <div className="rounded-lg p-4 max-w-md mx-auto" style={{
+            backgroundColor: 'var(--chat-bg-input)',
+            borderColor: 'var(--chat-border)'
+          }}>
+            <p className="text-sm font-semibold mb-3" style={{ color: 'var(--chat-text-primary)' }}>💡 Suggestions:</p>
+            <ul className="text-sm space-y-2 text-left" style={{ color: 'var(--chat-text-secondary)' }}>
               <li className="flex items-start gap-2">
-                <span className="text-neutral-400 mt-0.5">•</span>
+                <span className="mt-0.5" style={{ color: 'var(--chat-border)' }}>•</span>
                 <span>Use simpler keywords</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-neutral-400 mt-0.5">•</span>
+                <span className="mt-0.5" style={{ color: 'var(--chat-border)' }}>•</span>
                 <span>Try synonyms or related terms</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-neutral-400 mt-0.5">•</span>
+                <span className="mt-0.5" style={{ color: 'var(--chat-border)' }}>•</span>
                 <span>Check for typos</span>
               </li>
             </ul>

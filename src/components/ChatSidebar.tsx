@@ -130,27 +130,51 @@ export default function ChatSidebar({ selectedCategoryId, onCategorySelect }: Ch
         </div>
 
         {/* All Sources */}
-        <button
-          onClick={() => onCategorySelect?.(null)}
-          className={`w-full flex items-center gap-3 px-4 py-2.5 transition-colors ${
-            !selectedCategoryId ? 'bg-opacity-10' : ''
-          }`}
-          style={{
-            color: 'var(--chat-text-primary)',
-            backgroundColor: !selectedCategoryId ? 'var(--chat-hover)' : 'transparent'
-          }}
-          onMouseEnter={(e) => {
-            if (!selectedCategoryId) return
-            e.currentTarget.style.backgroundColor = 'var(--chat-hover)'
-          }}
-          onMouseLeave={(e) => {
-            if (!selectedCategoryId) return
-            e.currentTarget.style.backgroundColor = 'transparent'
-          }}
-        >
-          <MessageSquare className="h-4 w-4" />
-          <span className="flex-1 text-left text-sm">All Sources</span>
-        </button>
+        {onCategorySelect ? (
+          <button
+            onClick={() => onCategorySelect(null)}
+            className={`w-full flex items-center gap-3 px-4 py-2.5 transition-colors ${
+              !selectedCategoryId ? 'bg-opacity-10' : ''
+            }`}
+            style={{
+              color: 'var(--chat-text-primary)',
+              backgroundColor: !selectedCategoryId ? 'var(--chat-hover)' : 'transparent'
+            }}
+            onMouseEnter={(e) => {
+              if (!selectedCategoryId) return
+              e.currentTarget.style.backgroundColor = 'var(--chat-hover)'
+            }}
+            onMouseLeave={(e) => {
+              if (!selectedCategoryId) return
+              e.currentTarget.style.backgroundColor = 'transparent'
+            }}
+          >
+            <MessageSquare className="h-4 w-4" />
+            <span className="flex-1 text-left text-sm">All Sources</span>
+          </button>
+        ) : (
+          <Link
+            href="/search"
+            className={`flex items-center gap-3 px-4 py-2.5 transition-colors ${
+              pathname === '/search' ? 'bg-opacity-10' : ''
+            }`}
+            style={{
+              color: 'var(--chat-text-primary)',
+              backgroundColor: pathname === '/search' ? 'var(--chat-hover)' : 'transparent'
+            }}
+            onMouseEnter={(e) => {
+              if (pathname === '/search') return
+              e.currentTarget.style.backgroundColor = 'var(--chat-hover)'
+            }}
+            onMouseLeave={(e) => {
+              if (pathname === '/search') return
+              e.currentTarget.style.backgroundColor = 'transparent'
+            }}
+          >
+            <MessageSquare className="h-4 w-4" />
+            <span className="flex-1 text-left text-sm">All Sources</span>
+          </Link>
+        )}
 
         {/* Category List */}
         {loading ? (
