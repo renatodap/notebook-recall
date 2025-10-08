@@ -21,7 +21,6 @@ const protectedRoutes = [
   '/literature-review',
   '/import',
   '/publishing',
-  '/tools',
   '/onboarding',
   '/discover'
 ]

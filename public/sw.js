@@ -8,8 +8,8 @@ const STATIC_ASSETS = [
   '/dashboard',
   '/search',
   '/chat',
-  '/tools',
-  '/offline.html',
+  '/add',
+  '/collections',
   '/icon-192.png',
   '/icon-512.png',
 ]

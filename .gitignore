@@ -41,3 +41,31 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .nul
+
+# build logs and temporary files
+*.txt
+*.log
+build-*.txt
+final-*.txt
+
+# scripts and utilities
+fix-*.sh
+fix-*.ps1
+fix-*.js
+test-*.sh
+*-script.txt
+
+# browser extension (if not needed)
+browser-extension/
+
+# old documentation (keep only CLAUDE.md and README.md in root)
+PHASE_*.md
+FEATURES_*.md
+IMPLEMENTATION_*.md
+DEPLOY_*.md
+VALIDATION_*.md
+INTEGRATION_*.md
+PRODUCTION_*.md
+*_COMPLETE.md
+*_SUMMARY.md
+*_REPORT.md
