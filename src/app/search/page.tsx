@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import ChatSidebar from '@/components/ChatSidebar'
+import MobileSidebar from '@/components/MobileSidebar'
 import ChatMessage from '@/components/ChatMessage'
 import ChatInput from '@/components/ChatInput'
 import SourceCard from '@/components/SourceCard'
@@ -118,6 +119,7 @@ function SearchContent() {
         selectedCategoryId={selectedCategoryId}
         onCategorySelect={handleCategorySelect}
       />
+      <MobileSidebar />
 
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col md:ml-64">
@@ -245,6 +247,7 @@ export default function SearchPage() {
     <Suspense fallback={
       <div className="flex h-screen" style={{ backgroundColor: 'var(--chat-bg-main)' }}>
         <ChatSidebar />
+        <MobileSidebar />
         <div className="flex-1 flex items-center justify-center md:ml-64">
           <div className="animate-pulse" style={{ color: 'var(--chat-text-secondary)' }}>
             Loading...

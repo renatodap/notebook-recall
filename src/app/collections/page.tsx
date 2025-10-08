@@ -1,6 +1,7 @@
 import { createServerClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import ChatSidebar from '@/components/ChatSidebar'
+import MobileSidebar from '@/components/MobileSidebar'
 import Link from 'next/link'
 import { Plus } from 'lucide-react'
 import { generateMetadata as generateMeta } from '@/lib/metadata'
@@ -34,6 +35,7 @@ export default async function CollectionsPage() {
   return (
     <div className="flex h-screen" style={{ backgroundColor: 'var(--chat-bg-main)' }}>
       <ChatSidebar />
+      <MobileSidebar />
 
       <div className="flex-1 flex flex-col md:ml-64 overflow-y-auto">
         <main className="max-w-7xl mx-auto px-6 py-8 w-full">

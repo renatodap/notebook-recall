@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import ChatSidebar from '@/components/ChatSidebar'
+import MobileSidebar from '@/components/MobileSidebar'
 import Button from '@/components/ui/Button'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
@@ -57,6 +58,7 @@ export default function NewCollectionPage() {
   return (
     <div className="flex h-screen" style={{ backgroundColor: 'var(--chat-bg-main)' }}>
       <ChatSidebar />
+      <MobileSidebar />
 
       <div className="flex-1 flex flex-col md:ml-64 overflow-y-auto">
         <main className="max-w-2xl mx-auto px-6 py-8 w-full">

@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase/server'
 import ChatSidebar from '@/components/ChatSidebar'
+import MobileSidebar from '@/components/MobileSidebar'
 import SourcesView from '@/components/SourcesView'
 import Link from 'next/link'
 import { Sparkles, TrendingUp, FileText } from 'lucide-react'
@@ -53,6 +54,7 @@ export default async function DashboardPage() {
   return (
     <div className="flex h-screen" style={{ backgroundColor: 'var(--chat-bg-main)' }}>
       <ChatSidebar />
+      <MobileSidebar />
 
       <div className="flex-1 flex flex-col md:ml-64 overflow-y-auto">
         <div className="max-w-6xl mx-auto px-6 py-8 md:py-12 w-full">

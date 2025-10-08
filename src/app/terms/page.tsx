@@ -1,33 +1,45 @@
-import { Metadata } from 'next'
+import ChatSidebar from '@/components/ChatSidebar'
+import MobileSidebar from '@/components/MobileSidebar'
+import { generateMetadata as generateMeta } from '@/lib/metadata'
 
-export const metadata: Metadata = {
-  title: 'Terms of Service - Recall Notebook',
+export const metadata = generateMeta({
+  title: 'Terms of Service',
   description: 'Terms of Service for Recall Notebook - Rules and guidelines for using our service',
-  robots: {
-    index: true,
-    follow: true,
-  },
-}
+  keywords: ['terms', 'terms of service', 'legal', 'guidelines'],
+  path: '/terms',
+})
 
 export default function TermsPage() {
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
-      <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md p-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">Terms of Service</h1>
-        <p className="text-sm text-gray-600 mb-8">Last Updated: October 5, 2025</p>
+    <div className="flex h-screen" style={{ backgroundColor: 'var(--chat-bg-main)' }}>
+      <ChatSidebar />
+      <MobileSidebar />
 
-        <section className="mb-8">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4">1. Acceptance of Terms</h2>
-          <p className="text-gray-700">
-            By accessing or using Recall Notebook (&quot;the Service&quot;), you agree to be bound by these Terms of Service
-            (&quot;Terms&quot;). If you do not agree to these Terms, do not use the Service. We reserve the right to modify
-            these Terms at any time, and your continued use constitutes acceptance of any changes.
+      <div className="flex-1 flex flex-col md:ml-64 overflow-y-auto">
+        <main className="max-w-4xl mx-auto px-6 py-12 w-full" style={{ color: 'var(--chat-text-secondary)' }}>
+          <h1 className="text-4xl font-bold mb-4" style={{ color: 'var(--chat-text-primary)' }}>
+            Terms of Service
+          </h1>
+          <p className="text-sm mb-8">
+            Last Updated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
           </p>
-        </section>
 
-        <section className="mb-8">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4">2. Description of Service</h2>
-          <p className="text-gray-700 mb-4">
+          <section className="mb-8">
+            <h2 className="text-2xl font-semibold mb-4" style={{ color: 'var(--chat-text-primary)' }}>
+              1. Acceptance of Terms
+            </h2>
+            <p>
+              By accessing or using Recall Notebook (&quot;the Service&quot;), you agree to be bound by these Terms of Service
+              (&quot;Terms&quot;). If you do not agree to these Terms, do not use the Service. We reserve the right to modify
+              these Terms at any time, and your continued use constitutes acceptance of any changes.
+            </p>
+          </section>
+
+          <section className="mb-8">
+            <h2 className="text-2xl font-semibold mb-4" style={{ color: 'var(--chat-text-primary)' }}>
+              2. Description of Service
+            </h2>
+            <p className="mb-4">
             Recall Notebook is an AI-powered knowledge management platform that allows you to:
           </p>
           <ul className="list-disc list-inside text-gray-700 space-y-2 ml-4">
@@ -247,7 +259,8 @@ export default function TermsPage() {
             By using Recall Notebook, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service.
           </p>
         </div>
-      </div>
+      </main>
+    </div>
     </div>
   )
 }
