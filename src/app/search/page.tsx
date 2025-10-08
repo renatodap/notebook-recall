@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import ChatSidebar from '@/components/ChatSidebar'
 import ChatMessage from '@/components/ChatMessage'
 import ChatInput from '@/components/ChatInput'
@@ -12,11 +13,24 @@ interface Message {
   sources?: string[]
 }
 
-export default function SearchPage() {
+function SearchContent() {
+  const searchParams = useSearchParams()
+  const collectionParam = searchParams.get('collection')
+
   const [messages, setMessages] = useState<Message[]>([])
   const [loading, setLoading] = useState(false)
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(collectionParam)
   const [results, setResults] = useState<any[]>([])
+
+  // Update selectedCategoryId when URL param changes
+  useEffect(() => {
+    if (collectionParam) {
+      setSelectedCategoryId(collectionParam)
+      // Clear chat when switching from URL
+      setMessages([])
+      setResults([])
+    }
+  }, [collectionParam])
 
   const handleCategorySelect = (categoryId: string | null) => {
     setSelectedCategoryId(categoryId)
@@ -223,5 +237,22 @@ export default function SearchPage() {
         />
       </div>
     </div>
+  )
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-screen" style={{ backgroundColor: 'var(--chat-bg-main)' }}>
+        <ChatSidebar />
+        <div className="flex-1 flex items-center justify-center md:ml-64">
+          <div className="animate-pulse" style={{ color: 'var(--chat-text-secondary)' }}>
+            Loading...
+          </div>
+        </div>
+      </div>
+    }>
+      <SearchContent />
+    </Suspense>
   )
 }

@@ -184,33 +184,59 @@ export default function ChatSidebar({ selectedCategoryId, onCategorySelect }: Ch
         ) : (
           <div className="space-y-1">
             {categories.map((category) => (
-              <button
-                key={category.id}
-                onClick={() => onCategorySelect?.(category.id)}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 transition-colors ${
-                  selectedCategoryId === category.id ? 'bg-opacity-10' : ''
-                }`}
-                style={{
-                  color: 'var(--chat-text-primary)',
-                  backgroundColor: selectedCategoryId === category.id ? 'var(--chat-hover)' : 'transparent'
-                }}
-                onMouseEnter={(e) => {
-                  if (selectedCategoryId === category.id) return
-                  e.currentTarget.style.backgroundColor = 'var(--chat-hover)'
-                }}
-                onMouseLeave={(e) => {
-                  if (selectedCategoryId === category.id) return
-                  e.currentTarget.style.backgroundColor = 'transparent'
-                }}
-              >
-                <Folder className="h-4 w-4" />
-                <div className="flex-1 text-left">
-                  <div className="text-sm font-medium">{category.name}</div>
-                  <div className="text-xs" style={{ color: 'var(--chat-text-secondary)' }}>
-                    {category.source_count || 0} sources
+              onCategorySelect ? (
+                <button
+                  key={category.id}
+                  onClick={() => onCategorySelect(category.id)}
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 transition-colors ${
+                    selectedCategoryId === category.id ? 'bg-opacity-10' : ''
+                  }`}
+                  style={{
+                    color: 'var(--chat-text-primary)',
+                    backgroundColor: selectedCategoryId === category.id ? 'var(--chat-hover)' : 'transparent'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (selectedCategoryId === category.id) return
+                    e.currentTarget.style.backgroundColor = 'var(--chat-hover)'
+                  }}
+                  onMouseLeave={(e) => {
+                    if (selectedCategoryId === category.id) return
+                    e.currentTarget.style.backgroundColor = 'transparent'
+                  }}
+                >
+                  <Folder className="h-4 w-4" />
+                  <div className="flex-1 text-left">
+                    <div className="text-sm font-medium">{category.name}</div>
+                    <div className="text-xs" style={{ color: 'var(--chat-text-secondary)' }}>
+                      {category.source_count || 0} sources
+                    </div>
                   </div>
-                </div>
-              </button>
+                </button>
+              ) : (
+                <Link
+                  key={category.id}
+                  href={`/search?collection=${category.id}`}
+                  className={`flex items-center gap-3 px-4 py-2.5 transition-colors`}
+                  style={{
+                    color: 'var(--chat-text-primary)',
+                    backgroundColor: 'transparent'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--chat-hover)'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent'
+                  }}
+                >
+                  <Folder className="h-4 w-4" />
+                  <div className="flex-1 text-left">
+                    <div className="text-sm font-medium">{category.name}</div>
+                    <div className="text-xs" style={{ color: 'var(--chat-text-secondary)' }}>
+                      {category.source_count || 0} sources
+                    </div>
+                  </div>
+                </Link>
+              )
             ))}
           </div>
         )}
