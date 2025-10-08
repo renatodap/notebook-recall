@@ -4,6 +4,7 @@ import { useState, useRef, DragEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import MobileNav from '@/components/MobileNav'
 import Button from '@/components/ui/Button'
+import CategorySelectorModal from '@/components/CategorySelectorModal'
 import { ContentType } from '@/types'
 
 type DetectedType = 'text' | 'url' | 'pdf' | 'image' | 'unknown'
@@ -17,6 +18,8 @@ export default function AddPage() {
   const [success, setSuccess] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const [detectedType, setDetectedType] = useState<DetectedType>('unknown')
+  const [showCategoryModal, setShowCategoryModal] = useState(false)
+  const [createdSourceId, setCreatedSourceId] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const detectContentType = (text: string, file: File | null): DetectedType => {
@@ -170,15 +173,59 @@ export default function AddPage() {
       setFile(null)
       setDetectedType('unknown')
       setSuccess(true)
+      setCreatedSourceId(saveData.id)
 
-      setTimeout(() => {
-        router.push('/dashboard')
-      }, 1500)
+      // Show category selector modal
+      setShowCategoryModal(true)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleCategorySelect = async (categoryId: string | null) => {
+    if (!createdSourceId) return
+
+    try {
+      // If category is selected, link source to collection
+      if (categoryId) {
+        const response = await fetch(`/api/collections/${categoryId}/sources`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            source_id: createdSourceId
+          })
+        })
+
+        if (!response.ok) {
+          const data = await response.json()
+          throw new Error(data.error || 'Failed to add source to category')
+        }
+      }
+
+      // Redirect to dashboard
+      router.push('/dashboard')
+    } catch (err) {
+      console.error('Error adding to category:', err)
+      // Still redirect even if category link fails
+      router.push('/dashboard')
+    }
+  }
+
+  const handleCreateCategory = async (name: string, description?: string): Promise<string> => {
+    const response = await fetch('/api/collections', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, description })
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to create category')
+    }
+
+    const data = await response.json()
+    return data.id
   }
 
   const getTypeIndicator = () => {
@@ -345,6 +392,17 @@ export default function AddPage() {
           </p>
         </div>
       </div>
+
+      {/* Category Selector Modal */}
+      <CategorySelectorModal
+        isOpen={showCategoryModal}
+        onClose={() => {
+          setShowCategoryModal(false)
+          router.push('/dashboard')
+        }}
+        onSelect={handleCategorySelect}
+        onCreateNew={handleCreateCategory}
+      />
     </div>
   )
 }

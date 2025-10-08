@@ -59,6 +59,21 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* ChatGPT-Style Dark Theme */
+:root {
+  /* ChatGPT Colors */
+  --chat-bg-main: #343541;
+  --chat-bg-sidebar: #202123;
+  --chat-bg-message-user: #40414F;
+  --chat-bg-message-ai: #444654;
+  --chat-bg-input: #40414F;
+  --chat-text-primary: #ECECF1;
+  --chat-text-secondary: #8E8EA0;
+  --chat-border: #565869;
+  --chat-accent: #10A37F;
+  --chat-hover: #2A2B32;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;

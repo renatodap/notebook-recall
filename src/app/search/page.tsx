@@ -1,263 +1,228 @@
 'use client'
 
 import { useState } from 'react'
-import Input from '@/components/ui/Input'
-import Button from '@/components/ui/Button'
+import ChatSidebar from '@/components/ChatSidebar'
+import ChatMessage from '@/components/ChatMessage'
+import ChatInput from '@/components/ChatInput'
 import SourceCard from '@/components/SourceCard'
-import Loading from '@/components/ui/Loading'
 import MobileNav from '@/components/MobileNav'
 
-type SearchMode = 'semantic' | 'keyword' | 'hybrid'
-
-interface ParsedQueryInfo {
-  keywords: string[]
-  timeRange?: { start: Date; end: Date; relative?: string }
-  contentType?: string
-  topics?: string[]
-  intent: string
+interface Message {
+  role: 'user' | 'assistant'
+  content: string
+  sources?: string[]
 }
 
 export default function SearchPage() {
-  const [query, setQuery] = useState('')
-  const [results, setResults] = useState<any[]>([])
+  const [messages, setMessages] = useState<Message[]>([])
   const [loading, setLoading] = useState(false)
-  const [searched, setSearched] = useState(false)
-  const [searchMode, setSearchMode] = useState<SearchMode>('hybrid')
-  const [parsedQuery, setParsedQuery] = useState<ParsedQueryInfo | null>(null)
-  const [useConversational, setUseConversational] = useState(true)
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
+  const [results, setResults] = useState<any[]>([])
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!query.trim()) return
+  const handleCategorySelect = (categoryId: string | null) => {
+    setSelectedCategoryId(categoryId)
+    // Clear chat when switching categories
+    setMessages([])
+    setResults([])
+  }
 
+  const handleSendMessage = async (message: string) => {
+    if (!message.trim()) return
+
+    // Add user message to chat
+    const userMessage: Message = { role: 'user', content: message }
+    setMessages(prev => [...prev, userMessage])
     setLoading(true)
-    setSearched(true)
 
     try {
-      let searchQuery = query
-      let parsedInfo: ParsedQueryInfo | null = null
-
-      // Use conversational parsing for natural language queries
-      if (useConversational && query.length > 10) {
-        try {
-          const parseResponse = await fetch('/api/search/parse', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ query })
-          })
-
-          if (parseResponse.ok) {
-            const parsed = await parseResponse.json()
-            parsedInfo = parsed
-            setParsedQuery(parsed)
-
-            // Use extracted keywords for better search
-            if (parsed.keywords && parsed.keywords.length > 0) {
-              searchQuery = parsed.keywords.join(' ')
-            }
-          }
-        } catch {
-          console.log('Conversational parsing failed, using raw query')
-        }
-      }
-
+      // Perform search
       const response = await fetch('/api/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          query: searchQuery,
-          mode: searchMode,
+          query: message,
+          mode: 'hybrid',
+          collection_id: selectedCategoryId
         }),
       })
 
       const data = await response.json()
-      let finalResults = data.results || []
+      const searchResults = data.results || []
+      setResults(searchResults)
 
-      // Apply additional filters from parsed query
-      if (parsedInfo) {
-        if (parsedInfo.timeRange) {
-          finalResults = finalResults.filter((r: any) => {
-            const created = new Date(r.source?.created_at || r.created_at)
-            return created >= parsedInfo.timeRange!.start && created <= parsedInfo.timeRange!.end
-          })
-        }
+      // Format AI response
+      let aiResponse = ''
+      if (searchResults.length > 0) {
+        aiResponse = `I found ${searchResults.length} ${searchResults.length === 1 ? 'result' : 'results'} for "${message}":\n\n`
 
-        if (parsedInfo.contentType) {
-          finalResults = finalResults.filter((r: any) =>
-            (r.source?.content_type || r.content_type) === parsedInfo.contentType
-          )
+        searchResults.slice(0, 3).forEach((result: any, idx: number) => {
+          const source = result.source || result
+          aiResponse += `${idx + 1}. **${source.title || 'Untitled'}**\n`
+          if (source.summary) {
+            aiResponse += `   ${source.summary.substring(0, 150)}${source.summary.length > 150 ? '...' : ''}\n`
+          }
+          aiResponse += '\n'
+        })
+
+        if (searchResults.length > 3) {
+          aiResponse += `_...and ${searchResults.length - 3} more results shown below_`
         }
+      } else {
+        aiResponse = `I couldn't find any results for "${message}". Try:\n• Using different keywords\n• Checking your spelling\n• Searching in a different category`
       }
 
-      setResults(finalResults)
+      // Extract source titles for display
+      const sourceTitles = searchResults.slice(0, 5).map((r: any) =>
+        (r.source?.title || r.title || 'Untitled').substring(0, 50)
+      )
+
+      const assistantMessage: Message = {
+        role: 'assistant',
+        content: aiResponse,
+        sources: sourceTitles.length > 0 ? sourceTitles : undefined
+      }
+
+      setMessages(prev => [...prev, assistantMessage])
     } catch (error) {
       console.error('Search error:', error)
-      setResults([])
+
+      const errorMessage: Message = {
+        role: 'assistant',
+        content: 'Sorry, I encountered an error while searching. Please try again.'
+      }
+      setMessages(prev => [...prev, errorMessage])
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20 md:pb-0 md:pl-64">
+    <div
+      className="flex h-screen"
+      style={{ backgroundColor: 'var(--chat-bg-main)' }}
+    >
+      <ChatSidebar
+        selectedCategoryId={selectedCategoryId}
+        onCategorySelect={handleCategorySelect}
+      />
       <MobileNav />
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <div className="mb-4">
-            <h1 className="text-3xl font-bold text-gray-900">Search Your Knowledge</h1>
-          </div>
-
-          <form onSubmit={handleSearch} className="space-y-4">
-            <div className="space-y-2">
-              <div className="flex gap-2">
-                <Input
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="What did I learn about AI last month?"
-                  className="flex-1"
-                  disabled={loading}
-                />
-                <Button type="submit" loading={loading}>
-                  Search
-                </Button>
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col md:ml-64">
+        {/* Messages Area */}
+        <div className="flex-1 overflow-y-auto">
+          {messages.length === 0 ? (
+            <div className="h-full flex items-center justify-center p-4">
+              <div className="text-center max-w-2xl">
+                <h1
+                  className="text-4xl font-bold mb-4"
+                  style={{ color: 'var(--chat-text-primary)' }}
+                >
+                  {selectedCategoryId ? 'Search in Category' : 'Search Your Knowledge'}
+                </h1>
+                <p
+                  className="text-lg mb-8"
+                  style={{ color: 'var(--chat-text-secondary)' }}
+                >
+                  Ask me anything about your saved sources. I&apos;ll search through your knowledge base and provide relevant results.
+                </p>
+                <div
+                  className="grid gap-3 text-left"
+                  style={{ color: 'var(--chat-text-secondary)' }}
+                >
+                  <div
+                    className="p-3 rounded-lg border"
+                    style={{
+                      borderColor: 'var(--chat-border)',
+                      backgroundColor: 'var(--chat-bg-message-ai)'
+                    }}
+                  >
+                    💡 &quot;What did I learn about React hooks?&quot;
+                  </div>
+                  <div
+                    className="p-3 rounded-lg border"
+                    style={{
+                      borderColor: 'var(--chat-border)',
+                      backgroundColor: 'var(--chat-bg-message-ai)'
+                    }}
+                  >
+                    📚 &quot;Show me articles about machine learning&quot;
+                  </div>
+                  <div
+                    className="p-3 rounded-lg border"
+                    style={{
+                      borderColor: 'var(--chat-border)',
+                      backgroundColor: 'var(--chat-bg-message-ai)'
+                    }}
+                  >
+                    🔍 &quot;Find my notes from last week&quot;
+                  </div>
+                </div>
               </div>
-
-              {/* Conversational toggle */}
-              <label className="flex items-center gap-2 text-sm cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={useConversational}
-                  onChange={(e) => setUseConversational(e.target.checked)}
-                  className="rounded"
+            </div>
+          ) : (
+            <>
+              {messages.map((message, idx) => (
+                <ChatMessage
+                  key={idx}
+                  role={message.role}
+                  content={message.content}
+                  sources={message.sources}
                 />
-                <span className="text-gray-700">
-                  🗣️ Use conversational search (understands time, topics, intent)
-                </span>
-              </label>
-
-              {/* Show parsed query info */}
-              {parsedQuery && (
-                <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3 text-sm">
-                  <p className="font-semibold text-indigo-900 mb-2">🤖 Query understood as:</p>
-                  <div className="space-y-1 text-indigo-800">
-                    {parsedQuery.keywords.length > 0 && (
-                      <p><strong>Keywords:</strong> {parsedQuery.keywords.join(', ')}</p>
-                    )}
-                    {parsedQuery.timeRange?.relative && (
-                      <p><strong>Time:</strong> {parsedQuery.timeRange.relative}</p>
-                    )}
-                    {parsedQuery.topics && parsedQuery.topics.length > 0 && (
-                      <p><strong>Topics:</strong> {parsedQuery.topics.join(', ')}</p>
-                    )}
-                    {parsedQuery.intent && (
-                      <p><strong>Intent:</strong> {parsedQuery.intent}</p>
-                    )}
-                    {parsedQuery.contentType && (
-                      <p><strong>Type:</strong> {parsedQuery.contentType}</p>
-                    )}
+              ))}
+              {loading && (
+                <div
+                  className="w-full py-6 px-4"
+                  style={{ backgroundColor: 'var(--chat-bg-message-ai)' }}
+                >
+                  <div className="max-w-3xl mx-auto flex gap-6">
+                    <div
+                      className="flex-shrink-0 w-8 h-8 rounded-sm flex items-center justify-center"
+                      style={{ backgroundColor: 'var(--chat-border)' }}
+                    >
+                      <div className="animate-pulse">🤖</div>
+                    </div>
+                    <div style={{ color: 'var(--chat-text-secondary)' }}>
+                      Searching...
+                    </div>
                   </div>
                 </div>
               )}
-            </div>
+            </>
+          )}
 
-            {/* Search Mode Selector */}
-            <div className="flex items-center gap-6 text-sm">
-              <span className="text-gray-700 font-medium">Search mode:</span>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="searchMode"
-                  value="hybrid"
-                  checked={searchMode === 'hybrid'}
-                  onChange={(e) => setSearchMode(e.target.value as SearchMode)}
-                  className="text-blue-600"
-                />
-                <span>🔀 Hybrid (Best)</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="searchMode"
-                  value="semantic"
-                  checked={searchMode === 'semantic'}
-                  onChange={(e) => setSearchMode(e.target.value as SearchMode)}
-                  className="text-blue-600"
-                />
-                <span>🧠 Semantic</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="searchMode"
-                  value="keyword"
-                  checked={searchMode === 'keyword'}
-                  onChange={(e) => setSearchMode(e.target.value as SearchMode)}
-                  className="text-blue-600"
-                />
-                <span>🔤 Keyword</span>
-              </label>
-            </div>
-
-            {/* Mode explanation */}
-            <div className="text-xs text-gray-500 bg-gray-50 rounded p-3">
-              {searchMode === 'hybrid' && (
-                <p>🔀 <strong>Hybrid:</strong> Combines semantic understanding with keyword matching for best results</p>
-              )}
-              {searchMode === 'semantic' && (
-                <p>🧠 <strong>Semantic:</strong> Finds results based on meaning and context, even if words don&apos;t match exactly</p>
-              )}
-              {searchMode === 'keyword' && (
-                <p>🔤 <strong>Keyword:</strong> Matches exact words and phrases in your sources</p>
-              )}
-            </div>
-          </form>
-        </div>
-
-        {loading && (
-          <div className="py-12 flex justify-center">
-            <Loading text="Searching..." />
-          </div>
-        )}
-
-        {!loading && searched && (
-          <>
-            {results.length > 0 ? (
-              <div>
-                <p className="text-gray-600 mb-4">
-                  Found {results.length} {results.length === 1 ? 'result' : 'results'}
-                </p>
-                <div className="grid gap-4">
+          {/* Results Section */}
+          {results.length > 0 && (
+            <div
+              className="border-t p-6"
+              style={{
+                borderColor: 'var(--chat-border)',
+                backgroundColor: 'var(--chat-bg-main)'
+              }}
+            >
+              <div className="max-w-3xl mx-auto">
+                <h3
+                  className="text-lg font-semibold mb-4"
+                  style={{ color: 'var(--chat-text-primary)' }}
+                >
+                  Source Details:
+                </h3>
+                <div className="space-y-4">
                   {results.map((result: any) => (
                     <SourceCard key={result.id} source={result as any} />
                   ))}
                 </div>
               </div>
-            ) : (
-              <div className="text-center py-12 bg-white rounded-lg border-2 border-dashed border-gray-300">
-                <div className="text-4xl mb-4">🔍</div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  No results found
-                </h3>
-                <p className="text-gray-600">
-                  Try adjusting your search query
-                </p>
-              </div>
-            )}
-          </>
-        )}
+            </div>
+          )}
+        </div>
 
-        {!loading && !searched && (
-          <div className="text-center py-12 bg-white rounded-lg">
-            <div className="text-4xl mb-4">💡</div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              Start searching
-            </h3>
-            <p className="text-gray-600">
-              Use natural language to find anything in your knowledge base
-            </p>
-          </div>
-        )}
+        {/* Input Area */}
+        <ChatInput
+          onSend={handleSendMessage}
+          disabled={loading}
+          placeholder={selectedCategoryId ? "Search in this category..." : "Search your knowledge..."}
+        />
       </div>
     </div>
   )
