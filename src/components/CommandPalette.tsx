@@ -30,14 +30,6 @@ export default function CommandPalette() {
       action: () => router.push('/dashboard')
     },
     {
-      id: 'nav-tools',
-      label: 'Go to Tools',
-      description: 'Access AI tools',
-      icon: '🛠️',
-      category: 'Navigation',
-      action: () => router.push('/tools')
-    },
-    {
       id: 'nav-search',
       label: 'Search',
       description: 'Semantic search',

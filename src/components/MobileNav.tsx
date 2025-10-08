@@ -17,7 +17,7 @@ export default function MobileNav() {
     await signOut()
   }
 
-  // Simplified navigation - 5 primary items (2026 UX standards)
+  // Simplified navigation - 4 primary items (2026 UX standards)
   const navItems = [
     {
       name: 'Dashboard',
@@ -43,12 +43,6 @@ export default function MobileNav() {
       path: '/collections',
       icon: '📚',
       activeIcon: '📚'
-    },
-    {
-      name: 'Tools',
-      path: '/tools',
-      icon: '🛠️',
-      activeIcon: '🛠️'
     },
   ]
 
